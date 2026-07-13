@@ -1,86 +1,78 @@
-# Skills — Codex & Google Antigravity
+# Codex Skills
 
-იგივე SKILL.md ფაილები მუშაობს ორივეში. მხოლოდ ფოლდერის გზა განსხვავდება.
+პროდუქტზე ორიენტირებული, production-grade პირადი სქილების ნაკრები Codex-ისთვის. თითოეული ფოლდერი შეიცავს `SKILL.md`-ს და Codex-ის UI metadata-ს `agents/openai.yaml`-ში; საჭიროების შემთხვევაში დამატებულია references.
 
----
+## სქილები
 
-## Google Antigravity
+| სქილი | დანიშნულება |
+| --- | --- |
+| `web-development` | Production web architecture და end-to-end implementation |
+| `ui-ux` | Product flows, interaction systems, accessibility და handoff |
+| `anti-ai-slop-design` | Brand-specific visual craft generic AI aesthetics-ის გარეშე |
+| `premium-web-motion` | Purposeful, accessible და performant interface motion |
+| `security` | Evidence-based security audit, threat modeling და hardening |
+| `token-efficiency` | სრული პასუხები მაქსიმალური signal density-ით |
 
-### Global (ყველა პროექტი)
-```bash
-mkdir -p ~/.gemini/antigravity/skills/web-development
-mkdir -p ~/.gemini/antigravity/skills/ui-ux
-mkdir -p ~/.gemini/antigravity/skills/security
-mkdir -p ~/.gemini/antigravity/skills/token-efficiency
-mkdir -p ~/.gemini/antigravity/skills/anti-ai-slop-design-system
+## Codex-ში გლობალურად დაყენება
 
-cp -r codex-skills/*/  ~/.gemini/antigravity/skills/
-```
-
-### Workspace (ერთი პროექტი)
-```bash
-cp -r codex-skills/*/  .agent/skills/
-```
-
-### GEMINI.md (დამატებითი)
-token-efficiency სკილის შინაარსი `GEMINI.md`-ში ჩასვი პროექტის root-ში — ყოველ session-ში ავტომატურად იმუშავებს სკილების გარეშეც.
-
----
-
-# Codex Skills — Installation Guide
-
-## სტრუქტურა
-```
-~/.codex/
-  skills/
-    web-development/
-      SKILL.md
-    ui-ux/
-      SKILL.md
-    security/
-      SKILL.md
-    token-efficiency/
-      SKILL.md
-    anti-ai-slop-design-system/
-      SKILL.md
-```
-
-## დაყენება (macOS / Linux)
+### macOS / Linux
 
 ```bash
-# 1. შექმენი skills ფოლდერები
-mkdir -p ~/.codex/skills/web-development
-mkdir -p ~/.codex/skills/ui-ux
-mkdir -p ~/.codex/skills/security
-mkdir -p ~/.codex/skills/token-efficiency
-mkdir -p ~/.codex/skills/anti-ai-slop-design-system
-
-# 2. დააკოპირე ფაილები
-cp web-development/SKILL.md ~/.codex/skills/web-development/SKILL.md
-cp ui-ux/SKILL.md           ~/.codex/skills/ui-ux/SKILL.md
-cp security/SKILL.md        ~/.codex/skills/security/SKILL.md
-cp token-efficiency/SKILL.md ~/.codex/skills/token-efficiency/SKILL.md
-cp anti-ai-slop-design-system/SKILL.md ~/.codex/skills/anti-ai-slop-design-system/SKILL.md
+mkdir -p ~/.codex/skills
+for skill in web-development ui-ux anti-ai-slop-design premium-web-motion security token-efficiency; do
+  rm -rf "$HOME/.codex/skills/$skill"
+  cp -R "$skill" "$HOME/.codex/skills/$skill"
+done
 ```
+
+### Windows PowerShell
+
+```powershell
+$skills = @(
+  'web-development',
+  'ui-ux',
+  'anti-ai-slop-design',
+  'premium-web-motion',
+  'security',
+  'token-efficiency'
+)
+
+New-Item -ItemType Directory -Force -Path "$HOME\.codex\skills" | Out-Null
+
+foreach ($skill in $skills) {
+  $target = "$HOME\.codex\skills\$skill"
+  if (Test-Path -LiteralPath $target) {
+    Remove-Item -Recurse -Force -LiteralPath $target
+  }
+  Copy-Item -Recurse -LiteralPath ".\$skill" -Destination $target
+}
+```
+
+Codex-ის ახალი task გახსენი ან აპი გადატვირთე, რათა განახლებული metadata და trigger-ები ჩაიტვირთოს.
 
 ## გამოყენება
 
-**Implicit** — Codex თვითონ ირჩევს task-ის მიხედვით
-> "fix the XSS vulnerability in this plugin" → security სკილი ავტომატურად
+Codex შესაბამის სქილს ავტომატურად ირჩევს task-ის მიხედვით. Explicit invocation-ის მაგალითები:
 
-**Explicit** — სახელით გამოძახება
-> "$web-development build me a Next.js API route"
-> "$security audit this PHP file"
-> "$ui-ux review this component layout"
-> "$token-efficiency" → მოკლე პასუხების რეჟიმი
-
-## Skills ჩართვა (თუ feature flag სჭირდება)
-```bash
-codex --enable skills
+```text
+$web-development implement this Next.js feature end to end
+$ui-ux review this onboarding flow
+$anti-ai-slop-design remove generic AI styling from this landing page
+$premium-web-motion design an accessible motion system
+$security audit this API authorization boundary
+$token-efficiency summarize the result briefly
 ```
 
-## Codex-ის Restart (თუ სკილი არ გამოჩნდა)
+რამდენიმე სქილი შეიძლება ერთად გამოიყენო, მაგალითად `$web-development`, `$ui-ux`, `$security` და `$anti-ai-slop-design` სრული product implementation-ისთვის.
+
+## Google Antigravity
+
+`SKILL.md` ინსტრუქციების გამოყენება შესაძლებელია Antigravity-შიც. დააკოპირე შესაბამისი skill folders:
+
 ```bash
-# Codex-ის გადატვირთვა
-# App-ში: Cmd+R ან Quit → Reopen
+mkdir -p ~/.gemini/antigravity/skills
+cp -R web-development ui-ux anti-ai-slop-design premium-web-motion security token-efficiency \
+  ~/.gemini/antigravity/skills/
 ```
+
+`agents/openai.yaml` Codex-ის metadata-აა; სხვა runtime-მა შეიძლება უბრალოდ უგულებელყოს.

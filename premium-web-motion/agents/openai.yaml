@@ -1,0 +1,4 @@
+interface:
+  display_name: "Premium Web Motion"
+  short_description: "Purposeful, accessible, performant product motion"
+  default_prompt: "Use $premium-web-motion to design and implement a cohesive, interruptible, accessible motion system for this interface."

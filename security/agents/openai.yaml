@@ -1,0 +1,4 @@
+interface:
+  display_name: "Application Security"
+  short_description: "Evidence-based security auditing and hardening"
+  default_prompt: "Use $security to trace trust boundaries, verify exploitability, and implement root-cause security fixes for this system."

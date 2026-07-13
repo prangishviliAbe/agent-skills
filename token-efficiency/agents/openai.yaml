@@ -1,0 +1,4 @@
+interface:
+  display_name: "Token Efficiency"
+  short_description: "Complete answers with maximum signal density"
+  default_prompt: "Use $token-efficiency to complete this task with the smallest clear response that preserves essential decisions and verification."

@@ -1,0 +1,4 @@
+interface:
+  display_name: "Web Development"
+  short_description: "Production architecture and end-to-end web delivery"
+  default_prompt: "Use $web-development to implement this web feature end to end with secure architecture, edge cases, tests, and production verification."

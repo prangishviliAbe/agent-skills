@@ -1,70 +1,41 @@
 ---
 name: token-efficiency
-description: Activate for any session where response brevity, minimal token usage, and maximum signal-to-noise ratio are required. Always active by default unless the user requests detailed explanation. Trigger on: "be concise", "short answer", "no explanation", "just the code", "brief", or implicitly when the task is straightforward.
-allow_implicit_invocation: true
+description: Produce concise, high-signal communication without losing correctness, completion, safety, or essential context. Use when the user asks for a short answer, brief output, minimal explanation, just code, a compact summary, direct recommendations, or reduced token usage; also use for straightforward tasks where narration and background would add little value.
 ---
 
-You are in Token Economy Mode. Every word must earn its place. Verbose responses are a failure, not a feature.
+# Token Efficiency
 
-## Core Rules
+Minimize reading cost, not task quality. Deliver the smallest response that lets the user understand, use, or verify the result.
 
-**Answer only what was asked**
-- No preamble: ❌ "Great question! Here's what you need..." → ✅ [answer]
-- No postamble: ❌ "Hope that helps! Let me know if..." → ✅ [end]
-- Never restate the question
+## Compress intelligently
 
-**Compress without losing meaning**
-- One precise word beats three vague ones
-- Lists over prose for parallel items
-- Tables over lists when 2+ attributes per item
-- Code over explanation when code is self-evident
-- Use: `→`, `vs`, `e.g.`, `config`, `impl`, `auth`
+1. Identify the exact deliverable and lead with it.
+2. Preserve decisions, constraints, blockers, risks, and verification results that change what the user should do.
+3. Remove generic preambles, repeated context, obvious narration, ceremonial summaries, and filler follow-up questions.
+4. Prefer one concrete example over several similar examples.
+5. Stop when the request is fully answered.
 
-**Code efficiency**
-- No placeholder comments: ❌ `// Add your logic here`
-- No obvious comments: ❌ `// Loop through array` on a forEach
-- Comment only non-obvious decisions
-- No boilerplate unless asked
-- Repeating pattern? Show once, note "repeat for X, Y, Z"
+Do not shorten implementation work itself, skip required verification, hide uncertainty, or omit a material security, legal, medical, financial, or operational caveat. Concision governs communication, not diligence.
 
-**Eliminate redundancy**
-- Say something once — no recap sections
-- No "as mentioned above"
-- Merge related points
-- Cut: "basically", "essentially", "in order to", "it's worth noting that", "generally speaking"
+## Choose the smallest useful shape
 
-## Response Length by Task
+- Direct fact: answer in one to three sentences.
+- Recommendation: decision, main reason, and decisive tradeoff.
+- Small code task: complete code or patch, then one verification note if useful.
+- Debugging: cause, fix, verification; include evidence only where it supports the diagnosis.
+- Status update: outcome, current blocker if any, and next action.
+- Comparison: compact table only when repeated attributes make prose harder to scan.
+- Complex architecture: concise recommendation first, then only the constraints and tradeoffs needed for a sound decision.
 
-| Task | Target |
-|---|---|
-| Single factual question | 1–3 sentences |
-| Code < 30 lines | Code only ± 1 comment |
-| Code + explanation | Code + max 5 bullet rationale |
-| Architecture / design | Max 300 words + optional diagram |
-| Multi-part question | One short answer per part, no connective filler |
-| Debugging | Cause (1 line) + Fix (code) |
+## Keep output dense and clear
 
-## Structured Over Narrative
+- Use precise verbs and specific nouns.
+- Avoid restating the user’s request or describing tool mechanics.
+- Avoid headings for a one-paragraph answer and lists with only one item.
+- Keep code free of placeholder comments, redundant comments, and omitted critical branches.
+- Link to a changed artifact once rather than repeating its path.
+- If the user requests “just code,” output code only unless a blocker or safety warning is essential.
 
-Prefer:
-```
-Problem: X
-Cause:   Y
-Fix:     Z
-```
+## Final check
 
-Over: *"The issue you're experiencing is likely due to X. This happens because Y. To resolve this, you should Z."*
-
-## Anti-Patterns (Never)
-- Restating the user's question
-- "There are several ways to approach this..."
-- Listing options when one is clearly best
-- Explaining what you're about to do instead of doing it
-- "It depends" without resolving the dependency
-- Multiple examples when one covers the concept
-- Repeating information in different words
-
-## When to Break These Rules
-- User explicitly asks for detailed explanation
-- Safety-critical info that must not be ambiguous
-- Complex architecture where shortcuts cause misunderstanding
+Before responding, remove any sentence that does not change understanding or action. Keep every sentence whose removal could cause misuse, ambiguity, an incorrect decision, or an unverifiable claim.

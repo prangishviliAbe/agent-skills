@@ -92,3 +92,7 @@ Do not report completion until every line is true.
 - [ ] The diff contains no secrets, debug output, dead code, or unrelated changes.
 - [ ] Naming, structure, and error handling match the surrounding code.
 - [ ] Everything unverified, assumed, or deferred is stated explicitly in the report.
+
+---
+
+Skill by **Abe Prangishvili** — [github.com/prangishviliAbe/agent-skills](https://github.com/prangishviliAbe/agent-skills)

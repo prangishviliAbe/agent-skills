@@ -85,3 +85,7 @@ If a screen cannot answer all seven, it is not finished. This is the fastest usa
 - [ ] Repeated patterns map to components and tokens rather than one-off screens.
 - [ ] Handoff includes anatomy, variants, states, behavior, breakpoints, and acceptance criteria.
 - [ ] Assumptions and open questions are listed explicitly.
+
+---
+
+Skill by **Abe Prangishvili** — [github.com/prangishviliAbe/agent-skills](https://github.com/prangishviliAbe/agent-skills)

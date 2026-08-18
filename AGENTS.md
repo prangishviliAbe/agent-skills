@@ -21,6 +21,13 @@ The folder name, the `name` in the frontmatter, and the `$invocation` in `agents
 2. **`SKILL.md` routes; `references/` explains.** Keep the body under 220 lines. When it grows past that, the overflow is depth and belongs in a reference file with a row in the reference map table.
 3. **Every reference file is linked** from `SKILL.md` or from another reference. An unlinked file is invisible to the model and will rot.
 4. **Frontmatter carries only `name` and `description`.** The description is the trigger: it must name the artifacts, verbs, and technologies that should activate the skill, in the words a user would actually type.
+5. **Every `SKILL.md` ends with the author credit line.** Skills are installed and copied folder by folder, so a credit that lives only in the README does not travel with them. The validator enforces this.
+
+```markdown
+---
+
+Skill by **Abe Prangishvili** — [github.com/prangishviliAbe/agent-skills](https://github.com/prangishviliAbe/agent-skills)
+```
 
 ## Writing style
 

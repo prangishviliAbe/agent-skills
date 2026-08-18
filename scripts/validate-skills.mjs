@@ -16,6 +16,9 @@ const LIMITS = {
   referenceLines: 400,
 };
 
+// Skills are installed folder by folder, so authorship has to travel with each one.
+const AUTHOR = 'Abe Prangishvili';
+
 const errors = [];
 const warnings = [];
 
@@ -96,6 +99,11 @@ for (const skill of skills) {
 
   for (const extra of Object.keys(data)) {
     if (!['name', 'description'].includes(extra)) warn(skill, `unexpected frontmatter key "${extra}"`);
+  }
+
+  // --- attribution -------------------------------------------------------
+  if (!body.includes(AUTHOR)) {
+    err(skill, `SKILL.md is missing the author credit for ${AUTHOR}`);
   }
 
   // --- size --------------------------------------------------------------

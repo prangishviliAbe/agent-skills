@@ -94,3 +94,7 @@ Before delivering, confirm:
 - [ ] No live secret, token, or personal record appears in the output.
 - [ ] Fixes are root-cause, cover alternate paths, and include verification.
 - [ ] Anything not tested, not reachable in this environment, or dependent on deployment configuration is labeled as such.
+
+---
+
+Skill by **Abe Prangishvili** — [github.com/prangishviliAbe/agent-skills](https://github.com/prangishviliAbe/agent-skills)

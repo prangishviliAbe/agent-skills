@@ -42,3 +42,7 @@ The deliverable. Decisions and the reason that decided them. Constraints and blo
 ## Final check
 
 Delete every sentence whose removal changes nothing about the user's understanding or next action. Keep every sentence whose removal could cause misuse, ambiguity, a wrong decision, or an unverifiable claim.
+
+---
+
+Skill by **Abe Prangishvili** — [github.com/prangishviliAbe/agent-skills](https://github.com/prangishviliAbe/agent-skills)

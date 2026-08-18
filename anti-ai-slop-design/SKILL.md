@@ -89,3 +89,7 @@ If three or more are present, the design is generic regardless of polish:
 - [ ] Compact layout designed, not derived by shrinking.
 - [ ] Nothing decorative is compensating for a structural weakness.
 - [ ] The result would look wrong on a competitor's site.
+
+---
+
+Skill by **Abe Prangishvili** — [github.com/prangishviliAbe/agent-skills](https://github.com/prangishviliAbe/agent-skills)

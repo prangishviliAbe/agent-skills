@@ -1,5 +1,7 @@
 # Agent Skills
 
+**ავტორი: [Abe Prangishvili](https://github.com/prangishviliAbe)**
+
 Portable, production-grade სქილების ნაკრები **ნებისმიერი AI კოდირების აგენტისთვის** — Codex, Claude Code, Antigravity, Cursor, Windsurf ან საკუთარი harness.
 
 თითოეული სქილი დაწერილია როგორც **სამუშაო პროცედურა** — მკაცრი წესები, გადაწყვეტილების ცხრილები, failure-mode-ების რუკა და დასრულების ბინარული კრიტერიუმები. ეს არ არის ზოგადი რჩევების კრებული: ყოველი წესი ან კონკრეტულ ქმედებას კარნახობს, ან კონკრეტულ შეცდომას კეტავს.
@@ -120,4 +122,11 @@ node scripts/validate-skills.mjs
 3. Anti-pattern-ს ყოველთვის მიყვება სწორი ქმედება — მარტო აკრძალვა არ მუშაობს.
 4. რიცხვები ზედსართავების ნაცვლად: `4.5:1`, `44×44`, `180ms`, `45–75 სიმბოლო`.
 5. Cross-skill ბმულები აკრძალულია; საერთო ცოდნა თითოეულ სქილში ცალკე იწერება.
-6. Commit-მდე — `node scripts/validate-skills.mjs`.
+6. ყოველ `SKILL.md`-ს ბოლოში აქვს ავტორის ხაზი — სქილები ფოლდერობრივად კოპირდება, ამიტომ ატრიბუცია თან უნდა მიჰყვეს. ვალიდატორი ამას აიძულებს.
+7. Commit-მდე — `node scripts/validate-skills.mjs`.
+
+## ავტორი
+
+**Abe Prangishvili** — [github.com/prangishviliAbe](https://github.com/prangishviliAbe)
+
+ყველა სქილი — `SKILL.md`, `references/` და ინსტრუმენტები — ავტორის შექმნილია. თუ სქილს იყენებ ან ავრცელებ, შეინარჩუნე ატრიბუციის ხაზი `SKILL.md`-ის ბოლოში.

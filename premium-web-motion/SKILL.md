@@ -94,3 +94,7 @@ Pair with `anti-ai-slop-design` for the visual layer and `web-development` for i
 - [ ] Keyboard focus lands correctly through every transition, dialog, and route change.
 - [ ] Compact viewport reduces travel and concurrency; no hover-only affordance.
 - [ ] Profiled on a representative device: no layout shift, no long tasks, observers and listeners cleaned up.
+
+---
+
+Skill by **Abe Prangishvili** — [github.com/prangishviliAbe/agent-skills](https://github.com/prangishviliAbe/agent-skills)

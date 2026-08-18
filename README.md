@@ -1,8 +1,10 @@
-# Codex Skills
+# Agent Skills
 
-Production-grade სქილების ნაკრები Codex-ისთვის, Claude Code-ისთვის და Antigravity-ისთვის.
+Portable, production-grade სქილების ნაკრები **ნებისმიერი AI კოდირების აგენტისთვის** — Codex, Claude Code, Antigravity, Cursor, Windsurf ან საკუთარი harness.
 
 თითოეული სქილი დაწერილია როგორც **სამუშაო პროცედურა** — მკაცრი წესები, გადაწყვეტილების ცხრილები, failure-mode-ების რუკა და დასრულების ბინარული კრიტერიუმები. ეს არ არის ზოგადი რჩევების კრებული: ყოველი წესი ან კონკრეტულ ქმედებას კარნახობს, ან კონკრეტულ შეცდომას კეტავს.
+
+**ფორმატი მოდელისთვისაა და არა runtime-ისთვის.** სქილი უბრალო markdown-ია სტანდარტული YAML frontmatter-ით (`name` + `description`), ამიტომ მუშაობს ყველგან, სადაც აგენტს ფაილის წაკითხვა შეუძლია — მაშინაც კი, თუ runtime-ს საერთოდ არ აქვს „skills" სისტემა.
 
 ## სტრუქტურა
 
@@ -39,6 +41,11 @@ Production-grade სქილების ნაკრები Codex-ისთ�
 
 ## ინსტალაცია
 
+```bash
+git clone https://github.com/prangishviliAbe/agent-skills.git
+cd agent-skills
+```
+
 ### macOS / Linux
 
 ```bash
@@ -46,6 +53,7 @@ Production-grade სქილების ნაკრები Codex-ისთ�
 ./install.sh claude       # Claude Code
 ./install.sh antigravity  # Antigravity
 ./install.sh all          # სამივე
+./install.sh ~/my/dir     # ნებისმიერი სხვა დირექტორია
 ```
 
 ### Windows PowerShell
@@ -55,21 +63,24 @@ Production-grade სქილების ნაკრები Codex-ისთ�
 .\install.ps1 claude
 .\install.ps1 antigravity
 .\install.ps1 all
+.\install.ps1 D:\my\dir
 ```
 
 ორივე სკრიპტი ფოლდერს **მთლიანად** ანაცვლებს, ამიტომ წაშლილი ფაილები არ რჩება. ინსტალაციის შემდეგ გახსენი ახალი session, რომ განახლებული metadata და trigger-ები ჩაიტვირთოს.
 
-სამიზნე დირექტორიები:
+## Runtime-ები
 
-| Runtime | გზა |
-| --- | --- |
-| Codex | `~/.codex/skills` |
-| Claude Code | `~/.claude/skills` |
-| Antigravity | `~/.gemini/antigravity/skills` |
+| Runtime | სად იდება | როგორ გამოიძახება |
+| --- | --- | --- |
+| **Codex** | `~/.codex/skills` | ავტომატურად `description`-ის მიხედვით, ან `$web-development ...` |
+| **Claude Code** | `~/.claude/skills` | ავტომატურად `description`-ის მიხედვით, ან „use the security skill" |
+| **Antigravity** | `~/.gemini/antigravity/skills` | ავტომატურად, სესიის დაწყებისას |
+| **Cursor / Windsurf / Zed** | პროექტში, მაგ. `.ai/skills/` | rules-ში მიუთითე: „For security work, read and follow `.ai/skills/security/SKILL.md`" |
+| **სხვა ნებისმიერი აგენტი** | ნებისმიერი გზა | „Read `<path>/SKILL.md` and follow it for this task" |
+
+ბოლო ორ შემთხვევაში სქილი მაინც სრულად მუშაობს: `SKILL.md` თავადვე ამბობს, რომელი reference ფაილი როდის უნდა წაიკითხოს აგენტმა.
 
 ## გამოყენება
-
-Codex სქილს ავტომატურად ირჩევს ამოცანის მიხედვით — `description` ველი სწორედ ამისთვისაა დაწერილი. Explicit invocation:
 
 ```text
 $web-development implement this Next.js feature end to end
@@ -79,6 +90,8 @@ $premium-web-motion design an accessible, interruptible motion system
 $security audit this API authorization boundary
 $token-efficiency summarize the result briefly
 ```
+
+`$` პრეფიქსი Codex-ის სინტაქსია; სხვა runtime-ებში უბრალოდ სქილის სახელი ახსენე.
 
 ### კომბინაციები
 

@@ -2,6 +2,8 @@
 
 This repo holds portable agent skills. Read this before adding or editing one.
 
+A skill must work in any runtime that can read a file: Codex, Claude Code, Antigravity, an editor's rules file, or a custom harness. Nothing in `SKILL.md` or `references/` may depend on a runtime-specific feature, tool name, or directory layout. Runtime-specific metadata lives only in `agents/openai.yaml`, which other runtimes ignore.
+
 ## Layout
 
 ```

@@ -1,4 +1,4 @@
 interface:
   display_name: "Product UI/UX"
-  short_description: "End-to-end product flows and interface systems"
-  default_prompt: "Use $ui-ux to design or review this product flow, including states, accessibility, responsive behavior, and buildable component rules."
+  short_description: "Flows, states, accessibility, and buildable specs"
+  default_prompt: "Use $ui-ux to design or review this experience: map the flow including failure and recovery, specify every state from the state matrix, verify keyboard and contrast, define compact-to-wide behavior, and hand off with tokens and acceptance criteria."

@@ -1,87 +1,96 @@
 ---
 name: premium-web-motion
-description: Design, audit, and implement purposeful premium website motion without copying a brand's visual identity. Use for polished UI animation, microinteractions, page transitions, scroll storytelling, motion-system design, or performance/accessibility reviews in HTML/CSS/JavaScript, React, Next.js, and component libraries.
+description: Design, audit, and implement purposeful premium website motion without copying a brand's visual identity. Use for UI animation, microinteractions, hover and press feedback, page and view transitions, scroll storytelling, gesture and drag behavior, loading and skeleton choreography, motion-system and token design, and motion performance or accessibility reviews in HTML/CSS/JavaScript, React, Next.js, and component libraries.
 ---
 
 # Premium Web Motion
 
-Create restrained motion that clarifies hierarchy, gives controls tactile feedback, and makes state changes understandable. Aim for a calm, editorial, technically refined product feel; do not imitate a specific company's branding, layouts, or proprietary visual language.
+Motion is an interface layer, not a decoration layer. Its job is to explain: where something came from, what changed, what is still happening, and what the user just did.
 
-## Workflow
+Premium motion is recognized by restraint and responsiveness, never by quantity. The most common failure is not bad easing — it is animating things that did not need to move.
 
-1. Inspect the product goal, content hierarchy, interaction states, target devices, and existing motion. Preserve working project conventions and do not introduce a motion library unless it earns its cost.
-2. Derive a motion character from the product: calm, precise, tactile, playful, cinematic, or utilitarian. Express it through a limited vocabulary of distance, tempo, easing, and sequencing rather than unrelated effects.
-3. Make a motion inventory: for each proposed animation, name its trigger, UX purpose, properties, duration, easing, interruption behavior, reduced-motion behavior, and performance risk. Remove decorative movement with no clear purpose.
-4. Define shared motion tokens before implementing. Use the project token system if one exists; otherwise use the baseline in [implementation.md](references/implementation.md).
-5. Select the least complex implementation: CSS for state feedback; native Web Animations API for imperative, dependency-free sequences; Framer Motion/Motion for component lifecycle and shared layouts; the View Transitions API when progressive enhancement and browser support fit; GSAP only for genuinely complex, measured timelines.
-6. Implement reusable primitives and semantic state changes. Keep animations composable rather than scattering one-off keyframes across pages.
-7. Validate keyboard, touch, mobile, RTL/localized content, `prefers-reduced-motion`, interruption, loading/slow-device behavior, and performance. Report the motion decisions with code when coding is requested.
+## Operating rules
 
-## Design Rules
+1. **Every animation states its job** in one word: orient, reveal, confirm, connect, or report progress. If you cannot name it, delete it.
+2. **Never block content.** Text, navigation, form errors, and the primary action are available immediately, before and regardless of any animation.
+3. **Interruptible always.** A user action mid-animation takes over instantly. Nothing queues behind a stale transition.
+4. **`transform` and `opacity` first.** Animating layout properties (`width`, `height`, `top`, `left`, margins) causes reflow and jank. `filter` and `box-shadow` are expensive — use sparingly and verify.
+5. **Reduced motion is a designed path, not a global kill switch.** Remove travel, parallax, scroll-linked effects, and looping; keep short opacity and state feedback so the interface still explains itself.
+6. **Motion never carries meaning alone.** A state change that is only visible while it animates is invisible to anyone who missed it, and to assistive technology.
+7. **The resting state must be complete.** If JavaScript fails or is slow, content is visible and usable. Never ship `opacity: 0` that depends on a script to undo.
+8. **Never claim smoothness without profiling** the specific interaction on a representative device.
 
-- Assign one job to each animation: orient, reveal, confirm, preserve context, or communicate progress/error. If it cannot be named, omit it.
-- Favor `transform` and `opacity`; use `filter` sparingly and only after checking the visual/performance cost. Avoid layout-affecting animation (`width`, `height`, `top`, `left`, margins, padding) and continuous expensive shadows.
-- Keep ordinary UI movement small (8–24px). Reserve large spatial transitions for a meaningful navigation or product story.
-- Use ease-out for arrivals, ease-in for departures, and a deliberate spring only for direct manipulation. Never use linear motion by default.
-- Sequence related content with a subtle 40–80ms stagger; do not make every section enter identically.
-- Animate only a few elements at once. Prefer a single hero focal motion over a page full of competing reveals.
-- Make hover enhancements optional: every interaction must remain clear on touch and keyboard, and `:focus-visible` must stay obvious.
-- Respect content: do not delay essential copy, navigation, form errors, or core CTA availability merely to stage an animation.
+## Procedure
 
-## Baseline Timing
+1. **Read the product**: content hierarchy, primary interactions, target devices, existing motion conventions, and whether a motion library is already present.
+2. **Choose a motion character** — calm, precise, tactile, playful, cinematic, or utilitarian — and express it through a small vocabulary of distance, tempo, easing, and sequencing rather than assorted effects.
+3. **Write the motion inventory** before writing code. One row per animation: trigger, job, properties, duration, easing, interruption, reduced-motion behavior, and performance risk. Rows without a job get cut here, which is the cheapest place to cut them.
+4. **Define tokens** first, reusing the project's system if one exists. See [motion-system.md](references/motion-system.md).
+5. **Pick the least complex implementation** that does the job (table below).
+6. **Build reusable primitives**, not one-off keyframes scattered across pages.
+7. **Validate**: keyboard, touch, compact viewport, RTL, `prefers-reduced-motion`, interruption, slow network, low-end device, and no-JS fallback.
+8. **Report** the motion decisions alongside the code.
 
-Use these as starting points, then tune against the interaction and brand:
+## Choose the smallest tool
 
-| Context | Duration | Default easing |
-| --- | ---: | --- |
+| Need | Use |
+| --- | --- |
+| Hover, press, focus, and simple state changes | CSS transitions |
+| Enter and exit on a class or attribute change | CSS transitions plus a state class, or `@starting-style` where support allows |
+| Imperative sequences without a dependency | Web Animations API |
+| Component lifecycle, exit animations, shared layout in React | Motion (Framer Motion) |
+| Cross-document or cross-view continuity | View Transitions API, with a fallback |
+| Scroll-linked effects | CSS scroll-driven animations where supported, otherwise a minimal IntersectionObserver |
+| Genuinely complex, measured timelines with sequencing control | GSAP, only after the simpler options were considered and rejected |
+
+Adding a 40KB animation library for a fade-in is a cost with no benefit. State the reason whenever you introduce one.
+
+## Baseline timing
+
+| Context | Duration | Easing |
+| --- | --- | --- |
 | Press, hover, focus feedback | 120–180ms | `cubic-bezier(.2,.8,.2,1)` |
-| Menus, tabs, accordions, cards | 180–320ms | `cubic-bezier(.22,1,.36,1)` |
-| In-view editorial reveal | 400–650ms | `cubic-bezier(.16,1,.3,1)` |
-| Major hero or route transition | 650–1000ms | `cubic-bezier(.16,1,.3,1)` |
+| Menus, tabs, accordions, tooltips, cards | 180–320ms | `cubic-bezier(.22,1,.36,1)` |
+| Dialogs, sheets, in-view reveals | 320–520ms | `cubic-bezier(.16,1,.3,1)` |
+| Major hero or route transition | 500–900ms | `cubic-bezier(.16,1,.3,1)` |
 
-Do not treat these as a license to animate. Avoid durations above one second unless the user is intentionally watching a story sequence and can still act immediately.
+Rules that go with the numbers: ease-out for arrivals, ease-in for departures, ease-in-out for movement that starts and ends on screen, springs only for direct manipulation, and never `linear` except for continuous indeterminate loops. Larger distance justifies longer duration; small movements at long durations feel broken. Exits run slightly faster than entrances.
 
-## Pattern Guidance
+Anything over one second must be either a deliberate narrative sequence the user chose to watch, or a bug.
 
-### Reveal and hierarchy
+## Reference map
 
-Reveal a group once, near the viewport threshold, with opacity plus a small transform. Stagger only siblings that form one reading sequence. Never hide critical content indefinitely if JavaScript fails; use a no-JS-visible baseline.
+| When the task involves | Read |
+| --- | --- |
+| Tokens, character, choreography, the motion inventory | [motion-system.md](references/motion-system.md) |
+| Specific patterns: reveals, menus, dialogs, cards, scroll, gestures | [patterns.md](references/patterns.md) |
+| Writing the code: CSS, WAAPI, React, view transitions | [implementation.md](references/implementation.md) |
+| Profiling, budgets, jank, INP, reduced motion, verification | [performance.md](references/performance.md) |
 
-### Controls and state changes
+Pair with `anti-ai-slop-design` for the visual layer and `web-development` for integration.
 
-Make buttons press by 1–2% and give icons a small directional translation only when it reinforces the action. Menus, dialogs, and accordions should preserve focus management and use `aria-expanded`, `aria-controls`, or native dialog behavior; motion must not replace semantic state.
+## Failure modes and the correct move
 
-### Cards and media
+| Failure mode | Correct move |
+| --- | --- |
+| Every section fades up on scroll | Reveal one focal group; let the rest simply exist |
+| A 600ms hover transition | 120–180ms. Direct feedback must feel immediate |
+| Content hidden until an observer fires | Visible by default; enhance after the script confirms it is running |
+| `transition: all` | Name the properties. `all` animates things you did not intend, including layout |
+| Perpetual floating or pulsing | Tie motion to a state change |
+| An intro sequence before the page is usable | Content first, motion second |
+| A global `*` reduced-motion override | Scope it to your own motion utilities; a blanket override breaks third-party and assistive behavior |
+| Animating `height: auto` | Animate a transform, `grid-template-rows: 0fr → 1fr`, or a measured max-height |
+| A spinner that runs for 30 seconds | Progress, an estimate, or a cancel option |
+| Scroll-jacking the page | Let the user own the scroll; bind to progress, do not seize it |
 
-Use a restrained lift or image scale inside an overflow mask. Avoid perpetual float, aggressive tilt, glow, or a matching scroll reveal on every card. Maintain tap targets and avoid using hover as the only way to expose information.
+## Definition of done
 
-### Scroll storytelling
-
-Use sticky/pinned sequences only where progress through a concept benefits comprehension. Bind movement to scroll sparingly, cap movement on small screens, avoid scroll-jacking, and test with keyboard scrolling. Prefer CSS `scroll-timeline` only when browser support and fallback are acceptable; otherwise use a minimal observer/timeline.
-
-### Forms and asynchronous work
-
-Animate focus, validation, and success only enough to make the state legible. Keep errors visible until corrected, announce meaningful changes through an appropriate live region, and never use motion as the sole error cue. Do not block submission with ornamental animation.
-
-### Navigation and layout transitions
-
-Preserve spatial continuity only when users benefit from understanding where content moved. Keep outgoing and incoming states interruptible, prevent duplicate navigation during staged transitions, and ensure focus lands at the correct destination. Do not animate layout from stale measurements or make route content unavailable while animation code loads.
-
-### Gestures and direct manipulation
-
-Keep the controlled element attached to input, constrain movement to meaningful axes, and provide obvious snap, cancel, and boundary behavior. Preserve a non-gesture alternative for essential actions. Use spring motion only where velocity and physical continuity help users understand the result.
-
-## Accessibility and Responsive Behavior
-
-- Build a reduced-motion path deliberately: remove parallax, large translation, scroll-linked effects, nonessential looping, and lengthy staging. Preserve instant or short opacity/state feedback when it aids understanding.
-- Scope reduced-motion rules to the components or motion utilities you own. Do not apply an indiscriminate global `*` override that can break third-party controls, assistive interactions, or necessary transitions.
-- Reduce travel, blur, and concurrent effects below the mobile breakpoint. Treat hover as progressive enhancement and prioritize immediate touch feedback and scroll responsiveness.
-- Avoid autoplay or looping media that cannot be paused. Preserve readable contrast and visible focus throughout animated states.
-
-Use the CSS and React implementation patterns in [implementation.md](references/implementation.md) whenever writing code or reviewing implementation details.
-
-## Delivery Standard
-
-When designing, specify the trigger, purpose, timing/easing, properties, mobile behavior, and reduced-motion alternative for every nontrivial motion pattern. When coding, deliver the working implementation, reusable tokens/primitives where appropriate, and avoid placeholder comments such as “add smooth animation.”
-
-Before finishing, verify that motion is consistent, interruptible, optional where appropriate, meaningful without sound, usable without motion, and smooth on a representative low-end mobile profile. Check for layout shift, excessive main-thread work, stale observers/listeners, hydration regressions, and user-visible focus or state regressions. Never claim performance improvement without profiling the affected interaction.
+- [ ] Every animation has a named job and appears in the inventory.
+- [ ] Timing and easing come from tokens, not from ad-hoc values.
+- [ ] Reduced-motion path designed and tested, scoped to owned components.
+- [ ] Interruption tested with rapid, repeated input.
+- [ ] Content is usable with JavaScript disabled or delayed.
+- [ ] Keyboard focus lands correctly through every transition, dialog, and route change.
+- [ ] Compact viewport reduces travel and concurrency; no hover-only affordance.
+- [ ] Profiled on a representative device: no layout shift, no long tasks, observers and listeners cleaned up.

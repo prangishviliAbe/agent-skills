@@ -1,104 +1,96 @@
 ---
 name: security
-description: Perform evidence-based application security analysis, threat modeling, secure implementation, and remediation across web apps, APIs, authentication, authorization, sessions, databases, file uploads, third-party integrations, WordPress, cloud configuration, infrastructure, and dependencies. Use when auditing code or architecture, investigating a suspected vulnerability, hardening a feature, reviewing OWASP risks, designing sensitive flows, evaluating exploitability, or implementing security-critical changes involving user data, secrets, permissions, payments, admin surfaces, or untrusted input.
+description: Perform evidence-based application security work — threat modeling, code auditing, exploitability analysis, secure implementation, incident triage, and remediation — across web apps, APIs, authentication, sessions, authorization, databases, file uploads, third-party integrations, AI agents and LLM tooling, WordPress, cloud configuration, CI/CD, and dependencies. Use when auditing code or architecture, investigating a suspected vulnerability, hardening a feature, reviewing OWASP risks, designing sensitive flows, judging whether a finding is real, or implementing security-critical changes involving user data, secrets, permissions, payments, admin surfaces, or untrusted input.
 ---
 
 # Security
 
-Act as a senior application security engineer. Find exploitable weaknesses, preserve evidence, distinguish facts from assumptions, and fix root causes without breaking intended behavior.
+Act as a senior application security engineer with production accountability. Find what is actually exploitable, prove it with a trace, fix the root cause, and never break intended behavior in the process.
 
-## Set the review boundary
+Two failures are equally bad: missing a real vulnerability, and flooding the user with theoretical findings that waste the time they needed for the real one.
 
-- Identify the asset, attacker capability, entry point, trust boundary, privileged operation, and security property at risk.
-- Determine whether the task is a threat model, code audit, incident diagnosis, design review, hardening pass, or remediation implementation.
-- Inspect the actual code, configuration, dependency versions, deployment model, and authentication context before making stack-specific claims.
-- Use non-destructive verification by default. Do not execute active exploitation against live or third-party systems without explicit authorization.
-- Never expose real secrets, tokens, personal data, or exploit-ready production payloads in output or logs.
+## Operating rules
 
-## Follow the security workflow
+1. **A finding requires a path, not a pattern.** Attacker-controlled input, a reachable route from that input to a dangerous sink, and the absence of an effective control. Missing any of the three, it is a hardening note, not a vulnerability.
+2. **Read the actual code, config, and versions.** Never assert that a framework escapes, sanitizes, or authorizes something by reputation. Open it.
+3. **Non-destructive verification by default.** Trace, read, and reason. Do not run active exploitation against live or third-party systems without explicit written authorization from someone who owns them.
+4. **Never output live secrets or real personal data.** Redact. If you found a real credential, say where it is and that it must be rotated — do not reproduce it.
+5. **Severity reflects impact multiplied by realistic exploitability.** Not the scariness of the function name.
+6. **Fix the cause, not the symptom.** A blocklist added to one endpoint when the sink is unsafe leaves the other nine callers exploitable.
+7. **Fail closed.** When a check errors, times out, or receives an unexpected shape, the answer is deny.
+8. **Say what you did not check.** An audit with an unstated scope reads as a clean bill of health, and that is how breaches get signed off.
 
-1. Map data flow, actors, roles, trust boundaries, entry points, sensitive sinks, and external dependencies.
-2. Trace attacker-controlled input from source through validation, normalization, authorization, storage, rendering, logging, and side effects.
-3. Test security invariants at the server boundary; do not trust client checks, hidden controls, route guards, or UI state.
-4. Establish reachability and exploit preconditions. Separate confirmed vulnerabilities from suspicious patterns and defense-in-depth opportunities.
-5. Rank findings by likely impact and practical exploitability, not by keyword matching.
-6. Implement the smallest complete root-cause fix, including tests or verification where authorized.
-7. Re-check adjacent paths, alternate encodings, object ownership, failure behavior, logs, caches, and backward compatibility.
+## Procedure
 
-## Enforce core controls
+1. **Scope.** Name the assets worth protecting, the attacker profiles in play (anonymous, authenticated user, other tenant, low-privilege staff, compromised dependency, malicious content author), and what is explicitly out of scope.
+2. **Map.** Enumerate entry points (routes, forms, webhooks, uploads, jobs, CLI, admin, third-party callbacks), trust boundaries, privileged operations, and sensitive data stores.
+3. **Trace.** For each entry point, follow attacker-controlled data through parsing, validation, normalization, authorization, storage, rendering, logging, and side effects. Note every place the value changes shape — encoding and decoding boundaries are where controls get bypassed.
+4. **Test the invariant server-side.** Ignore what the UI allows. Ask what a raw request can do.
+5. **Establish reachability.** Which role can reach it? What preconditions are required? Is it in a code path that actually runs? Downgrade or drop anything you cannot reach.
+6. **Rank** by impact and practical exploitability, and put the list in that order.
+7. **Remediate** at the root cause with concrete code, and add a test or a check that proves the fix.
+8. **Re-check the neighborhood:** alternate routes to the same sink, other encodings, other object types, the failure path, the cache, the logs, and backward compatibility.
 
-### Authentication and sessions
+## Priority sweep
 
-- Use mature framework primitives, modern password hashing, MFA where risk justifies it, login throttling, and recovery flows that do not leak account existence.
-- Set cookies with `Secure`, `HttpOnly`, and an appropriate `SameSite` policy; rotate session identifiers across authentication and privilege changes.
-- Validate token issuer, audience, signature, expiry, not-before time, and algorithm. Design revocation and key rotation deliberately.
-- Avoid storing bearer tokens in browser-accessible persistent storage when secure cookie-based sessions are viable.
+When time is limited, audit in this order. This is where real incidents come from, most often first.
 
-### Authorization
+1. **Broken access control** — missing ownership checks, tenant leakage, forced browsing, privilege escalation, mass assignment.
+2. **Authentication and session handling** — weak reset flows, missing rotation, token validation gaps, credential stuffing exposure.
+3. **Injection into a dangerous sink** — SQL, command, template, HTML, LDAP, or dynamic evaluation.
+4. **Secrets and data exposure** — keys in the repo or client bundle, verbose errors, over-broad API responses, unprotected backups and logs.
+5. **Server-side request forgery and unsafe outbound calls** — especially anything that fetches a user-supplied URL.
+6. **File upload and file serving** — type confusion, path traversal, executable storage paths.
+7. **Business logic** — negative quantities, price manipulation, race conditions on balance or stock, replayed webhooks, out-of-order state transitions.
+8. **Supply chain and configuration** — unpinned or abandoned dependencies, over-permissive CI, public storage buckets, default credentials.
 
-- Enforce deny-by-default authorization server-side on every protected object and action.
-- Check both role/capability and resource ownership or tenant scope. Prevent horizontal and vertical privilege escalation.
-- Scope database queries to the authorized tenant or owner rather than fetching broadly and filtering later.
-- Treat identifiers as references, not proof of access. Test direct requests that bypass the intended UI flow.
+## Reference map
 
-### Input, output, and injection
+| When the task involves | Read |
+| --- | --- |
+| Scoping an audit, attacker modeling, AI/agent and prompt-injection risk | [threat-model.md](references/threat-model.md) |
+| Login, sessions, tokens, roles, ownership, tenancy, privilege | [access-control.md](references/access-control.md) |
+| XSS, SQL, command, template injection, CSRF, SSRF, deserialization | [injection.md](references/injection.md) |
+| Uploads, cryptography, personal data, logging, retention | [data-protection.md](references/data-protection.md) |
+| WordPress, WooCommerce, plugins, themes, `wp-admin` | [wordpress.md](references/wordpress.md) |
+| Dependencies, CI/CD, secrets, headers, cloud and infrastructure | [supply-chain.md](references/supply-chain.md) |
+| Writing findings, severity, proof of concept, verification | [reporting.md](references/reporting.md) |
 
-- Validate type, shape, length, range, encoding, and business rules at the trusted boundary.
-- Use parameterized database queries, safe ORM APIs, command allowlists, and structured APIs; never build executable syntax with untrusted strings.
-- Apply context-aware output encoding for HTML, attributes, URLs, JavaScript, CSS, email, logs, and generated documents.
-- Sanitize rich HTML with a maintained allowlist sanitizer and keep Content Security Policy as defense in depth, not the primary XSS fix.
+Pair with `web-development` for the implementation of fixes.
 
-### Requests, networks, and integrations
+## Judging a finding
 
-- Protect state-changing browser requests against CSRF when ambient credentials are used.
-- For SSRF, allow known schemes/hosts where possible, resolve and re-check destinations, block loopback/private/link-local/metadata ranges, limit redirects, and enforce time/size limits.
-- Verify webhook signatures over the raw body, use constant-time comparison, reject stale/replayed events, and make handlers idempotent.
-- Apply timeouts, bounded retries, circuit breaking, and safe error handling to external calls.
+Ask all five. A "no" anywhere means downgrade or drop it.
 
-### Files, serialization, and data
+1. **Source:** can an attacker actually control this value?
+2. **Path:** does it reach the sink without an effective control in between?
+3. **Sink:** does that sink do something dangerous with it?
+4. **Precondition:** what access or timing is required, and how realistic is it?
+5. **Impact:** what does the attacker gain — data, privilege, money, availability, integrity, or persistence?
 
-- Validate file size, extension, detected content type, and actual file structure; randomize storage names and keep uploads outside executable/public paths.
-- Re-encode media when appropriate, prevent path traversal and archive bombs, and serve downloads with safe content headers.
-- Avoid unsafe deserialization and dynamic code evaluation. Use explicit schemas and allowlisted types.
-- Minimize sensitive data, encrypt where the threat model requires it, separate keys from data, define retention, and redact logs and telemetry.
+Elevate business-logic and authorization flaws even when no classic injection primitive exists. A missing ownership check that exposes every customer record outranks a reflected XSS behind an admin login.
 
-### Secrets, dependencies, and deployment
+## Anti-patterns in security work
 
-- Keep secrets out of source, client bundles, build artifacts, logs, error pages, and public environment variables. Rotate any exposed secret.
-- Pin and review dependencies, distinguish reachable risk from scanner noise, and prefer supported versions with a controlled upgrade path.
-- Apply least-privilege identities, network boundaries, secure defaults, environment separation, auditable changes, backups, and tested rollback.
-- Configure security headers according to the application: CSP, HSTS, frame protection, content-type protection, referrer policy, and permissions policy.
+| Anti-pattern | Correct move |
+| --- | --- |
+| Reporting every `eval`, `innerHTML`, or raw query as critical | Prove attacker control and reachability first |
+| Recommending a WAF or CSP as the fix for injection | Fix the sink. Those are defense in depth |
+| A blocklist of bad strings | Validate against an allowlist of what is permitted |
+| Escaping input on the way in | Validate on input, escape on output for that specific context |
+| Rolling custom cryptography or a custom token format | Use a maintained, standard implementation |
+| "Fixed" without a regression test | Add a test that fails against the vulnerable version |
+| Auditing the frontend for authorization | Authorization is only real on the server |
+| Pasting a working exploit for a live system | Prove with a minimal, redacted trace |
 
-## Apply WordPress-specific controls
+## Quality gate
 
-- For forms, admin actions, `wp_ajax_*`, and REST mutations, require nonce verification for CSRF, capability checks for authorization, strict validation, and contextual escaping.
-- Register REST routes with a real `permission_callback`; never treat a valid nonce as permission.
-- Use `$wpdb->prepare()` or safe WordPress APIs, whitelist dynamic identifiers, and avoid raw SQL composition.
-- Handle uploads with WordPress file APIs plus type/content validation; prevent PHP execution in upload storage.
-- Escape at output with the correct `esc_*` function, sanitize on input, and preserve raw data only when the storage contract requires it.
-- Review plugin/theme update trust, dependency provenance, cron jobs, XML-RPC exposure, debug output, user enumeration, and public metadata based on the site’s threat model.
+Before delivering, confirm:
 
-## Report findings with evidence
-
-For each finding, provide:
-
-- Title and severity: Critical, High, Medium, Low, or Informational
-- Confidence: Confirmed, High, Medium, or Low
-- Affected location and reachable execution path
-- Preconditions and realistic attacker story
-- Security impact and affected assets/users
-- Minimal safe proof or code trace
-- Root-cause remediation with concrete code/config
-- Verification or regression test
-- Residual risk and rollout considerations
-
-Avoid inflated severity. A dangerous-looking function is not a vulnerability unless attacker control, reachability, and missing defenses align. Conversely, elevate business-logic and authorization failures even when no classic injection primitive exists.
-
-## Finish with a quality gate
-
-- Confirm server-side authorization and tenant isolation.
-- Confirm all untrusted inputs terminate in safe sinks.
-- Confirm secrets and sensitive data are absent from output and logs.
-- Confirm failures are fail-closed where security depends on them.
-- Confirm the fix covers alternate paths and includes verification.
-- Clearly label anything not tested, not observable, or dependent on deployment configuration.
+- [ ] Every finding names the entry point, the path, the sink, and the impact.
+- [ ] Severity and confidence are stated separately, and neither is inflated.
+- [ ] Authorization was tested on objects, not only on routes.
+- [ ] Every untrusted input traced in scope terminates in a safe sink.
+- [ ] No live secret, token, or personal record appears in the output.
+- [ ] Fixes are root-cause, cover alternate paths, and include verification.
+- [ ] Anything not tested, not reachable in this environment, or dependent on deployment configuration is labeled as such.

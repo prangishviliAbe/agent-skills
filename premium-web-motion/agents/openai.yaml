@@ -1,4 +1,4 @@
 interface:
   display_name: "Premium Web Motion"
-  short_description: "Purposeful, accessible, performant product motion"
-  default_prompt: "Use $premium-web-motion to design and implement a cohesive, interruptible, accessible motion system for this interface."
+  short_description: "Purposeful, interruptible, profiled interface motion"
+  default_prompt: "Use $premium-web-motion for this motion layer: write the motion inventory first with a named job per animation, define duration and easing tokens, keep to transform and opacity, design the reduced-motion path, and verify interruption and performance on a throttled profile."

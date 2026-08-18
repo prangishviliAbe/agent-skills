@@ -1,78 +1,110 @@
 # Codex Skills
 
-პროდუქტზე ორიენტირებული, production-grade პირადი სქილების ნაკრები Codex-ისთვის. თითოეული ფოლდერი შეიცავს `SKILL.md`-ს და Codex-ის UI metadata-ს `agents/openai.yaml`-ში; საჭიროების შემთხვევაში დამატებულია references.
+Production-grade სქილების ნაკრები Codex-ისთვის, Claude Code-ისთვის და Antigravity-ისთვის.
+
+თითოეული სქილი დაწერილია როგორც **სამუშაო პროცედურა** — მკაცრი წესები, გადაწყვეტილების ცხრილები, failure-mode-ების რუკა და დასრულების ბინარული კრიტერიუმები. ეს არ არის ზოგადი რჩევების კრებული: ყოველი წესი ან კონკრეტულ ქმედებას კარნახობს, ან კონკრეტულ შეცდომას კეტავს.
+
+## სტრუქტურა
+
+```
+<skill>/
+├── SKILL.md            # პროცედურა: წესები, ნაბიჯები, reference-ების რუკა, definition of done
+├── agents/openai.yaml  # Codex-ის UI metadata (სხვა runtime-ები უბრალოდ უგულებელყოფენ)
+└── references/         # სიღრმე — იტვირთება მხოლოდ მაშინ, როცა ამოცანა მას ითხოვს
+```
+
+**პრინციპი — progressive disclosure.** `SKILL.md` მოკლეა (< 220 ხაზი) და მარშრუტიზაციას აკეთებს; დეტალები `references/`-შია, რომ კონტექსტი მხოლოდ საჭიროებისას დაიხარჯოს.
+
+**თითოეული ფოლდერი თვითკმარია.** სქილებს შორის ბმულები აკრძალულია, რადგან ინსტალაცია ფოლდერობრივად ხდება — `scripts/validate-skills.mjs` ამას ამოწმებს.
 
 ## სქილები
 
-| სქილი | დანიშნულება |
-| --- | --- |
-| `web-development` | Production web architecture და end-to-end implementation |
-| `ui-ux` | Product flows, interaction systems, accessibility და handoff |
-| `anti-ai-slop-design` | Brand-specific visual craft generic AI aesthetics-ის გარეშე |
-| `premium-web-motion` | Purposeful, accessible და performant interface motion |
-| `security` | Evidence-based security audit, threat modeling და hardening |
-| `token-efficiency` | სრული პასუხები მაქსიმალური signal density-ით |
+| სქილი | დანიშნულება | References |
+| --- | --- | --- |
+| `web-development` | Production-ის არქიტექტურა და end-to-end delivery: risk tier-ები, verification ladder, diff review, reporting | delivery, frontend, backend, wordpress, debugging, operations |
+| `ui-ux` | Flow-ები, IA, სრული state matrix, accessibility, design system, responsive, კრიტიკა | discovery, flows, states, accessibility, design-system, responsive, critique |
+| `anti-ai-slop-design` | ბრენდზე მიბმული ვიზუალური ხარისხი generic AI-სტილის გარეშე | visual-thesis, slop-catalog, craft, multilingual, review |
+| `premium-web-motion` | მიზნობრივი, შეწყვეტადი და პროფილირებული motion | motion-system, patterns, implementation, performance |
+| `security` | Exploitability-first აუდიტი, threat modeling და root-cause hardening | threat-model, access-control, injection, data-protection, wordpress, supply-chain, reporting |
+| `token-efficiency` | სრული პასუხი მაქსიმალური signal density-ით | — |
 
-## Codex-ში გლობალურად დაყენება
+### რას აკეთებს თითოეული კონკრეტულად
+
+- **web-development** — R0–R3 risk tier-ები განსაზღვრავს ვერიფიკაციის სიღრმეს; „არასდროს თქვა რომ შემოწმება გაიარა, თუ არ გაუშვი"; server-side validation/authorization ყოველ mutation-ზე; ცალკე reference WordPress/WooCommerce/Elementor-ისთვის და ცალკე — debugging-ისა და incident-ისთვის.
+- **ui-ux** — სრული state matrix (loading, empty, error, partial failure, permission, content extremes); WCAG AA-ს ოპერაციული ზღვრები რიცხვებით; keyboard pattern-ები კომპონენტების მიხედვით; token-ების სამშრიანი არქიტექტურა.
+- **anti-ai-slop-design** — slop catalog: ნიმუში → რატომ იკითხება როგორც გენერირებული → რითი ჩაანაცვლო; visual thesis-ის გამოყვანის მეთოდი; ცალკე reference ქართული და მრავალენოვანი ტიპოგრაფიისთვის.
+- **premium-web-motion** — motion inventory კოდის წერამდე; duration/easing token-ები; შეწყვეტადობა და reduced-motion როგორც დაპროექტებული გზა და არა გლობალური გამორთვა; frame budget და პროფილირების პროცედურა.
+- **security** — ნაპოვნი უნდა იყოს **გზა და არა ნიმუში**: attacker-controlled input + reachable path + სახიფათო sink; priority sweep; AI agent-ებისა და prompt injection-ის თავი; finding-ის და severity-ის შაბლონი.
+- **token-efficiency** — რას ჭრი და რას ინარჩუნებ; პასუხის ფორმა მოთხოვნის ტიპის მიხედვით.
+
+## ინსტალაცია
 
 ### macOS / Linux
 
 ```bash
-mkdir -p ~/.codex/skills
-for skill in web-development ui-ux anti-ai-slop-design premium-web-motion security token-efficiency; do
-  rm -rf "$HOME/.codex/skills/$skill"
-  cp -R "$skill" "$HOME/.codex/skills/$skill"
-done
+./install.sh              # Codex
+./install.sh claude       # Claude Code
+./install.sh antigravity  # Antigravity
+./install.sh all          # სამივე
 ```
 
 ### Windows PowerShell
 
 ```powershell
-$skills = @(
-  'web-development',
-  'ui-ux',
-  'anti-ai-slop-design',
-  'premium-web-motion',
-  'security',
-  'token-efficiency'
-)
-
-New-Item -ItemType Directory -Force -Path "$HOME\.codex\skills" | Out-Null
-
-foreach ($skill in $skills) {
-  $target = "$HOME\.codex\skills\$skill"
-  if (Test-Path -LiteralPath $target) {
-    Remove-Item -Recurse -Force -LiteralPath $target
-  }
-  Copy-Item -Recurse -LiteralPath ".\$skill" -Destination $target
-}
+.\install.ps1
+.\install.ps1 claude
+.\install.ps1 antigravity
+.\install.ps1 all
 ```
 
-Codex-ის ახალი task გახსენი ან აპი გადატვირთე, რათა განახლებული metadata და trigger-ები ჩაიტვირთოს.
+ორივე სკრიპტი ფოლდერს **მთლიანად** ანაცვლებს, ამიტომ წაშლილი ფაილები არ რჩება. ინსტალაციის შემდეგ გახსენი ახალი session, რომ განახლებული metadata და trigger-ები ჩაიტვირთოს.
+
+სამიზნე დირექტორიები:
+
+| Runtime | გზა |
+| --- | --- |
+| Codex | `~/.codex/skills` |
+| Claude Code | `~/.claude/skills` |
+| Antigravity | `~/.gemini/antigravity/skills` |
 
 ## გამოყენება
 
-Codex შესაბამის სქილს ავტომატურად ირჩევს task-ის მიხედვით. Explicit invocation-ის მაგალითები:
+Codex სქილს ავტომატურად ირჩევს ამოცანის მიხედვით — `description` ველი სწორედ ამისთვისაა დაწერილი. Explicit invocation:
 
 ```text
 $web-development implement this Next.js feature end to end
-$ui-ux review this onboarding flow
+$ui-ux review this onboarding flow and specify every state
 $anti-ai-slop-design remove generic AI styling from this landing page
-$premium-web-motion design an accessible motion system
+$premium-web-motion design an accessible, interruptible motion system
 $security audit this API authorization boundary
 $token-efficiency summarize the result briefly
 ```
 
-რამდენიმე სქილი შეიძლება ერთად გამოიყენო, მაგალითად `$web-development`, `$ui-ux`, `$security` და `$anti-ai-slop-design` სრული product implementation-ისთვის.
+### კომბინაციები
 
-## Google Antigravity
+| ამოცანა | სქილები |
+| --- | --- |
+| ახალი feature ნულიდან | `ui-ux` → `anti-ai-slop-design` → `web-development` → `security` |
+| Landing page-ის რედიზაინი | `anti-ai-slop-design` + `premium-web-motion` |
+| WordPress პლაგინის აუდიტი | `security` + `web-development` |
+| Production-ის ინციდენტი | `web-development` (debugging.md) → `security` |
+| სწრაფი პასუხი | `token-efficiency` |
 
-`SKILL.md` ინსტრუქციების გამოყენება შესაძლებელია Antigravity-შიც. დააკოპირე შესაბამისი skill folders:
+## ვალიდაცია
 
 ```bash
-mkdir -p ~/.gemini/antigravity/skills
-cp -R web-development ui-ux anti-ai-slop-design premium-web-motion security token-efficiency \
-  ~/.gemini/antigravity/skills/
+node scripts/validate-skills.mjs
 ```
 
-`agents/openai.yaml` Codex-ის metadata-აა; სხვა runtime-მა შეიძლება უბრალოდ უგულებელყოს.
+ამოწმებს: frontmatter-ის სისწორეს, `name`-ისა და ფოლდერის დამთხვევას, description-ის სიგრძეს, `SKILL.md`-ის მოცულობას, Codex metadata-ს ველებს, ყველა markdown ბმულის არსებობას, ფოლდერს გარეთ გამავალ ბმულებს და მიუბმელ reference ფაილებს. Exit code 1 — შეცდომაზე.
+
+## ავტორინგის კონვენციები
+
+დეტალები — [AGENTS.md](AGENTS.md). მოკლედ:
+
+1. `SKILL.md` არის პროცედურა, არა ესსე. თუ 220 ხაზს გადააჭარბა — სიღრმე `references/`-ში გადადის.
+2. ყოველი წესი კონკრეტულია და შესამოწმებელი. „იყავი ფრთხილად" არ არის წესი.
+3. Anti-pattern-ს ყოველთვის მიყვება სწორი ქმედება — მარტო აკრძალვა არ მუშაობს.
+4. რიცხვები ზედსართავების ნაცვლად: `4.5:1`, `44×44`, `180ms`, `45–75 სიმბოლო`.
+5. Cross-skill ბმულები აკრძალულია; საერთო ცოდნა თითოეულ სქილში ცალკე იწერება.
+6. Commit-მდე — `node scripts/validate-skills.mjs`.

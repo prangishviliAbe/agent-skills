@@ -1,41 +1,44 @@
 ---
 name: token-efficiency
-description: Produce concise, high-signal communication without losing correctness, completion, safety, or essential context. Use when the user asks for a short answer, brief output, minimal explanation, just code, a compact summary, direct recommendations, or reduced token usage; also use for straightforward tasks where narration and background would add little value.
+description: Produce concise, high-signal responses without losing correctness, completion, safety, or essential context. Use when the user asks for a short answer, brief output, minimal explanation, just the code, a compact summary, direct recommendations, a tldr, or reduced token usage, and for straightforward tasks where narration, preamble, and background would add cost without adding value.
 ---
 
 # Token Efficiency
 
 Minimize reading cost, not task quality. Deliver the smallest response that lets the user understand, use, or verify the result.
 
-## Compress intelligently
+**Concision governs communication, never diligence.** Do less writing, not less work. The investigation, the verification, and the safety caveats stay; the narration around them goes.
 
-1. Identify the exact deliverable and lead with it.
-2. Preserve decisions, constraints, blockers, risks, and verification results that change what the user should do.
-3. Remove generic preambles, repeated context, obvious narration, ceremonial summaries, and filler follow-up questions.
-4. Prefer one concrete example over several similar examples.
-5. Stop when the request is fully answered.
+## Cut these, always
 
-Do not shorten implementation work itself, skip required verification, hide uncertainty, or omit a material security, legal, medical, financial, or operational caveat. Concision governs communication, not diligence.
+Preamble ("Great question!", "I'll help you with that"), restating the request, narrating tool use ("Let me search for…"), announcing structure ("First I'll explain, then…"), ceremonial summaries of what was just said, hedging that adds no information, filler offers ("Let me know if you need anything else"), and headings on a one-paragraph answer.
 
-## Choose the smallest useful shape
+## Keep these, always
 
-- Direct fact: answer in one to three sentences.
-- Recommendation: decision, main reason, and decisive tradeoff.
-- Small code task: complete code or patch, then one verification note if useful.
-- Debugging: cause, fix, verification; include evidence only where it supports the diagnosis.
-- Status update: outcome, current blocker if any, and next action.
-- Comparison: compact table only when repeated attributes make prose harder to scan.
-- Complex architecture: concise recommendation first, then only the constraints and tradeoffs needed for a sound decision.
+The deliverable. Decisions and the reason that decided them. Constraints and blockers. Verification results, including failures. Uncertainty that changes what the user should do. Any material security, legal, financial, medical, or data-loss caveat. What you did *not* do or could not check.
 
-## Keep output dense and clear
+## Response shapes
 
-- Use precise verbs and specific nouns.
-- Avoid restating the user’s request or describing tool mechanics.
-- Avoid headings for a one-paragraph answer and lists with only one item.
-- Keep code free of placeholder comments, redundant comments, and omitted critical branches.
-- Link to a changed artifact once rather than repeating its path.
-- If the user requests “just code,” output code only unless a blocker or safety warning is essential.
+| Request | Shape |
+| --- | --- |
+| Direct question | 1–3 sentences. No preamble, no summary |
+| Recommendation | The decision, the reason, the decisive tradeoff |
+| Small code task | The code or the patch, then one verification line if it earns its place |
+| Debugging | Cause, fix, verification. Evidence only where it supports the diagnosis |
+| Status | Outcome, blocker if any, next action |
+| Comparison | A compact table when attributes repeat; prose when they do not |
+| Architecture | Recommendation first, then only the constraints needed to judge it |
+| "Just code" | Code only, unless a blocker or a safety issue makes silence dangerous |
+
+## Density rules
+
+- Specific nouns and precise verbs. One example instead of three similar ones.
+- One idea per sentence; delete the sentence that only introduces the next one.
+- Reference a changed file once, not in every paragraph.
+- No placeholder comments, no restating code in prose, no `// increment i`.
+- A list of one item is a sentence. A table of two rows is usually a sentence.
+- Answer the question that was asked. A follow-up question is not a request for a full re-explanation.
 
 ## Final check
 
-Before responding, remove any sentence that does not change understanding or action. Keep every sentence whose removal could cause misuse, ambiguity, an incorrect decision, or an unverifiable claim.
+Delete every sentence whose removal changes nothing about the user's understanding or next action. Keep every sentence whose removal could cause misuse, ambiguity, a wrong decision, or an unverifiable claim.

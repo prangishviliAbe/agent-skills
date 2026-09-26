@@ -82,7 +82,7 @@ npm run check
 | --- | --- | --- |
 | Codex | `~/.codex/skills` | ავტომატურად description-ით ან `$skill-name` |
 | Claude Code | `~/.claude/skills` | სქილის სახელის მითითებით ან ავტომატურად |
-| Antigravity | `~/.gemini/antigravity/skills` | სესიის skill discovery-ით |
+| Antigravity | `~/.gemini/config/skills` | სესიის skill discovery-ით |
 | Cursor / Windsurf / Zed | პროექტში, მაგალითად `.ai/skills/` | rule-ში მიუთითე შესაბამისი `SKILL.md` |
 | Custom harness | ნებისმიერი ხელმისაწვდომი გზა | წააკითხე `<path>/SKILL.md` დავალებამდე |
 

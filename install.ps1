@@ -168,7 +168,7 @@ $codexBase = if ([string]::IsNullOrWhiteSpace($env:CODEX_HOME)) { Join-Path $HOM
 $paths = [ordered]@{
     codex = Join-Path $codexBase 'skills'
     claude = Join-Path $HOME '.claude/skills'
-    antigravity = Join-Path $HOME '.gemini/antigravity/skills'
+    antigravity = Join-Path $HOME '.gemini/config/skills'
 }
 if ($Target -eq 'all') { foreach ($path in $paths.Values) { Install-Skills $path } }
 elseif ($paths.Contains($Target)) { Install-Skills $paths[$Target] }

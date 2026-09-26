@@ -132,11 +132,11 @@ codex_base="${CODEX_HOME:-$HOME/.codex}"
 case "$TARGET" in
   codex) install_to "$codex_base/skills" ;;
   claude) install_to "$HOME/.claude/skills" ;;
-  antigravity) install_to "$HOME/.gemini/antigravity/skills" ;;
+  antigravity) install_to "$HOME/.gemini/config/skills" ;;
   all)
     install_to "$codex_base/skills"
     install_to "$HOME/.claude/skills"
-    install_to "$HOME/.gemini/antigravity/skills"
+    install_to "$HOME/.gemini/config/skills"
     ;;
   */*|~*|.*) install_to "${TARGET/#\~/$HOME}" ;;
   *) echo "Unknown target: $TARGET. Use codex, claude, antigravity, all, or a path." >&2; exit 1 ;;

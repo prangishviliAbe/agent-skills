@@ -83,6 +83,9 @@ install_to() (
   cleanup() {
     status="${1:-$?}"
     trap - EXIT HUP INT TERM
+    # Bash 3 treats an empty array as unset under `set -u`. Cleanup must still
+    # release the lock when staging fails before any skill is moved.
+    set +e +u
     if [ "$committed" = 0 ]; then
       for skill in "${installed[@]}"; do
         [ ! -L "$dest/$skill" ] && within "$dest" "$dest/$skill" && rm -rf -- "$dest/$skill" || status=1

@@ -104,7 +104,7 @@ install_to() (
   trap 'exit 130' INT
   trap 'exit 143' HUP TERM
   parent="$(dirname "$dest")"
-  stage="$(mktemp -d "$parent/.agent-skills-stage-XXXXXXXX")"
+  stage="$(absolute_path "$(mktemp -d "$parent/.agent-skills-stage-XXXXXXXX")")"
   backup_parent="$(absolute_path "$parent/.agent-skills-backups")"
   mkdir -p "$backup_parent"
   backup="$(mktemp -d "$backup_parent/$(date -u +%Y%m%dT%H%M%SZ)-XXXXXXXX")"

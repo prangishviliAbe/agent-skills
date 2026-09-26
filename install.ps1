@@ -15,7 +15,10 @@ function Is-Within([string]$Root, [string]$Path) {
     return $Path.Equals($base, $comparison) -or $Path.StartsWith($base + [IO.Path]::DirectorySeparatorChar, $comparison)
 }
 function Assert-NotLink([string]$Path) {
-    if ((Test-Path -LiteralPath $Path) -and ((Get-Item -Force -LiteralPath $Path).Attributes -band [IO.FileAttributes]::ReparsePoint)) {
+    try { $item = Get-Item -LiteralPath $Path -Force -ErrorAction Stop }
+    catch [System.Management.Automation.ItemNotFoundException] { return }
+    $nativeItem = if ($item.PSIsContainer) { [IO.DirectoryInfo]::new($Path) } else { [IO.FileInfo]::new($Path) }
+    if (($item.Attributes -band [IO.FileAttributes]::ReparsePoint) -or -not [string]::IsNullOrEmpty($nativeItem.LinkTarget)) {
         throw "Refusing linked path: $Path"
     }
 }
@@ -39,8 +42,9 @@ function Get-PhysicalPath([string]$Path) {
             }
             return [IO.Path]::GetFullPath($resolved)
         }
-        if ($item.Attributes -band [IO.FileAttributes]::ReparsePoint) {
-            $target = $item.ResolveLinkTarget($true)
+        $nativeItem = if ($item.PSIsContainer) { [IO.DirectoryInfo]::new($candidate) } else { [IO.FileInfo]::new($candidate) }
+        if (($item.Attributes -band [IO.FileAttributes]::ReparsePoint) -or -not [string]::IsNullOrEmpty($nativeItem.LinkTarget)) {
+            $target = $nativeItem.ResolveLinkTarget($true)
             if ($null -eq $target -or -not $target.Exists) { throw "Cannot resolve linked path: $candidate" }
             $resolved = [IO.Path]::GetFullPath($target.FullName)
         } else {

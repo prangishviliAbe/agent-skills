@@ -58,9 +58,10 @@ function fixture(t, shell) {
       assert.ok(existsSync(join(dest, name, 'stale.txt')));
     }
   }
-  function noDebris() {
+  function noDebris(diagnostic = '') {
     assert.equal(existsSync(join(dest, '.agent-skills-install.lock')), false);
-    assert.equal(readdirSync(dirname(dest)).some(name => name.startsWith('.agent-skills-stage-')), false);
+    const stages = readdirSync(dirname(dest)).filter(name => name.startsWith('.agent-skills-stage-'));
+    assert.equal(stages.length, 0, `${diagnostic}\nUnexpected staging directories: ${stages.join(', ')}`);
   }
   return { root, source, dest, write, run, backups, unchanged, noDebris };
 }
@@ -117,7 +118,7 @@ for (const shell of shells) {
   });
   spec('a staged copy failure leaves every old skill intact', f => {
     const result = f.run(f.dest, { fault: 'copy' }); assert.notEqual(result.status, 0, 'fault must fire');
-    assert.match(result.stdout + result.stderr, /Injected failure/); f.unchanged(); f.noDebris();
+    assert.match(result.stdout + result.stderr, /Injected failure/); f.unchanged(); f.noDebris(result.stdout + result.stderr);
   });
   spec('a mid-install failure restores every prior skill', f => {
     const result = f.run(f.dest, { fault: 'move' }); assert.notEqual(result.status, 0, 'fault must fire');

@@ -81,7 +81,7 @@ install_to() (
   stage=''; backup=''; committed=0
   installed=(); saved=()
   cleanup() {
-    status=$?
+    status="${1:-$?}"
     trap - EXIT HUP INT TERM
     if [ "$committed" = 0 ]; then
       for skill in "${installed[@]}"; do
@@ -97,28 +97,28 @@ install_to() (
       [ -z "$backup" ] || echo "Recovery backup: $backup" >&2
     fi
     if [ -n "$stage" ] && [ -d "$stage" ] && [ ! -L "$stage" ]; then rm -rf -- "$stage" || status=1; fi
-    rmdir "$lock" || status=1
+    if [ -n "${lock:-}" ] && [ -d "$lock" ] && [ ! -L "$lock" ]; then rm -rf -- "$lock" || status=1; fi
     exit "$status"
   }
   trap cleanup EXIT
   trap 'exit 130' INT
   trap 'exit 143' HUP TERM
   parent="$(dirname "$dest")"
-  stage="$(mktemp -d "$parent/.agent-skills-stage-XXXXXXXX")"
+  if ! stage="$(mktemp -d "$parent/.agent-skills-stage-XXXXXXXX")"; then cleanup 1; fi
   backup_parent="$(absolute_path "$parent/.agent-skills-backups")"
-  mkdir -p "$backup_parent"
-  backup="$(mktemp -d "$backup_parent/$(date -u +%Y%m%dT%H%M%SZ)-XXXXXXXX")"
+  if ! mkdir -p "$backup_parent"; then cleanup 1; fi
+  if ! backup="$(mktemp -d "$backup_parent/$(date -u +%Y%m%dT%H%M%SZ)-XXXXXXXX")"; then cleanup 1; fi
   for skill in "${skills[@]}"; do
-    cp -Rp -- "$SRC/$skill" "$stage/$skill"
-    diff -qr -- "$SRC/$skill" "$stage/$skill" >/dev/null
+    if ! cp -Rp -- "$SRC/$skill" "$stage/$skill"; then cleanup 1; fi
+    if ! diff -qr -- "$SRC/$skill" "$stage/$skill" >/dev/null; then cleanup 1; fi
   done
   for skill in "${skills[@]}"; do
     [ ! -L "$dest/$skill" ] || { echo "Destination changed to a link: $skill" >&2; exit 1; }
     if [ -e "$dest/$skill" ]; then
-      mv -- "$dest/$skill" "$backup/$skill"
+      if ! mv -- "$dest/$skill" "$backup/$skill"; then cleanup 1; fi
       saved+=("$skill")
     fi
-    mv -- "$stage/$skill" "$dest/$skill"
+    if ! mv -- "$stage/$skill" "$dest/$skill"; then cleanup 1; fi
     installed+=("$skill")
   done
   committed=1

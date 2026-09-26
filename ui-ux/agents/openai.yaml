@@ -1,4 +1,4 @@
 interface:
   display_name: "Product UI/UX"
   short_description: "Flows, states, accessibility, and buildable specs"
-  default_prompt: "Use $ui-ux to design or review this experience: map the flow including failure and recovery, specify every state from the state matrix, verify keyboard and contrast, define compact-to-wide behavior, and hand off with tokens and acceptance criteria."
+  default_prompt: "Use $ui-ux to improve this experience within the existing product constraints, covering the relevant flow, recovery states, accessibility, responsive behavior, and verification limits."

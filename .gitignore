@@ -1,0 +1,4 @@
+node_modules/
+.agent-skills-backups/
+.agent-skills-install.lock
+.agent-skills-stage-*/

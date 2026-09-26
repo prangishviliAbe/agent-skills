@@ -1,72 +1,54 @@
 # Repository conventions
 
-This repo holds portable agent skills. Read this before adding or editing one.
+This repository contains portable agent skills. A skill must be useful in any runtime that can read Markdown: Codex, Claude Code, Antigravity, editor rules, or a custom harness.
 
-A skill must work in any runtime that can read a file: Codex, Claude Code, Antigravity, an editor's rules file, or a custom harness. Nothing in `SKILL.md` or `references/` may depend on a runtime-specific feature, tool name, or directory layout. Runtime-specific metadata lives only in `agents/openai.yaml`, which other runtimes ignore.
+## Layout and portability
 
-## Layout
-
-```
+```text
 <skill-name>/
-├── SKILL.md            # required — the procedure
-├── agents/openai.yaml  # required — Codex UI metadata
-└── references/         # optional — depth, loaded on demand
+├── SKILL.md            # required entrypoint and routing
+├── agents/openai.yaml  # required Codex UI metadata; other runtimes ignore it
+└── references/         # optional conditional depth
 ```
 
-The folder name, the `name` in the frontmatter, and the `$invocation` in `agents/openai.yaml` must all match exactly.
+- Keep each skill folder self-contained. Installation is folder-by-folder, so do not link to another skill or to repository-level files from `SKILL.md` or its references.
+- The folder name and frontmatter `name` must match. Use lowercase hyphenated names of at most 64 characters.
+- Use only `name` and `description` in `SKILL.md` frontmatter. Write the description after the skill exists; it should identify the real requests and artifacts that should trigger it.
+- End every `SKILL.md` with this exact attribution, after its content:
 
-## Hard rules
+  ```markdown
+  Skill by **Abe Prangishvili** — [github.com/prangishviliAbe/agent-skills](https://github.com/prangishviliAbe/agent-skills)
+  ```
 
-1. **Self-contained folders.** No links between skills. Installation copies one folder at a time, so a cross-folder link becomes a dead link on the user's machine. Shared knowledge is duplicated deliberately, not linked.
-2. **`SKILL.md` routes; `references/` explains.** Keep the body under 220 lines. When it grows past that, the overflow is depth and belongs in a reference file with a row in the reference map table.
-3. **Every reference file is linked** from `SKILL.md` or from another reference. An unlinked file is invisible to the model and will rot.
-4. **Frontmatter carries only `name` and `description`.** The description is the trigger: it must name the artifacts, verbs, and technologies that should activate the skill, in the words a user would actually type.
-5. **Every `SKILL.md` ends with the author credit line.** Skills are installed and copied folder by folder, so a credit that lives only in the README does not travel with them. The validator enforces this.
+## Write for decisions, not ceremony
 
-```markdown
----
+- State non-obvious outcomes, constraints, and decision criteria. Do not explain capabilities an agent already has.
+- Preserve the user's product, authorization, scope, and existing stack. Do not turn a focused request into a redesign, audit, migration, or deployment.
+- Match specificity to risk. Use firm rules for real invariants; leave implementation choices open where several approaches are sound.
+- Put conditional or format-specific detail in a routed reference. Keep an entrypoint under 220 body lines because it must be useful before the agent knows which branch applies.
+- Use examples only when they clarify a decision or a failure mode. Label examples and starting ranges as examples; do not misrepresent them as universal standards.
+- Quantify a requirement only when the number changes a decision, and cite or contextualize version-sensitive thresholds.
+- State what evidence supports completion. Let agents mark irrelevant checks as not applicable and unavailable checks as unverified; do not require fabricated testing or boilerplate reports.
+- Keep a completed skill readable: direct prose, tables for genuinely repeated decisions, and no ritual headings or duplicate checklists.
 
-Skill by **Abe Prangishvili** — [github.com/prangishviliAbe/agent-skills](https://github.com/prangishviliAbe/agent-skills)
-```
+## References and metadata
 
-## Writing style
+- Link every reference from the entrypoint or another reachable reference. Keep references task-specific and maintained.
+- `agents/openai.yaml` needs nonempty `interface.display_name`, `interface.short_description`, and `interface.default_prompt`. The default prompt must invoke the matching `$skill-name`.
+- Preserve existing metadata or policy fields unless the change requires them. Do not disable implicit invocation unless the user explicitly asks for an explicit-only skill.
 
-Skills are read by a model that will act on them. Write accordingly.
+## Validation and evaluation
 
-- **Imperative, not descriptive.** "Validate the payload server-side" beats "It is important that payloads are validated."
-- **Rules must be checkable.** "Be careful with user input" is not a rule. "Reject unknown fields on write endpoints" is.
-- **Numbers instead of adjectives.** `4.5:1`, `44×44 CSS px`, `180ms`, `45–75 characters`, `under 2.5s`.
-- **Anti-pattern always paired with the replacement.** A prohibition alone leaves the model with nothing to do instead.
-- **Tables for decisions.** When the content is "in situation X, do Y", a table beats a paragraph — it is faster to scan and harder to half-apply.
-- **No filler.** Cut sentences that restate a heading, introduce the next sentence, or add emphasis without adding information.
-- **A binary `definition of done`** at the end of every `SKILL.md`. Checkboxes, each one verifiable.
-
-## Section shape for a SKILL.md
-
-```
-frontmatter (name, description)
-# Title
-mandate paragraph — the role and what "done" means
-## Operating rules      — the non-negotiables, numbered
-## Procedure            — ordered steps
-## Reference map        — table: when the task involves X, read Y
-## Failure modes        — table: failure -> correct move
-## Definition of done   — checkbox list
-```
-
-Skills may add domain sections (risk tiers, timing tables, priority sweeps) between the procedure and the reference map.
-
-## Adding a skill
-
-1. Create the folder with `SKILL.md` and `agents/openai.yaml`.
-2. Write the description last, after the content exists — it is a summary of what the skill actually does, not an aspiration.
-3. Run `node scripts/validate-skills.mjs`.
-4. Add a row to the README table and to the composition table.
-
-## Before every commit
+Run this before committing:
 
 ```bash
-node scripts/validate-skills.mjs
+npm run check
 ```
 
-Errors block the commit. Warnings are judgment calls: a long reference file may be fine, an unlinked one is not.
+It runs structural validation plus unit tests for the validator and both installers. The structural validator checks YAML, metadata, reachable local resources, self-containment, portability hazards, and attribution; it does not prove an agent follows a skill well.
+
+For substantial instruction changes, use the manual scenarios in `tests/evals/` with an independent evaluator. Give the evaluator the skill, its task input, and only the necessary fixture. Keep the rubric until after the response; record what actually ran. Do not call a scenario an executed test merely because it was added to the repository.
+
+## Installation changes
+
+Validate the matching skill folder before changing installation behavior. Both installers stage and content-check every source folder before replacing any matching destination folder, retain prior versions in `.agent-skills-backups`, and restore the destination after an error. Keep that behavior covered by tests on Bash and PowerShell.

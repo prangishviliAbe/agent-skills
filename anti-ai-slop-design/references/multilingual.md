@@ -1,61 +1,58 @@
-# Georgian and multilingual interfaces
+# Georgian and multilingual visual design
 
-Read whenever the interface carries a non-Latin script, or any language beyond the one the layout was designed in. Most "it looks off in Georgian" problems are Latin defaults applied to a script that does not behave like Latin.
+Read when a requested interface uses Georgian, a non-Latin script, multiple languages, or RTL content. Use the user's actual language/brand requirements; do not infer a locale from a name or directory.
 
-## Georgian (ქართული)
+## Georgian (ქართული): casing without myths
 
-**The script is unicase.** Mkhedruli has no capital letters. Consequences:
+Modern Georgian body text generally uses Mkhedruli. Unicode defines uppercase mappings to Mtavruli; Georgian titlecasing is not the same as Latin word/sentence capitalization. Do not call Georgian wholly caseless or claim that uppercase is technically invalid.
 
-- `text-transform: uppercase` is wrong. Depending on the font and the browser it either does nothing or converts to Mtavruli, a display form that reads as shouting or as an unrelated style. Never apply it to Georgian UI labels, buttons, or navigation.
-- Small caps, capitalized headings, and "Title Case" conventions do not exist. Do not port a Latin design's capitalization rules.
-- Because there is no case contrast, **hierarchy must come from size, weight, color, and space** — the workload Latin design partly gives to capitalization.
+Mtavruli can be a deliberate heading or brand choice. Preserve approved usage and check font coverage, tone, size, and readability. Avoid applying a global Latin uppercase/title-case rule blindly to Georgian controls or rewriting the underlying content merely for styling.
 
-**Vertical metrics.** Georgian has both tall ascenders and deep descenders (ბ, ღ, ყ, ც, ძ, ჭ, ჯ, ტ, ფ). Set body line-height around **1.6–1.75**, not the 1.4–1.5 that works for Latin. Headings need roughly **1.25–1.4**, more than a Latin heading at the same size. Tight leading causes ascenders and descenders from adjacent lines to collide.
+Source: [Unicode's Georgian script description](https://www.unicode.org/versions/Unicode12.1.0/ch07.pdf) documents Mkhedruli/Mtavruli case mapping and the titlecase distinction; [Georgian Extended character names](https://www.unicode.org/charts/nameslist/n_1C90.html) identifies the uppercase block.
 
-**Optical size.** At equal point size, Georgian generally reads smaller than Latin. Body text usually wants **16–18px**, and 14px is often too small for comfortable reading.
+## Georgian typography in practice
 
-**Letter-spacing.** Do not track Georgian. Positive tracking borrowed from Latin label styling breaks the connected rhythm of the script and looks amateurish. Leave it at zero.
+- Inspect glyphs, ascenders/descenders, weight, and line boxes in the actual chosen font. Choose size and leading through rendered samples; there is no mandatory Georgian line-height or universal minimum font size.
+- Verify Mkhedruli coverage and Mtavruli when used, plus punctuation, numerals, Latin product names, and relevant symbols.
+- Verify that the delivered font files contain the needed glyphs and real weights. A family name in CSS does not prove coverage, and fallback can produce a different optical size.
+- Start with natural letter spacing. Evaluate any display tracking with a fluent reviewer when possible; do not force a zero-tracking rule onto every brand treatment.
+- Use real long labels, validation messages, navigation items, and table headers. Georgian expansion relative to English is content-dependent, not a fixed percentage.
+- Allow flexible control width and wrapping where needed; do not cut essential labels to preserve a Latin-sized mockup.
+- Test reading and clipping at compact widths, zoom, and user text-spacing overrides. Verify mixed-script alignment without demanding identical glyph dimensions.
 
-**Length.** Georgian text typically runs **10–30% longer** than English, and words are long with few natural break points. Narrow buttons, fixed-width chips, and cramped table headers overflow or wrap into two lines. Design controls to hug their content with generous horizontal padding rather than to a fixed width.
+If exploring fonts, evaluate candidates such as Noto Sans Georgian or FiraGO only after checking availability, file coverage, license, weight support, and fit. These examples are not mandatory dependencies or assurance of the installed font version.
 
-**Fonts.** Most Latin webfonts have no Georgian coverage, so the browser silently falls back and the page ends up with two different typefaces at two different optical sizes. Choose a family with real Georgian support and set the stack explicitly:
+## Language-aware content and layout
 
-```css
-:root {
-  --font-ka: "Noto Sans Georgian", "FiraGO", "BPG Arial", "Helvetica Neue LT Geo", system-ui, sans-serif;
-}
-```
+| Concern | Practical decision |
+| --- | --- |
+| Font fallback | Supply a deliberate stack and inspect actual fallback rendering; avoid a list of uninstalled fonts that hides missing coverage |
+| Expansion | Use real translations plus pseudolocalization; test short controls as well as long prose |
+| Message grammar | Localize whole messages with plural/select rules; do not concatenate English-shaped fragments |
+| Line breaking | Use language metadata and appropriate wrapping/hyphenation; avoid global `word-break: break-all` as an overflow repair |
+| Text metrics | Test the specific font/script combination; do not assume every non-Latin script requires more leading |
+| Embedded content | Localize screenshots, images containing text, examples, and essential image alternatives when required |
+| Formatting | Apply locale-aware number/date formatting while preserving explicit currency, timezone, and product rules |
+| User identity | Support real name/address structures without assuming given-name/family-name order or a single country's fields |
 
-Verify that the chosen family ships a real bold weight for Georgian. If it does not, the browser synthesizes one, and faux-bold Georgian looks smeared. Use color, size, or a second family for emphasis instead.
+Pseudolocalization exposes clipping and hardcoded strings; it cannot prove translation quality, typography, shaping, or cultural appropriateness. For public-facing copy, distinguish a draft translation from one reviewed by a fluent speaker.
 
-**Numerals and punctuation.** Georgian uses standard Arabic numerals. The Georgian paragraph separator (჻) is archaic and belongs only in deliberately historical typography.
+## RTL and mixed-direction content
 
-**Checklist for a Georgian interface**
+Set language and direction appropriately; language alone does not establish layout direction. Use logical layout properties where they express intent.
 
-- [ ] No `text-transform: uppercase` anywhere in the Georgian layer
-- [ ] Body line-height ≥ 1.6, headings ≥ 1.25
-- [ ] Body size ≥ 16px
-- [ ] Letter-spacing zero on Georgian text
-- [ ] Font family with genuine Georgian coverage, including a real bold
-- [ ] Buttons, chips, tabs, and table headers tested with the longest real Georgian string
-- [ ] Navigation tested at compact width — Georgian menu labels wrap where English does not
-- [ ] Form labels, validation messages, and empty states written in Georgian, not translated placeholders
-- [ ] Mixed Georgian and Latin (product names, code, URLs) does not produce a metric mismatch that looks broken
+Mirror meaning, not every pixel. Navigation sequence and directional arrows may adapt; numbers, code, logos, media controls, and charts need their own semantic decision. An RTL locale does not mean reversing a time series automatically.
 
-## General multilingual rules
+Isolate inserted opposite-direction or unknown-direction strings, for example with `bdi` or an appropriate `dir` value. Test names, email addresses, amounts, punctuation, and mixed-script labels in context. Follow [W3C inline bidi guidance](https://www.w3.org/International/articles/inline-bidi-markup/) and [internationalization quick tips](https://www.w3.org/International/quicktips/).
 
-**Expansion.** Plan for text 30–40% longer than English (German, Finnish, Russian, Georgian) and shorter (Chinese, Japanese, Korean). Never size a container to the English string. Test with the longest real translation, not with a repeated placeholder.
+## Focused verification
 
-**Never build a sentence from fragments.** Concatenating "You have" + count + "items" produces broken grammar in most languages. Use one complete, parameterized string per message with plural rules handled by the platform's formatting API.
+For the supported locales and affected feature:
 
-**Line breaking differs by script.** Georgian, German, and Finnish have long unbreakable words. Thai and Khmer have no spaces between words. Chinese and Japanese break almost anywhere but have their own prohibited-position rules. Do not force `word-break: break-all` globally to solve one overflow — fix the container.
-
-**Vertical metrics vary widely.** Devanagari, Thai, Arabic, Armenian, and Georgian all need more line-height than Latin at the same size. A single global line-height tuned for Latin will look cramped in half your locales.
-
-**RTL is a layout flip, not a text change.** Arabic and Hebrew mirror the layout, alignment, directional icons, progress direction, and slider direction. Build with logical properties (`margin-inline-start`, `padding-block`, `inset-inline-end`) so the flip costs nothing. Do not mirror icons that represent real-world objects with a fixed orientation.
-
-**Formatting is locale data, not string work.** Dates, times, numbers, currencies, name order, address order, and sort order all come from the platform's internationalization APIs. Hardcoding `MM/DD/YYYY` or a `$` prefix is a bug in most of the world.
-
-**Content, not just strings.** Images with embedded text, screenshots of an English interface, culturally specific metaphors, and examples using local names all need localized versions or a neutral alternative.
-
-**Testing.** Build with pseudo-localization early (expand strings, add accents, wrap in brackets) to expose hardcoded text and fragile containers before real translation exists. Then test the real translations at the smallest supported viewport, where every layout weakness appears first.
+- [ ] Required glyphs and weights render from the expected font files; fallback remains usable.
+- [ ] Casing and tone follow the language and approved brand treatment.
+- [ ] Real long strings fit without clipping or losing essential meaning.
+- [ ] Reading order, focus order, direction, and control relationships remain understandable.
+- [ ] Numbers, dates, plurals, and mixed-script content are correct for the stated requirements.
+- [ ] Font metrics, text enlargement, and spacing overrides do not hide content or controls.
+- [ ] Draft translation or typography limits are reported honestly.

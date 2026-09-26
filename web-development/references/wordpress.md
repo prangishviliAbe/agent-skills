@@ -1,145 +1,72 @@
-# WordPress, WooCommerce, Elementor
+# WordPress, WooCommerce, and Elementor
 
-Read when working on a WordPress site, plugin, theme, block, REST route, or WooCommerce/Elementor integration.
+Read for a site, plugin, theme, block, REST route or commerce integration. Inspect WordPress/PHP versions, plugin dependencies, theme type, multisite state and relevant storage features first.
 
-## Extension rules
+## Extension boundaries
 
-- Extend through hooks, filters, the template hierarchy, a child theme, or a focused plugin. Never edit core, and never patch a vendor plugin file in place: the next update erases it and you lose the audit trail.
-- One plugin, one responsibility. A site-specific "functionality plugin" is better than dozens of snippets in `functions.php` or a snippets plugin, because it is versionable and reviewable.
-- Prefix every global function, class, constant, option, meta key, hook name, and script handle with a project-specific prefix. Collisions in the global namespace are the most common WordPress bug.
-- Guard direct file access at the top of every PHP file:
+Use supported hooks, filters, templates, child themes or a focused plugin. Avoid untracked vendor/core edits that updates will overwrite; if vendor code itself is the requested repair target, maintain a reviewable patch or fork and state the update implications.
 
-```php
-if ( ! defined( 'ABSPATH' ) ) {
-	exit;
-}
-```
+Namespace or prefix global symbols and persistent keys. Use the lifecycle hook documented for the API; do not assume all registration and translation work belongs on one hook across WordPress versions. Keep business behavior separate from presentation when it should survive a theme change.
 
-- Load code on the right hook: `plugins_loaded` for bootstrapping, `init` for post types, taxonomies and text domains, `wp_enqueue_scripts` for assets, `admin_init` for admin-only work. Work performed at file load runs on every request, including AJAX and cron.
+Protect directly executable entry files when necessary, but do not mistake an ABSPATH guard for endpoint authorization. Follow project coding standards and supported PHP syntax rather than introducing a modern feature the host cannot run.
 
-## The four gates on every request that changes something
+## Request controls
 
-Forms, `admin_post_*`, `wp_ajax_*`, REST mutations, and block editor saves all pass the same four gates, in this order:
+Select controls by authentication mode and operation; there is no universal sequence of four function calls.
 
-```php
-// 1. CSRF: prove the request came from your UI
-check_admin_referer( 'prefix_save_thing' );            // or wp_verify_nonce(), or check_ajax_referer()
+| Entry | Required reasoning |
+| --- | --- |
+| Cookie-authenticated admin form or AJAX mutation | Verify the appropriate action nonce and capability; validate the target and permitted fields |
+| Cookie-authenticated REST mutation | Use REST authentication/nonces and a permission_callback appropriate to the resource |
+| Application Password or other explicit credential flow | Validate through its supported authentication mechanism; assess CSRF based on ambient credentials |
+| Public form, signup or webhook | Preserve intentional public access; apply input limits, abuse controls or provider signature verification as appropriate |
+| Save hook, cron or CLI | Identify its initiating authority and guard autosave, revision, recursion or replay where relevant |
 
-// 2. Authorization: prove this user may do this, to this object
-if ( ! current_user_can( 'edit_post', $post_id ) ) {
-	wp_die( esc_html__( 'Not allowed.', 'text-domain' ), '', array( 'response' => 403 ) );
-}
+A WordPress nonce helps mitigate CSRF. It does not prove origin, authorize an actor, guarantee a single use or stop replay. Pair protected work with capability/resource checks. Meta capabilities such as edit_post take an object ID; capabilities for site-wide settings need no invented ownership ID.
 
-// 3. Validation and sanitization: coerce input to a known-safe shape
-$title  = sanitize_text_field( wp_unslash( $_POST['title'] ?? '' ) );
-$status = in_array( $_POST['status'] ?? '', array( 'draft', 'publish' ), true ) ? $_POST['status'] : 'draft';
+For superglobals, reject the wrong type before calling string functions, unslash where WordPress added slashes, then validate and sanitize for the intended value. Do not silently turn invalid security-sensitive input into a valid default. REST request values have their own parsing contract; do not blindly unslash every input source.
 
-// 4. Escaping at output, in the right context
-echo esc_html( $title );
-```
-
-A nonce is **not** a permission check. `current_user_can()` without an object ID is not an ownership check. Both are required.
+Escape when rendering for the exact context: HTML text, attribute, URL or deliberately allowed HTML. Sanitization is not authorization and does not make a value universally safe for SQL or script output.
 
 ## REST API
 
-```php
-register_rest_route(
-	'prefix/v1',
-	'/things/(?P<id>\d+)',
-	array(
-		'methods'             => WP_REST_Server::EDITABLE,
-		'callback'            => 'prefix_update_thing',
-		'permission_callback' => function ( WP_REST_Request $request ) {
-			return current_user_can( 'edit_post', (int) $request['id'] );
-		},
-		'args'                => array(
-			'id'    => array( 'required' => true, 'type' => 'integer', 'sanitize_callback' => 'absint' ),
-			'title' => array( 'type' => 'string', 'sanitize_callback' => 'sanitize_text_field' ),
-		),
-	)
-);
-```
+Register on rest_api_init. Supply a permission_callback, argument schema and validation suitable for the route. An intentionally public route may use __return_true; a protected mutation must enforce its policy regardless of the method name.
 
-- `permission_callback` is mandatory. Returning `true` is a public endpoint; write it only when that is the intent.
-- Define `args` with types and sanitize callbacks so validation is declarative and documented.
-- Return `WP_Error` with a proper status code rather than an ad-hoc array with `success => false`.
+Use WP_REST_Response or WP_Error with suitable status codes. Return only permitted fields. Verify denied and allowed actors, invalid types, missing objects and alternate entry points. A successful capability check does not itself validate the field values or permitted state transition.
 
-## Database access
+## SQL and query cost
 
-- Use the WordPress data APIs (`WP_Query`, `get_posts`, `wp_insert_post`, `update_post_meta`, `WP_User_Query`) before dropping to SQL. They handle caching, hooks, and escaping.
-- When raw SQL is unavoidable, always prepare:
+Prefer documented data APIs where they fit. They do not automatically authorize callers; raw SQL is not automatically unsafe if constructed correctly.
 
-```php
-$rows = $wpdb->get_results(
-	$wpdb->prepare( "SELECT id, name FROM {$wpdb->prefix}custom WHERE status = %s AND created > %d", $status, $since )
-);
-```
+Parameterize values with wpdb::prepare. WordPress 6.2+ supports %i for identifiers; check the plugin's minimum version or identifier_placeholders capability before relying on it. On older versions, use fixed identifiers or a strict mapping. Identifier escaping still does not authorize which column/table a caller may select; allowlist dynamic choices. For LIKE, apply esc_like to the search value before preparing the full wildcard value.
 
-- `prepare()` cannot placeholder table or column names. Whitelist dynamic identifiers against a fixed array; never interpolate user input into them.
-- Never run an unbounded `meta_query` on a large site. Meta is not indexed for value lookups. If you filter by it constantly, use a taxonomy or a custom table.
-- Set `'no_found_rows' => true` when you do not paginate, `'update_post_meta_cache' => false` and `'update_post_term_cache' => false` when you do not need them, and `'fields' => 'ids'` when you only need IDs.
-- `posts_per_page => -1` is a production outage waiting for the content to grow. Always cap it.
+Bound growing queries and inspect expensive meta queries with representative data. Set no_found_rows when total counts are unnecessary and disable meta/term priming only when callers do not need it. Large exports may need batched queries; a blanket ban on every loop obscures that use case.
 
-## Assets
+## Assets and editor behavior
 
-```php
-add_action( 'wp_enqueue_scripts', function () {
-	if ( ! is_singular( 'product' ) ) {
-		return; // load only where it is needed
-	}
-	$path = plugin_dir_path( __FILE__ ) . 'assets/app.js';
-	wp_enqueue_script(
-		'prefix-app',
-		plugins_url( 'assets/app.js', __FILE__ ),
-		array(),
-		file_exists( $path ) ? (string) filemtime( $path ) : '1.0.0',
-		true
-	);
-	wp_localize_script( 'prefix-app', 'prefixData', array(
-		'restUrl' => esc_url_raw( rest_url( 'prefix/v1/' ) ),
-		'nonce'   => wp_create_nonce( 'wp_rest' ),
-	) );
-} );
-```
+Enqueue with real dependencies and load only on relevant surfaces. Use build hashes or a release version for reliable cache invalidation; filemtime is useful when deployment timestamps are reliable. Use supported URL helpers. Keep server secrets out of inline configuration; a browser nonce is visible to the user and must not be treated as a secret capability.
 
-- Version assets by file modification time so caches and CDNs invalidate on deploy.
-- Never hardcode a URL; use `plugins_url()`, `get_stylesheet_directory_uri()`, or `rest_url()`.
-- Declare real dependencies instead of relying on load order.
+Use script translation/localization APIs for translated strings and an appropriate JSON/inline-data mechanism for configuration. Verify safely serialized values cannot break out of their HTML/script context.
+
+For Elementor and other builders, use documented extension APIs and classes you control. Test both editor and rendered output when changing shared styles or widgets. Preserve builder-owned data unless editing that structure is explicitly part of the task. Inspect the installed plugin's registration contracts instead of guessing from an older version.
 
 ## WooCommerce
 
-- Use the CRUD API (`wc_get_order`, `$order->get_total()`, `$order->save()`, `wc_get_product`) rather than reading post meta directly. Direct meta access breaks under High-Performance Order Storage.
-- Declare HPOS compatibility explicitly in the plugin bootstrap, and test with it enabled.
-- Never recalculate prices, totals, or tax by hand in the frontend. Use the cart and order APIs so coupons, tax, and currency rules stay correct.
-- Payment gateway and webhook handlers must be idempotent: the same notification will arrive twice. Key on the transaction ID and the order state machine.
-- Order status transitions have side effects (stock, emails, accounting). Hook the specific transition, not a generic save.
-- Never expose order or customer data in a public REST route or an AJAX endpoint without a capability plus ownership check.
+Use order/product CRUD and documented getters/setters rather than assuming orders are posts. Check HPOS and legacy-storage compatibility where supported, and declare compatibility only after meaningful validation. Checkout Blocks and classic checkout may expose different extension paths; verify the one the site uses.
 
-## Elementor and page builders
+Keep pricing, tax, coupons and totals authoritative on the server. Do not apply PHP-specific storage assumptions to currency calculations without checking the relevant WooCommerce API.
 
-- Builder output is generated markup. Do not target its internal class names with brittle selectors; the next version will rename them. Add your own class or a wrapper you control.
-- Register a custom widget rather than pasting HTML into a text widget when the content has logic, data, or state.
-- Keep custom CSS scoped and specific enough not to leak into the editor UI. Test inside the editor as well as on the frontend.
-- Anything the editor owns, the editor will overwrite. Store your data in post meta or options you control, not in builder-managed structures.
-- Assume the builder already loads a large amount of CSS and JS. Do not add another framework on top; measure the page weight before and after.
+Payment callbacks and order transitions may repeat or arrive concurrently. Verify signatures, order/provider identity, amount/currency and permissible state; deduplicate atomically. Avoid repeating stock updates, notifications or refunds when replaying an event. Customer-facing order access can use ownership or the platform's supported guest-order mechanism; do not replace it with an admin-only capability check.
 
-## Site environment concerns
+## Site operations
 
-- **Caching:** page caching, object caching, and a CDN can all serve stale or wrong output. Anything user-specific must be excluded from full-page cache or rendered client-side. Invalidate deliberately on write.
-- **Cron:** `wp_cron` runs on traffic, not on time. For anything reliable, disable it and drive a real system cron. Schedule with a unique hook, guard against overlap, and make the job idempotent.
-- **Multisite:** switch and restore blog context correctly, and remember that options, uploads, and users are scoped differently per network configuration.
-- **Localization:** load the text domain on `init`, wrap every user-facing string, and use the escaping variants (`esc_html__`, `esc_attr_e`) rather than escaping a translated string afterwards.
-- **Upgrades:** run schema or option changes through a versioned upgrade routine keyed to a stored version option, so it executes once and can be re-run deterministically.
+- Exclude or correctly partition personalized pages from shared caches; client rendering still requires an authorized data endpoint.
+- WP-Cron depends on traffic by default. If reliable scheduling is required, configure and verify an external trigger before disabling page-load spawning; guard overlap and replay.
+- In multisite work, restore blog context after switching and inspect network/site scope for options, capabilities and uploads.
+- Version schema/option upgrades and make interrupted reruns safe. Avoid expensive migrations on every request.
 
-## WordPress anti-patterns
+## Primary references
 
-| Anti-pattern | Replace with |
-| --- | --- |
-| Editing a plugin or core file directly | Hook, filter, child theme, or a custom plugin |
-| `$_POST['x']` used without `wp_unslash()` and sanitization | Unslash, sanitize by type, validate against a whitelist |
-| `echo $value` in a template | `esc_html()`, `esc_attr()`, `esc_url()`, or `wp_kses_post()` by context |
-| `permission_callback => '__return_true'` on a mutation | A real capability plus ownership check |
-| `posts_per_page => -1` | A capped page size with pagination |
-| Business logic in `functions.php` | A versioned, testable plugin |
-| Inline `<style>` and `<script>` in templates | Enqueued, versioned, conditionally loaded assets |
-| Reading order data from post meta | WooCommerce CRUD getters |
+- [WordPress nonces](https://developer.wordpress.org/apis/security/nonces/): limitations, CSRF and authentication boundaries.
+- [wpdb::prepare](https://developer.wordpress.org/reference/classes/wpdb/prepare/): placeholder semantics, including %i since 6.2.
+- [WooCommerce HPOS recipe book](https://developer.woocommerce.com/docs/features/orders/high-performance-order-storage/recipe-book/): order storage APIs and compatibility declarations.

@@ -1,105 +1,63 @@
-# Frontend: state, rendering, performance, SEO
+# Frontend: state, rendering, performance, and SEO
 
-Read when building or reviewing UI code, React/Next.js architecture, client performance, or indexable pages.
+Read the sections needed for the affected framework and feature. Inspect the installed framework version before adopting APIs or caching defaults.
 
-## Classify state before writing it
+## State and effects
 
-Most frontend bugs are state stored in the wrong place. Sort every value into exactly one bucket.
+Choose an authoritative owner for each value. Server data belongs in the existing query/framework layer, shareable navigation state in the URL, form drafts in the form, and transient UI state near its users. Editable snapshots of server data are legitimate; define how refresh, dirty state and conflicts reconcile them.
 
-| Kind | Lives in | Never |
-| --- | --- | --- |
-| Server state | Data layer with caching, revalidation, and request dedup | Copied into `useState` on mount |
-| URL state | Route params and search params | Duplicated in a store that can drift from the URL |
-| Form state | The form library or the uncontrolled DOM | Lifted globally "just in case" |
-| Ephemeral UI state | Local component state | Promoted to global state because two siblings need it (lift one level instead) |
-| Derived values | Computed during render | Stored in state and synced by an effect |
+Compute inexpensive derived values during rendering. Use effects to synchronize with external systems; clean up subscriptions, timers, and listeners when they create ongoing work. Not every effect requires cleanup. Do not move per-user state, browser-only initialization, or request-specific work to module scope merely to avoid an effect.
 
-**The single strongest rule:** if a value can be computed from other values, compute it. An effect that syncs derived state is a bug waiting for a race.
+Use stable identity keys for reorderable lists. Avoid conditional calls to ordinary hooks; check version-specific exceptions in official API docs. Memoize when profiling or a library contract gives a reason, rather than enforcing arbitrary component/prop counts.
 
-## Effects are for synchronizing with systems outside React
+## Async and mutations
 
-Legitimate uses: subscriptions, event listeners, imperative DOM APIs, timers, analytics, integrating a non-React widget. Each returns a cleanup function.
-
-Not effects: deriving values, transforming props, resetting state on prop change (use a `key`), fetching that the framework's data layer can do, or "run once on mount" initialization that belongs at module scope or in an event handler.
-
-## Async correctness
-
-Every remote read must define behavior for all six of these, not just the happy path:
-
-1. **Loading** — first load versus background refresh are different states with different UI.
-2. **Empty** — no results is not an error; distinguish "none exist yet" from "none match the filter".
-3. **Error** — with a retry affordance and a message that says what the user can do.
-4. **Stale response** — a slow request for query A must not overwrite the result of query B. Use the data layer's key-based cache or an abort signal.
-5. **Race on rapid input** — debounce input, cancel in-flight requests, and key the result to the input that produced it.
-6. **Partial failure** — one widget failing must not blank the page.
-
-For mutations: disable double submit, define the optimistic update *and its rollback*, invalidate exactly the affected cache keys, and make retried requests idempotent on the server.
-
-## React discipline
-
-- Type props explicitly. Reach for `any` only at a genuinely unknown boundary, and narrow it immediately with a schema parse.
-- Prefer composition and `children` over prop explosion and boolean flag soup.
-- A component that takes more than roughly seven props or renders more than three unrelated concerns is two components.
-- Keep list keys stable and derived from identity, never from the array index when items can reorder, insert, or delete.
-- Memoize only after a measured render problem, and memoize the expensive computation rather than wrapping everything reflexively.
-- Keep refs out of render output. Read and write them in handlers and effects.
-- Never conditionally call hooks; extract a child component instead.
+- Distinguish first load, background refresh, empty results, failure and stale data when they affect the experience.
+- Prevent query A's delayed response from replacing query B's result. Use keyed data state, cancellation, or stale-result guards; aborting a client request does not undo a server mutation.
+- Debounce only where the interaction benefits. Do not delay explicit submit actions automatically.
+- Keep a failure local when the rest of the page can still function; preserve entered data and provide a meaningful recovery action.
+- For optimistic writes, define rollback or reconciliation, cache invalidation, and conflict behavior. Disabling a button is a usability control, not protection against duplicate requests.
+- Preserve server validation as authoritative. Prefer structured field errors with stable codes over parsing message strings.
 
 ## Next.js App Router
 
-- Default to Server Components. Add `'use client'` at the **smallest leaf** that needs interactivity, not at the top of a route.
-- Pass serializable data down; never pass a database client, a secret, or a non-serializable object across the boundary.
-- Server Actions and route handlers are public endpoints. Validate the payload with a schema and authorize the actor exactly as you would for a REST endpoint. `'use server'` is not an access control.
-- Choose the rendering strategy deliberately per route: static, revalidated (ISR), dynamic, or streamed. Write down the revalidation trigger for any cached mutable data.
-- Provide `loading.tsx`, `error.tsx`, and `not-found.tsx` for routes that fetch. Stream the slow part with `Suspense` instead of blocking the whole route.
-- Use `generateMetadata` for indexable routes. Set canonical URLs, Open Graph, and the correct robots directives for private or paginated pages.
-- Do not turn a route tree into client components for a transition or an animation. That trades the entire server-rendering benefit for a visual flourish.
+Check the installed version and route configuration: data caching, request APIs, revalidation and rendering options change between versions.
 
-## Performance budgets
+- Keep data access and secrets server-side. Use the smallest practical client boundary for interactivity; a complex interactive subtree can reasonably be one client boundary.
+- Treat callable Server Actions and route handlers as externally reachable operations. Authorize near data access, validate inputs, and return only permitted fields; hidden buttons and layouts do not provide the access policy.
+- Respect the framework's supported serialization contract at server/client boundaries. Do not equate it with JSON-only data or pass privileged service objects.
+- For cached mutable data, define key scope, freshness and invalidation. Verify user-specific data cannot appear in another session or public cache.
+- Add loading, error, not-found and streaming boundaries where they improve behavior. Reuse inherited route boundaries when appropriate; do not create all boundary files on every route.
+- Check hydration mismatches caused by time, randomness, locale or browser-only state. Do not silence warnings before understanding the mismatch.
 
-Design against numbers, not adjectives. Field targets at the 75th percentile:
+## Accessibility and forms
 
-| Metric | Target | Usual causes when it fails |
-| --- | --- | --- |
-| LCP | under 2.5s | Unoptimized hero image, render-blocking CSS/JS, slow server response, client-side data fetch for above-the-fold content |
-| INP | under 200ms | Long tasks, heavy hydration, unmemoized expensive renders, synchronous layout thrash in handlers |
-| CLS | under 0.1 | Images and embeds without dimensions, injected banners, late-loading fonts, content that appears after hydration |
-| TTFB | under 800ms | Uncached upstream calls, N+1 queries, cold starts, missing CDN |
+Use native controls and semantics before custom keyboard behavior. For changed interactions, check accessible name, label, focus visibility, keyboard operation and announcements. Ensure dialogs, menus and disclosure controls follow the interaction pattern they claim; an ARIA role alone does not implement it.
 
-Practical rules:
+Use suitable `type`, `inputmode`, `autocomplete` and `name` attributes. Associate field errors programmatically, preserve input on failure, and direct focus to an error summary or first invalid field when it helps correction. Avoid stealing focus on each keystroke or background refresh. Handle pending submission and repeated activation without trapping keyboard users.
 
-- Set explicit `width` and `height` (or an aspect ratio) on every image, video, and embed.
-- Serve modern image formats at the size actually rendered; lazy-load below the fold and eagerly load the LCP image with `fetchpriority="high"`.
-- Self-host or preload critical fonts, use `font-display: swap`, and define a metric-compatible fallback to avoid a layout shift on swap.
-- Split code at route boundaries and around genuinely heavy widgets. Do not micro-split into dozens of tiny chunks.
-- Move work off the main thread or out of the browser entirely before optimizing it in place.
-- Measure before and after with the same tool and the same throttling profile. Report both numbers or do not claim an improvement.
+Responsive checks should include narrow layouts, zoom, long/localized content and overflow in affected areas. Test reduced motion when adding animated interaction; do not use color alone to communicate an error or selection.
 
-## Forms
+## Performance
 
-- Native `<form>` with a real submit path first; enhance with JavaScript.
-- Correct `type`, `inputmode`, `autocomplete`, and `name` on every field. This is a conversion feature, not a nicety.
-- Validate on the client for speed and on the server for truth. The server result wins.
-- Errors: field-level, adjacent to the field, programmatically associated, and announced. Never clear the user's input on a failed submit.
-- Preserve scroll and focus position across a failed submit; move focus to the first invalid field.
+Core Web Vitals good thresholds are LCP ≤ 2.5 seconds, INP ≤ 200 milliseconds and CLS ≤ 0.1, evaluated at the 75th percentile with mobile and desktop considered separately. They are field metrics; one lab run cannot certify field performance. TTFB is a useful diagnostic, not a Core Web Vital.
 
-## SEO for indexable pages
+- Measure the user's critical path before optimizing. Use the same device/network conditions for comparisons and identify synthetic versus real-user data.
+- Reserve space for media and embeds. Use responsive source sizes; avoid lazy loading a likely LCP image. Add high fetch priority only for genuinely critical candidates, not every image.
+- Load only needed font weights and subsets; compare fallback metrics and loading behavior before indiscriminate preloading or self-hosting.
+- Investigate long tasks, hydration cost, layout thrashing and server latency from evidence. Reduce shipped JavaScript and expensive work before blanket memoization.
+- Bound lists or virtualize when measured scale warrants it, while preserving keyboard access and discoverability.
 
-- Meaningful content in the server-rendered HTML. If the page is empty without JavaScript, it is invisible to a meaningful share of crawlers and social previews.
-- One `<h1>` describing the page, with a heading hierarchy that survives being read alone.
-- Canonical URL on every indexable page. Decide explicitly what happens to paginated, filtered, and parameterized variants.
-- Structured data only when it is valid and true to what the page shows.
-- `robots`, sitemap, and status codes coherent: a "not found" page must return 404, not 200 with sad text.
+## Indexable pages
 
-## Frontend anti-patterns
+Apply SEO work to pages intended for discovery. Server-render or prerender important content when appropriate; crawlers differ in JavaScript support. Check titles, meaningful headings, status codes, canonical decisions, structured data matching visible content, and crawlable links. Pagination needs deliberate canonical and indexing policy rather than blanket noindex.
 
-| Anti-pattern | Replace with |
-| --- | --- |
-| `useEffect` that copies props into state | Compute during render, or use a `key` to reset |
-| A global store for one screen's toggle | Local state |
-| `try/catch` around a fetch that only logs | Surface an error state the user can act on |
-| Index keys on a reorderable list | Stable identity keys |
-| `window` or `document` accessed during render | Access in an effect or an event handler, guarded |
-| Spinner over the entire page for one slow widget | Scoped skeleton or streamed boundary |
-| `dangerouslySetInnerHTML` with server content | Sanitize with a maintained allowlist sanitizer, or render structured data |
-| Hard-coded breakpoints scattered through components | Tokens or container queries in one place |
+A private page requires access control. `robots.txt` is crawl guidance, and `noindex` is indexing guidance; neither protects sensitive content. A crawler blocked by robots may not see a page's noindex instruction.
+
+## Primary references
+
+Use the deployed version's contract; these links are starting points, not a promise that all current APIs exist locally.
+
+- [React useEffect](https://react.dev/reference/react/useEffect): external synchronization, dependencies and cleanup.
+- [Next.js data security](https://nextjs.org/docs/app/guides/data-security): data-access boundaries and Server Actions.
+- [Web Vitals](https://web.dev/articles/vitals): metric definitions and field thresholds.

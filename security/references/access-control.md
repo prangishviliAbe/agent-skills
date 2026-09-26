@@ -1,87 +1,60 @@
-# Authentication, sessions, and authorization
+# Authentication, sessions, and access policy
 
-Read when reviewing or building login, sessions, tokens, roles, ownership, or tenancy. This is where the most damaging real-world flaws live.
+Read for login, recovery, OAuth, tokens, roles, tenancy or object access. First establish the intended policy; ownership is one possible relationship, not a universal condition for shared, delegated or administrative access.
 
-## Authorization: the checklist that catches most breaches
+## Authorization
 
-- [ ] Every protected route **and** every protected object has a server-side check.
-- [ ] The check tests **both** capability ("may this role do this?") and **relationship** ("does this record belong to this actor?").
-- [ ] Queries are scoped in the database (`WHERE tenant_id = :actor_tenant`), not filtered in application code after a broad read.
-- [ ] Deny by default: a new route without an explicit policy is inaccessible.
-- [ ] The check runs on the server for every entry point to the same operation: REST, GraphQL, server action, admin panel, CLI, job, and export.
-- [ ] Errors and timeouts in the authorization path result in denial.
-- [ ] Write endpoints reject unknown fields, so `role`, `price`, `ownerId`, `isVerified`, and `status` cannot be smuggled in.
-- [ ] Bulk and export endpoints apply the same per-object rules as the single-record endpoint.
-- [ ] Aggregate endpoints (counts, search suggestions, autocompletes) do not leak the existence of records the actor cannot read.
+Build a matrix for the affected operation: actor × action × resource relationship × relevant state. Include allowed and forbidden examples, such as owner, other user, shared collaborator, other tenant, staff and revoked member when they exist.
 
-**The two escalation shapes to test explicitly:**
+- Enforce policy at each externally reachable operation and near sensitive data access. Inspect inherited middleware, repository filters and database policies before claiming checks are absent.
+- Scope protected queries before returning records, counts or pagination. Validate nested relationships rather than checking a parent and trusting an unrelated child ID.
+- Select writable fields explicitly. Unknown fields may be rejected or stripped according to the API contract; never spread a raw request into privileged fields.
+- Include exports, bulk writes, downloads, GraphQL resolvers, jobs and cached responses in the affected policy.
+- For state-dependent grants, consider the time between check and use and revocation behavior. A stale token or queued job must not silently retain privilege beyond the documented policy.
+- Authentication/authorization failure must not grant access. Log a useful redacted diagnostic without exposing resource existence unnecessarily.
 
-- *Horizontal:* log in as user A, request user B's identifier directly. Try it on every endpoint that takes an ID, including PATCH, DELETE, and nested resources.
-- *Vertical:* as a low-privilege user, call an admin endpoint directly, without the UI. Also try the admin endpoint's underlying API, its GraphQL field, and its export variant.
+A client-supplied tenant ID may be a legitimate selector. Verify membership and permitted actions server-side before accepting it; identity and authority cannot come from the selector alone. Unguessable IDs reduce discovery but do not provide access control.
 
-**Identifiers are not secrets.** Sequential IDs make enumeration trivial, but unguessable IDs are not access control either — they only slow discovery. Fix the check, and use non-sequential IDs as an additional measure.
+## Authentication and recovery
 
-## Authentication
+Use maintained identity components and review their integration rather than inventing token formats. Choose password hashing from supported password-storage guidance and platform constraints; migrate legacy hashes through a deliberate policy rather than an unsafe bulk rewrite.
 
-- Use the framework's or platform's maintained authentication rather than a hand-rolled one. Custom auth is the single highest-yield place for a mistake.
-- Store passwords with a modern memory-hard hash at current parameters. Never a fast hash, never encryption, never a home-made scheme.
-- Compare secrets in constant time. Ordinary string comparison leaks length and prefix through timing.
-- Rate limit and progressively delay login, password reset, one-time-code verification, and any endpoint that reveals whether an account exists.
-- Return identical responses and timing for "unknown account" and "wrong password", and for reset requests regardless of whether the address exists.
-- Offer second-factor authentication where the risk justifies it, and cover the recovery path with the same rigor — recovery is the usual bypass.
+Use library verification routines for hashes, signatures and secrets. Where a comparison is security-sensitive, use the appropriate constant-time primitive; handle input lengths as its contract requires. Do not claim ordinary comparisons necessarily expose a remotely exploitable prefix oracle without evidence.
 
-**Password reset, the most-abused flow:**
+Limit credential attempts using account and network signals without making account lockout an easy denial-of-service tool. Reduce unnecessary account-enumeration differences in response content and processing; exact network timing equality is not a realistic promise.
 
-- Single-use, short-lived, high-entropy token, stored hashed, invalidated on use and on password change.
-- Never place the token in a redirect, a referrer-leaking URL, or an analytics payload.
-- Invalidate all other sessions after a password change, and notify the account owner.
-- Do not reveal existence of the account through the reset response, timing, or a differing error.
+Recovery tokens need sufficient entropy, limited lifetime, a protected verifier and atomic single use. Generate reset destinations from trusted configuration. Token-bearing links can be legitimate; prevent leakage through logs, analytics, redirects and referrers, and remove tokens from navigation once exchanged. Treat MFA replacement, recovery codes and helpdesk recovery as authentication paths.
+
+Define session revocation after password reset, compromise or privilege change. Do not silently change routine password-change policy without considering the identity provider and existing user experience. Notify owners through an appropriate trusted channel without including sensitive tokens.
 
 ## Sessions and tokens
 
-**Cookie sessions (preferred for browsers):**
+| Mechanism | Verify |
+| --- | --- |
+| Cookie session | Secure/HttpOnly where appropriate, deliberate SameSite/Domain/Path, CSRF defenses, fixation resistance, expiry and real invalidation |
+| Bearer token | Signature or introspection, expected issuer/audience/type, accepted algorithm, required claims and lifetime |
+| JWT | Required claims for this protocol; expiry enforcement, nbf when present, bounded clock tolerance and trusted key selection |
+| Refresh token | Rotation or sender constraint as appropriate, reuse handling, concurrency behavior and revocation |
+| Sensitive operation | Required authentication strength and recency, plus resource authorization |
 
-- `HttpOnly`, `Secure`, and a deliberate `SameSite` value. `Lax` for typical apps; `None` requires `Secure` and an explicit reason.
-- Rotate the session identifier on login and on any privilege change, to defeat fixation.
-- Set both an idle timeout and an absolute lifetime. Provide real server-side logout that invalidates the record, not merely a cookie delete.
-- Bind sensitive operations to a recent re-authentication.
+Do not trust a token's header to select arbitrary algorithms, keys or remote key URLs. Distinguish ID tokens from access tokens. Self-contained access tokens need a revocation strategy if immediate invalidation is required; short expiry alone leaves a revocation window.
 
-**Bearer tokens and JWTs:**
+Choose browser credential storage against XSS, CSRF, framework and deployment constraints. An HttpOnly cookie reduces direct script theft but does not stop XSS from issuing authenticated actions. Avoid persistent script-readable credentials when a suitable alternative exists.
 
-- Verify signature, algorithm (against an expected allowlist, never taken from the header), issuer, audience, expiry, and not-before. Reject `none` and reject an unexpected algorithm family.
-- Keep access tokens short-lived and design refresh with rotation and reuse detection.
-- A JWT cannot be revoked by itself. If you need revocation, keep a server-side session or a denylist, and say so in the design.
-- Do not put personal data or authorization decisions in a token the client can read and cache indefinitely; claims go stale after a permission change.
-- Avoid storing tokens in `localStorage` when a secure cookie session is viable: any XSS becomes full account takeover with a persistent credential.
+## OAuth and OpenID Connect
 
-## Multi-tenancy
+Prefer authorization code flows with PKCE using S256 where supported, including confidential clients following current security guidance. Use a maintained library and bind the callback to the initiating browser transaction; preserve state/nonce protections required by that library and protocol.
 
-- The tenant identifier comes from the server-side session, never from a request header, body field, or path segment the client controls.
-- Enforce the scope in one place — a repository layer, a query scope, or row-level security — rather than repeating a `WHERE` clause the next developer will forget.
-- Test cross-tenant access on every endpoint that accepts an identifier, plus search, export, file download, and webhook callbacks.
-- Shared caches, background jobs, and file storage paths must carry the tenant scope too. A cache key without the tenant is a cross-tenant read.
+Match registered redirect URIs exactly subject to the protocol's specific exceptions, and prevent open-redirect chains. Validate issuer, audience, signature, expiry and applicable nonce on ID tokens. Link identities by verified issuer and subject; email alone is not a universal identity or account-linking policy. Account linking is a sensitive authenticated action.
 
-## OAuth and third-party sign-in
+Check current protocol guidance and provider behavior before implementing refresh rotation, sender constraints or special redirect handling. Do not remove a library's protections because another mechanism appears to overlap them.
 
-- Validate the `state` parameter to prevent CSRF on the callback, and use PKCE for public clients.
-- Register exact redirect URIs. Wildcards and open redirects turn into token theft.
-- Verify the ID token's signature, issuer, audience, nonce, and expiry. Never trust profile data from an unverified source.
-- Match accounts on a verified, provider-stable subject identifier. Matching on an email address alone allows takeover when a provider does not verify emails.
+## Verification
 
-## Rate limiting and abuse
+Use synthetic accounts and objects for allowed/forbidden cases. Exercise the actual route or data policy rather than only its helper. Test membership removal, bulk paths and caches when relevant. Record static policy reasoning separately from observed responses; neither a matrix cell nor a scanner warning becomes a finding until intended and actual policy differ.
 
-Apply limits keyed by both identity and network origin, on: login, registration, password reset, verification codes, search, file upload, export, expensive computations, and any endpoint that sends an email or an SMS on demand.
+## Primary references
 
-Return `429` with a `Retry-After`, and make sure the limiter fails closed if its backing store is unavailable — an outage should not remove the brakes on credential stuffing.
-
-## Verification recipe
-
-For an authorization audit, work through a matrix rather than reading code randomly:
-
-```
-rows    = every endpoint that accepts an object identifier
-columns = anonymous | user-owner | user-other | other-tenant | staff | admin
-cells   = expected outcome (200 / 403 / 404) vs observed
-```
-
-Fill the matrix by tracing the code, or by testing with disposable accounts in an environment you are authorized to test. Every mismatch is a finding.
+- [OWASP Authorization Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/Authorization_Cheat_Sheet.html): policy design and enforcement.
+- [OWASP Authentication Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/Authentication_Cheat_Sheet.html): authentication and recovery controls.
+- [RFC 9700](https://www.rfc-editor.org/rfc/rfc9700.html): current OAuth security best practice; consult the applicable section and provider contract.

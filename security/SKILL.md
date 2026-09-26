@@ -1,99 +1,80 @@
 ---
 name: security
-description: Perform evidence-based application security work — threat modeling, code auditing, exploitability analysis, secure implementation, incident triage, and remediation — across web apps, APIs, authentication, sessions, authorization, databases, file uploads, third-party integrations, AI agents and LLM tooling, WordPress, cloud configuration, CI/CD, and dependencies. Use when auditing code or architecture, investigating a suspected vulnerability, hardening a feature, reviewing OWASP risks, designing sensitive flows, judging whether a finding is real, or implementing security-critical changes involving user data, secrets, permissions, payments, admin surfaces, or untrusted input.
+description: Audit application code and architecture, investigate suspected vulnerabilities, threat-model sensitive features, and implement security fixes. Use for explicit security reviews, exploitability analysis, incident triage, or changes to authentication, authorization, secrets, tenant isolation, injection defenses, file handling, and privileged AI tools.
 ---
 
-# Security
+# Application Security
 
-Act as a senior application security engineer with production accountability. Find what is actually exploitable, prove it with a trace, fix the root cause, and never break intended behavior in the process.
-
-Two failures are equally bad: missing a real vulnerability, and flooding the user with theoretical findings that waste the time they needed for the real one.
+Find and reduce concrete risk within the requested scope. Trace how an actor crosses a security boundary, establish the consequence, and distinguish demonstrated vulnerabilities from unresolved hypotheses and hardening opportunities. A scoped review cannot certify that a system is secure.
 
 ## Operating rules
 
-1. **A finding requires a path, not a pattern.** Attacker-controlled input, a reachable route from that input to a dangerous sink, and the absence of an effective control. Missing any of the three, it is a hardening note, not a vulnerability.
-2. **Read the actual code, config, and versions.** Never assert that a framework escapes, sanitizes, or authorizes something by reputation. Open it.
-3. **Non-destructive verification by default.** Trace, read, and reason. Do not run active exploitation against live or third-party systems without explicit written authorization from someone who owns them.
-4. **Never output live secrets or real personal data.** Redact. If you found a real credential, say where it is and that it must be rotated — do not reproduce it.
-5. **Severity reflects impact multiplied by realistic exploitability.** Not the scariness of the function name.
-6. **Fix the cause, not the symptom.** A blocklist added to one endpoint when the sink is unsafe leaves the other nine callers exploitable.
-7. **Fail closed.** When a check errors, times out, or receives an unexpected shape, the answer is deny.
-8. **Say what you did not check.** An audit with an unstated scope reads as a clean bill of health, and that is how breaches get signed off.
+1. **Match the requested mode.** Audit and explain without unrequested edits; implement when asked to fix; prioritize containment and evidence during an incident. Do not turn ordinary development into a full audit solely because user input exists.
+2. **Follow evidence.** Read actual code, policy, configuration, and versions. A dangerous function or scanner match starts an investigation; it is not itself a finding. Verify version-sensitive advice against primary documentation when needed.
+3. **Identify the violated invariant.** Use actor → entry → control/data path → sensitive operation → impact. Injection is only one shape: unauthorized reads, race conditions, exposed credentials, and insecure defaults can violate an invariant without a classic input-to-sink chain.
+4. **Respect the testing boundary.** Local analysis of provided artifacts and isolated tests are normally part of the request. Active tests must stay within authorized targets, accounts, methods, and load. Clarify missing scope before testing live or third-party systems; do not re-request authorization already supplied.
+5. **Minimize effects and evidence.** Use synthetic fixtures and disposable accounts where possible. Do not read another person's record simply to prove access. Stop an active test if it exposes unexpected real data, crosses scope, or causes unintended state change; retain only necessary redacted evidence.
+6. **Separate confidence from severity.** Estimate impact and realistic exploitation conditions; label whether each is observed or inferred. Keep unresolved high-impact questions visible without presenting them as confirmed defects.
+7. **Deny unauthorized access.** Errors in authentication or authorization must not grant protected access. Availability controls, rate-limit fallbacks, and incident containment need an explicit threat/availability tradeoff rather than a universal fail-closed rule.
+8. **Preserve intended behavior.** Fix the policy or unsafe operation at the narrowest complete boundary, including alternate callers. A security change that removes a legitimate user flow without agreement is incomplete.
 
 ## Procedure
 
-1. **Scope.** Name the assets worth protecting, the attacker profiles in play (anonymous, authenticated user, other tenant, low-privilege staff, compromised dependency, malicious content author), and what is explicitly out of scope.
-2. **Map.** Enumerate entry points (routes, forms, webhooks, uploads, jobs, CLI, admin, third-party callbacks), trust boundaries, privileged operations, and sensitive data stores.
-3. **Trace.** For each entry point, follow attacker-controlled data through parsing, validation, normalization, authorization, storage, rendering, logging, and side effects. Note every place the value changes shape — encoding and decoding boundaries are where controls get bypassed.
-4. **Test the invariant server-side.** Ignore what the UI allows. Ask what a raw request can do.
-5. **Establish reachability.** Which role can reach it? What preconditions are required? Is it in a code path that actually runs? Downgrade or drop anything you cannot reach.
-6. **Rank** by impact and practical exploitability, and put the list in that order.
-7. **Remediate** at the root cause with concrete code, and add a test or a check that proves the fix.
-8. **Re-check the neighborhood:** alternate routes to the same sink, other encodings, other object types, the failure path, the cache, the logs, and backward compatibility.
+1. **Scope.** Identify the requested output, code revision or environment, assets, relevant attacker roles, allowed testing, and material exclusions. Scale detail to the task.
+2. **Map.** Locate affected entry points and trust boundaries: routes, jobs, exports, storage, callbacks, privileged tools, and configuration. Start where exposure and impact are greatest, not with a fixed vulnerability checklist.
+3. **Trace.** Follow access decisions, untrusted input, state transitions, and sensitive outputs. Check normalization, alternate routes, caches, failures, and concurrency when they affect the invariant.
+4. **Challenge the hypothesis.** Look for effective upstream controls, dead code, safe APIs, deployment conditions, and legitimate policy exceptions. Record missing evidence instead of inventing reachability or silently treating it as safety.
+5. **Verify proportionately.** Prefer code/config evidence and isolated tests. For an authorized active check, use the smallest observable effect, cap requests, and define a stop condition. A timeout is not a failed mutation; reconcile before retrying.
+6. **Rank and report.** Group duplicate symptoms by root cause, retain precise locations, state confidence separately, and prioritize practical impact. Give a specific next check for unresolved hypotheses.
+7. **Remediate if requested.** Implement the smallest complete correction. Verify that prohibited behavior is blocked and intended behavior still succeeds. Use meaningful regression checks where the failure can be exercised safely.
+8. **Close coverage.** State what was reviewed, which tests actually ran, deployment-dependent assumptions, residual risk, and outstanding work. Do not claim that all possible paths are safe.
 
-## Priority sweep
+## Investigation routing
 
-When time is limited, audit in this order. This is where real incidents come from, most often first.
-
-1. **Broken access control** — missing ownership checks, tenant leakage, forced browsing, privilege escalation, mass assignment.
-2. **Authentication and session handling** — weak reset flows, missing rotation, token validation gaps, credential stuffing exposure.
-3. **Injection into a dangerous sink** — SQL, command, template, HTML, LDAP, or dynamic evaluation.
-4. **Secrets and data exposure** — keys in the repo or client bundle, verbose errors, over-broad API responses, unprotected backups and logs.
-5. **Server-side request forgery and unsafe outbound calls** — especially anything that fetches a user-supplied URL.
-6. **File upload and file serving** — type confusion, path traversal, executable storage paths.
-7. **Business logic** — negative quantities, price manipulation, race conditions on balance or stock, replayed webhooks, out-of-order state transitions.
-8. **Supply chain and configuration** — unpinned or abandoned dependencies, over-permissive CI, public storage buckets, default credentials.
+| Task or evidence | Next focus |
+| --- | --- |
+| Object IDs, roles, tenants, exports | Access policy per actor/action/resource; scoped reads, writes, counts and caches |
+| Login, recovery, session or token changes | Authentication transitions, revocation, reauthentication and abuse limits |
+| Attacker-controlled values at interpreters | Context-specific safe APIs, parsing/encoding boundaries and reachable output |
+| Balance, stock, refund, invitation or workflow abuse | Invariants under repeats, concurrency and out-of-order transitions |
+| Uploads, user URLs or external callbacks | Isolation, bounded resource use, destination validation and identity |
+| Secrets, dependencies or build credentials | Actual exposure, executing environment, credential scope and supply-chain path |
+| Agent tools processing retrieved content | Instruction/data separation and independently enforced tool permissions |
 
 ## Reference map
 
 | When the task involves | Read |
 | --- | --- |
-| Scoping an audit, attacker modeling, AI/agent and prompt-injection risk | [threat-model.md](references/threat-model.md) |
-| Login, sessions, tokens, roles, ownership, tenancy, privilege | [access-control.md](references/access-control.md) |
-| XSS, SQL, command, template injection, CSRF, SSRF, deserialization | [injection.md](references/injection.md) |
-| Uploads, cryptography, personal data, logging, retention | [data-protection.md](references/data-protection.md) |
-| WordPress, WooCommerce, plugins, themes, `wp-admin` | [wordpress.md](references/wordpress.md) |
-| Dependencies, CI/CD, secrets, headers, cloud and infrastructure | [supply-chain.md](references/supply-chain.md) |
-| Writing findings, severity, proof of concept, verification | [reporting.md](references/reporting.md) |
+| Threat modeling, business logic, AI agents and prompt injection | [threat-model.md](references/threat-model.md) |
+| Authentication, sessions, OAuth, access policy and tenancy | [access-control.md](references/access-control.md) |
+| XSS, SQL/command injection, CSRF, SSRF and unsafe parsing | [injection.md](references/injection.md) |
+| Uploads, cryptography, sensitive data and logging | [data-protection.md](references/data-protection.md) |
+| WordPress and WooCommerce code or compromise | [wordpress.md](references/wordpress.md) |
+| Dependencies, CI/CD, secrets, headers and infrastructure | [supply-chain.md](references/supply-chain.md) |
+| Findings, confidence, prioritization and scope statements | [reporting.md](references/reporting.md) |
 
-Pair with `web-development` for the implementation of fixes.
+## Failure modes
 
-## Judging a finding
-
-Ask all five. A "no" anywhere means downgrade or drop it.
-
-1. **Source:** can an attacker actually control this value?
-2. **Path:** does it reach the sink without an effective control in between?
-3. **Sink:** does that sink do something dangerous with it?
-4. **Precondition:** what access or timing is required, and how realistic is it?
-5. **Impact:** what does the attacker gain — data, privilege, money, availability, integrity, or persistence?
-
-Elevate business-logic and authorization flaws even when no classic injection primitive exists. A missing ownership check that exposes every customer record outranks a reflected XSS behind an admin login.
-
-## Anti-patterns in security work
-
-| Anti-pattern | Correct move |
+| Failure | Correct move |
 | --- | --- |
-| Reporting every `eval`, `innerHTML`, or raw query as critical | Prove attacker control and reachability first |
-| Recommending a WAF or CSP as the fix for injection | Fix the sink. Those are defense in depth |
-| A blocklist of bad strings | Validate against an allowlist of what is permitted |
-| Escaping input on the way in | Validate on input, escape on output for that specific context |
-| Rolling custom cryptography or a custom token format | Use a maintained, standard implementation |
-| "Fixed" without a regression test | Add a test that fails against the vulnerable version |
-| Auditing the frontend for authorization | Authorization is only real on the server |
-| Pasting a working exploit for a live system | Prove with a minimal, redacted trace |
+| Every raw query is reported as injection | Trace parameterization, attacker control and reachability |
+| Inability to run an exploit is treated as no vulnerability | Assess static evidence and label missing runtime conditions |
+| A public mutation is automatically called an auth bypass | Establish the intended policy and anti-abuse requirements |
+| A fixed severity is assigned from a vulnerability label | Describe privileges, affected data, scope and practical consequence |
+| A prompt tells a model to ignore malicious text | Enforce capabilities and resource permissions outside the model too |
+| An audit log captures full tokens and request bodies | Keep redacted event metadata with controlled retention |
+| Hardening breaks login, embeds, recovery or integrations | Test intended flows and explain the control's compatibility cost |
 
-## Quality gate
+## Definition of done
 
-Before delivering, confirm:
+Apply to the requested mode; an audit does not require unrequested remediation.
 
-- [ ] Every finding names the entry point, the path, the sink, and the impact.
-- [ ] Severity and confidence are stated separately, and neither is inflated.
-- [ ] Authorization was tested on objects, not only on routes.
-- [ ] Every untrusted input traced in scope terminates in a safe sink.
-- [ ] No live secret, token, or personal record appears in the output.
-- [ ] Fixes are root-cause, cover alternate paths, and include verification.
-- [ ] Anything not tested, not reachable in this environment, or dependent on deployment configuration is labeled as such.
+- [ ] Findings identify a violated invariant, relevant path, evidence and realistic impact.
+- [ ] Severity, confidence and deployment assumptions are distinguishable.
+- [ ] Unresolved hypotheses and hardening notes are separate from demonstrated findings.
+- [ ] Testing stayed within scope and the report contains no live secrets or unnecessary personal data.
+- [ ] Requested fixes cover relevant alternate paths and preserve authorized behavior, with actual verification or a stated limitation.
+- [ ] Coverage and remaining uncertainty are explicit; no blanket security assurance is implied.
 
 ---
 

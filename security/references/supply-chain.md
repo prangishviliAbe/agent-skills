@@ -1,74 +1,60 @@
 # Dependencies, CI/CD, secrets, and infrastructure
 
-Read when auditing dependencies, build pipelines, deployment configuration, or cloud and hosting setup.
+Read when reviewing the software supply chain, deployment configuration or hosting controls. Focus on where code executes and what authority it receives.
 
-## Dependencies
+## Dependency risk
 
-- Commit the lockfile and install with the frozen/CI variant everywhere, including production builds. A floating resolve means the artifact you tested is not the artifact you shipped.
-- Judge a dependency before adding it: maintenance activity, release cadence, the size of its own dependency tree, and whether it needs install scripts or network access.
-- Separate reachable risk from scanner noise. A critical advisory in a package used only by a dev-time tool is not the same as one in the request path. State which it is.
-- Prefer a supported major version with a boring upgrade cadence over an emergency jump across three majors during an incident.
-- Watch for typosquatting and hallucinated package names — verify the exact name and publisher of anything unfamiliar, especially names suggested by a code generator.
-- Disable or review lifecycle install scripts where the ecosystem allows; they run arbitrary code at install time, on developer machines and in CI.
-- Pin container base images by digest, rebuild on a schedule so patches land, and keep the runtime layer minimal.
+Inspect the resolved version and advisory range, affected feature/configuration, execution environment, reachable path and available fix. A dev dependency may execute with CI secrets or write production artifacts; it is not low risk solely because it is absent from runtime dependencies.
 
-## CI/CD
+Use committed lockfiles and deterministic install modes for applications where the ecosystem supports them. Lockfiles and container digests improve reproducibility, but do not prove trust or apply future patches. Pair pinning with reviewed updates and artifact provenance where available.
 
-The pipeline holds production credentials and writes production artifacts. It is a production system.
+Verify unfamiliar package names and publishers, lifecycle scripts and transitive execution. Installing a repository or running its tests may execute code; inspect relevant scripts before exposing credentials or network access. Do not blindly run a package manager's force-fix option: it can alter major versions or leave the affected feature reachable.
 
-- Workflows triggered by untrusted contributions must not receive secrets and must not run untrusted code with elevated tokens. Separate the "build the fork's code" job from the "deploy with credentials" job.
-- Grant the minimum token permissions per job, not a broad default at the workflow level.
-- Pin third-party actions and shared pipeline steps to an immutable reference, not a moving tag.
-- Never echo secrets, and never let a debug mode print the environment. Masking is a fallback, not a design.
-- Protect the deploy path: required review on the release branch, and no direct pushes that bypass checks.
-- Keep a secret scanner and a dependency audit in the pipeline, and treat a scanner failure as a real failure rather than something to click past.
+Separate confirmed vulnerable use from unproven exposure, unsupported components and defense-in-depth recommendations. Scanner output is an input to this analysis, not the final finding.
 
-## Secrets
+## Build and release trust
 
-- Store in a secret manager or the platform's encrypted store. Not the repo, not the client bundle, not a public environment prefix, not a log line, not a screenshot in a ticket.
-- A secret that was ever committed is compromised: it lives in the history and in every clone. Rotate it; removing the line is not remediation.
-- Scope each credential to one service and the least privilege that works. One shared root token means one compromise is total.
-- Give every secret an owner, an expiry, and a rotation procedure that has been executed at least once.
-- Verify the client bundle: search the built output for anything resembling a key before shipping.
+Trace contribution → workflow trigger → checkout revision → command → token/secrets → artifact → deployment. Check whether untrusted pull request content, issue text, branch names or artifacts can become shell syntax or privileged code.
 
-## HTTP security headers
+- Give jobs the smallest needed token scopes; isolate untrusted builds from deployment identities.
+- Review triggers that run with base-repository authority, especially if they check out or execute a contributor's code.
+- Pin third-party executable workflow dependencies to immutable identities and use a reviewed update process.
+- Do not interpolate untrusted expression values into shell source; pass them as data using the shell's supported safe mechanism.
+- Validate artifacts and their producer/revision before promotion. Cache or artifact reuse can cross a trust boundary even when the deploy job itself contains no untrusted checkout.
+- Inspect self-hosted runner persistence and access to other workloads. An ephemeral process is not necessarily an isolated machine.
 
-Set what the application actually needs, and verify the response rather than trusting the configuration file.
+Suggest branch protection or environment gates when they address the actual release policy; a skill must not silently change repository governance or block already-authorized work on invented rules.
 
-| Header | Purpose | Note |
-| --- | --- | --- |
-| `Content-Security-Policy` | Limits script sources and reduces XSS impact | Nonce or hash based; `unsafe-inline` on scripts negates most of the benefit |
-| `Strict-Transport-Security` | Forces HTTPS | Add subdomains and preload only once you are certain |
-| `X-Content-Type-Options: nosniff` | Stops content-type guessing | Always |
-| `X-Frame-Options` or CSP `frame-ancestors` | Clickjacking | `frame-ancestors` is the modern form |
-| `Referrer-Policy` | Stops leaking URLs and tokens to third parties | `strict-origin-when-cross-origin` is a sane default |
-| `Permissions-Policy` | Disables unused device APIs | Deny what the app does not use |
-| `Cross-Origin-Opener-Policy` / `Resource-Policy` | Isolates the browsing context | Useful for sensitive apps |
+## Credential exposure
 
-Headers reduce impact. They never replace fixing the underlying flaw.
+Inspect current files, generated bundles and history when they are in scope using redacted scanner output or controlled local review. Do not dump git history or environment values into the conversation to search for secrets.
 
-## CORS
+Determine whether a discovered value is a live secret, public identifier, placeholder or uncertain candidate. Report location and privilege/exposure context without reproducing the value. Never test a credential against an unrelated service just to classify it.
 
-- Allowlist exact origins. Never reflect the request's `Origin` header while allowing credentials — that is equivalent to allowing everyone.
-- `Access-Control-Allow-Origin: *` with credentials is rejected by browsers, and attempting to work around it is a sign the design is wrong.
-- CORS protects browser callers only. It is not authorization, and a server-side client ignores it entirely.
+For a credible exposure, identify affected identity, revoke/rotate within authority, update dependents, and check relevant use logs. Removing a file or rewriting history does not revoke credentials. History rewriting is a separate disruptive action and needs its own scoped decision.
+
+## Headers and cross-origin policy
+
+Verify actual responses and the flows affected by configuration. Missing a header alone usually supports a hardening recommendation; establish a concrete consequence before asserting a vulnerability.
+
+| Control | Evaluate |
+| --- | --- |
+| CSP | Real script/style needs, nonce/hash handling and rollout; reports may contain sensitive URLs |
+| HSTS | HTTPS readiness of affected hosts, subdomains and consequences of preload |
+| frame-ancestors / X-Frame-Options | Sensitive framed actions and legitimate embedding |
+| nosniff | Correct media types and user-controlled content |
+| Referrer-Policy | Token-bearing URLs and necessary integrations |
+| COOP / COEP / CORP | Isolation goals and compatibility with sign-in popups, embeds and cross-origin resources |
+| CORS | Exact permitted origins and credentials; reflection is unsafe when unrestricted |
+
+CORS affects browser access to responses, not whether a server-side attacker may send a request. It does not replace authentication, authorization or CSRF controls. An intentional wildcard public read API is not inherently a vulnerability.
 
 ## Cloud and hosting
 
-- Storage buckets private by default; audit for public listing and public objects, including ones created by a build step.
-- Network boundaries: databases and internal services should not be reachable from the internet. Verify from outside rather than assuming.
-- Instance metadata endpoints are a favorite SSRF target — restrict access and require the hardened version where the provider offers one.
-- Identity: per-service roles with narrow permissions, no long-lived static keys where a workload identity is available.
-- Enable provider-side audit logging, and confirm it is retained somewhere the compromised account cannot delete.
-- Separate environments at the account or project level, not just by naming convention.
-- Turn on protection against accidental deletion for data stores, and verify the restore path works.
+Check effective policies, not names: public storage access, network reachability, workload identity, metadata access, cross-account grants, audit retention and restoration ability. A private subnet or private bucket label is insufficient evidence without effective routes and permissions.
 
-## A pragmatic audit sequence
+Use authorized, bounded tests; do not scan broad address ranges or probe providers merely because configuration suggests possible exposure. Keep infrastructure changes, secret rotation and deletion within the requested scope.
 
-1. `git log -p` for secrets in history, and a secret scanner over the full history.
-2. Manifest and lockfile: unmaintained packages, known advisories, install scripts.
-3. Built client bundle: any key, internal URL, or source map exposing server code.
-4. Response headers on a real request, from outside the network.
-5. A deliberately broken URL: what does the error page reveal?
-6. Storage and database reachability from an untrusted network.
-7. CI configuration: token scope, trigger conditions, third-party step pinning.
+## Primary reference
+
+[GitHub Actions secure use reference](https://docs.github.com/en/actions/reference/security/secure-use) covers workflow expression injection, permissions, untrusted code and dependency pinning. Adapt those mechanisms to the actual CI platform.

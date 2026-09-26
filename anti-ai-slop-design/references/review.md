@@ -1,80 +1,76 @@
-# Reviewing visual work
+# Visual review without taste disguised as fact
 
-Read when critiquing a design, a page, a component, or generated visual output.
+Read for critique of a page, screen, component, or generated visual. Judge it against the brief and intended audience.
 
-## Order of the passes
+## Define the evidence boundary
 
-Do not comment on spacing before you know whether the page communicates. Each pass gates the next.
+State what was available: screenshot, design file, source, rendered interface, or a set of assets. Review only observable properties as facts.
 
-**1. Squint pass.** Blur your eyes, or scale the page to 25%. What is still visible is the real hierarchy. If the biggest visual weight is a decorative gradient rather than the message and the primary action, stop here — nothing else matters yet.
+A screenshot may suggest weak contrast but cannot always establish exact color values, hit areas, semantics, focus behavior, or responsive rules. A design file supplies intended values, not proof of production behavior. Note the missing evidence and the smallest useful check.
 
-**2. Five-second pass.** Look, then look away. What is this? Who is it for? What can I do? What matters most? Every unanswered question is a hierarchy finding, not a styling finding.
+## Useful review passes
 
-**3. Specificity pass.** Could this design be lifted onto a competitor's product with only a logo swap? If yes, the direction is generic. Name the missing thesis, not the individual elements.
+Adapt these to the size of the task rather than requiring a full audit for every edit:
 
-**4. Content pass.** Is the copy specific or interchangeable? Is any evidence fabricated? Do buttons name their outcome? Would a domain expert recognize their own world here?
+1. **Communication:** What is this, what matters, and what can the user do? Reduced-scale or squint inspection can reveal emphasis, but it is a heuristic rather than a user study.
+2. **Brief and identity:** Does the work express the requested character and preserve approved brand constraints? Familiar components are allowed.
+3. **Content and trust:** Are the claims specific and supported? Are samples and conceptual images visibly distinguished from evidence?
+4. **Composition:** Do grouping, alignment, rhythm, measure, and relative emphasis fit the actual content?
+5. **System:** Are equivalent roles consistent? Multiple radii, colors, or fonts can be intentional; identify a conflicting use rather than counting values.
+6. **Reality:** Inspect relevant content extremes, missing assets, compact layouts, and themes/locales actually supported.
+7. **Accessibility and operation:** Measure applicable properties and operate affected controls where possible; use [craft.md](craft.md) for requirements and distinctions.
+8. **Finish:** Correct optical alignment, awkward wrapping, crop, icon weight, and other details that remain visible in the delivered artifact.
 
-**5. System pass.** Type roles, color roles, spacing scale, radius, borders, icons, elevation — one vocabulary or an accumulation? List the drift concretely: "three radii in use: 6, 12, 9999".
+Continue independent useful checks even when a serious issue appears; defer polish likely to be invalidated by its correction.
 
-**6. Reality pass.** Longest string, empty state, missing image, 320px width, 200% zoom, dark mode, translated locale. This is where polished-looking work usually breaks.
+## Prioritize by consequence
 
-**7. Accessibility pass.** Measured contrast on real backgrounds, visible focus, target sizes, meaning that survives without color.
+| Type | Evidence to seek |
+| --- | --- |
+| Blocker | Important content or an essential action is demonstrably unavailable/unreadable |
+| High | A major task, trust signal, or supplied brand requirement is materially harmed |
+| Medium | Meaningful confusion, inconsistency, or reading effort |
+| Polish | Local refinement with limited task impact |
+| Preference | Another defensible aesthetic with no demonstrated defect |
 
-**8. Detail pass.** Optical alignment, rhythm, orphans, icon weight, hairline consistency, transition timing. Only now.
+Severity and certainty are separate. Describe confidence as observed, inferred, or unverified. Do not invent affected-user counts, conversion effects, or research findings.
 
 ## Finding format
 
+Use as much of this structure as the finding needs:
+
+```text
+Issue:    Event date loses emphasis against the hero artwork
+Where:    Main event header, compact layout
+Observed: In the supplied frame, the date sits within a visually busy image region
+Impact:   Attendees may miss information needed before booking; this is a readability hypothesis
+Fix:      Move the date to a stable text area or adjust the image treatment locally
+Verify:   Inspect actual contrast and hierarchy at the compact rendered size
+Preserve:  Approved artwork, palette, and expressive title treatment
 ```
-[Blocker | High | Medium | Polish] Short statement of what fails
-Where:    the specific element or section
-Observed: the concrete, measurable fact (a value, a ratio, a behavior)
-Why:      what it costs the user or the product
-Fix:      the smallest strong correction
-```
 
-"Observed" must be a fact, not an adjective. `body text #9aa0a6 on #ffffff = 2.9:1` is a finding. "The gray feels light" is a preference.
+For measured claims, state the actual value, method, and applicable requirement. Do not invent measurements to make a critique appear objective.
 
-## Separating evidence from preference
+## Common false positives
 
-Both belong in a review; label which is which.
-
-| Evidence | Preference |
+| Claim | Better assessment |
 | --- | --- |
-| Contrast ratio below AA | "I would use a warmer neutral" |
-| Target smaller than 44px on touch | "The buttons could be rounder" |
-| Heading breaks into a one-word orphan at 390px | "I would size the heading down a step" |
-| Primary action below the fold on a phone | "The hero could be shorter" |
-| Three different radii with no rule | "I prefer sharper corners" |
+| "Three cards and a gradient prove AI slop" | Evaluate the cards' comparison role, palette fit, content, and execution |
+| "The CTA below the fold is a failure" | Check whether useful context precedes it and the action is discoverable |
+| "Every control must be 44px for AA" | Check the 24px AA minimum and exceptions; distinguish a larger touch recommendation |
+| "The design would work for a competitor" | Determine whether identity is adequate for this product; standard utility patterns are beneficial |
+| "All expressive effects should go" | Preserve the requested style and correct only demonstrated harm |
+| "A one-word heading line is wrong" | Evaluate intentional composition and actual readability |
+| "This looks old" | Identify a specific hierarchy, readability, brand, or interaction problem |
 
-Lead with the evidence. Offer the preferences at the end, marked as such, and drop them if the current solution already serves the brief.
+## Generated visual review
 
-## Reviewing generated images and illustration
+Inspect text, logos, people, object geometry, reflections, repeated elements, and consistency at final display size. Check whether the visual communicates a real capability, a clearly labeled concept, or atmosphere.
 
-- Check hands, eyes, text, logos, reflections, jewellery, and repeated background elements — the usual failure points.
-- Check whether the image does a job (evidence, atmosphere, instruction, recognition) or merely fills a slot.
-- Check consistency across the set: one light direction, one grade, one crop family, one level of stylization.
-- Check honesty: does it depict a product capability, a person, or a result that does not exist?
-- Check that essential information is not carried only by the image.
+A generated image is not inherently a defect. The problem is an artifact, mismatch, or misleading factual implication. Prefer the smallest effective correction or a more suitable source asset.
 
-## Anti-patterns in reviewing
+## Deliver the review
 
-| Anti-pattern | Instead |
-| --- | --- |
-| "Feels dated" | Name the mechanism: contrast, density, type roles, or rhythm |
-| Rewriting the design in your own taste | Correct what fails against the brief |
-| Forty unranked notes | Three blockers first, the rest grouped |
-| Aesthetic notes ahead of a broken flow | Always order by user impact |
-| Flattening an expressive direction into a safe one | Execute the direction better, not smaller |
-| Reviewing a static frame and asserting behavior | Flag the states you could not see |
+Lead with the highest-impact corrections and preserve effective choices. Include optional alternatives only when they help the user decide. End with material verification limits rather than a blanket quality score or a promise of conversion gains.
 
-## Closing the review
-
-```
-Fix first:  <blockers, each with the smallest correction>
-Then:       <high-impact items>
-Later:      <polish, batched>
-Preserve:   <what is working and should survive the revision>
-Thesis:     <the direction as you read it — if you cannot state it, that is the top finding>
-```
-
-The "Thesis" line is the most useful part of the review. If neither you nor the designer can state in one sentence why the product looks this way, the design has no direction yet, and every other note is premature.
+Do not redesign the work unless that is requested. For an implementation task, make the authorized corrections and verify them instead of stopping at a critique.

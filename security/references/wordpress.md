@@ -1,97 +1,70 @@
-# WordPress security
+# WordPress and WooCommerce security
 
-Read when auditing or hardening a WordPress site, plugin, or theme. Most WordPress compromises are not core exploits; they are missing capability checks, unsanitized input in a plugin, and abandoned dependencies.
+Read for WordPress site, plugin, theme, REST/AJAX endpoint or compromise investigation. Record relevant WordPress/PHP/plugin versions, intended roles, storage mode and deployment controls; ecosystem reputation is not evidence about a particular installation.
 
-## The four gates, every time
+## Discover entry points
 
-Every request that changes state passes all four. Missing any one is a finding.
+Search for registrations and follow callbacks; use the available text-search tool and inspect the match in context. Useful terms:
 
-```php
-// 1. CSRF
-check_admin_referer( 'prefix_action' );        // forms
-check_ajax_referer( 'prefix_action', 'nonce' ); // wp_ajax
-// REST: 'wp_rest' nonce, handled by the REST cookie authentication layer
+| Surface | Search terms |
+| --- | --- |
+| AJAX | wp_ajax_, wp_ajax_nopriv_ |
+| Forms and REST | admin_post_, admin_post_nopriv_, register_rest_route, permission_callback |
+| Content and lifecycle | add_shortcode, register_block_type, save_post, init, cron hook registrations |
+| Data/side effects | $wpdb, update_option, update_user_meta, wp_remote_get, wp_remote_post, file operations |
+| Output/parsing | echo, print, wp_kses, unserialize, eval, template construction |
 
-// 2. Authorization — capability AND object
-if ( ! current_user_can( 'edit_post', $post_id ) ) {
-	wp_send_json_error( array( 'message' => 'Forbidden' ), 403 );
-}
+A registration or unsafe-looking function is a lead. Trace the initiating actor, actual input, effective controls and impact before reporting it.
 
-// 3. Validation and sanitization
-$email = sanitize_email( wp_unslash( $_POST['email'] ?? '' ) );
-if ( ! is_email( $email ) ) {
-	wp_send_json_error( array( 'message' => 'Invalid email' ), 400 );
-}
+## Authentication, nonce, and capability distinctions
 
-// 4. Escaping at output
-echo esc_html( $email );
-```
+WordPress nonces mitigate CSRF in applicable flows; they are not authentication, authorization, proof of origin or single-use replay protection. Logged-out nonce behavior needs particular attention when used in public forms. Never infer a user's capability from possessing a nonce.
 
-**A nonce is not authorization.** It proves the request came from your page, not that the user is allowed to perform the action. Every real-world "any subscriber can change site options" vulnerability is a nonce check with no capability check.
+For cookie-authenticated forms/AJAX, check the action nonce and intended capability. For cookie-authenticated REST work, inspect the REST authentication layer and permission_callback. Application Passwords and signed provider webhooks use different identity mechanisms; they do not universally need a UI nonce.
 
-## Audit checklist
+Use object-aware meta capabilities such as current_user_can('edit_post', $id) when that is the policy. Site-wide capabilities do not require an invented object argument. For commerce customer operations, preserve the supported ownership or guest-order authorization mechanism instead of imposing an administrative capability.
 
-**Entry points to enumerate**
+Public endpoints and public mutations can be intentional. Check their policy, input limits, abuse controls and returned data; __return_true alone is not an auth-bypass finding.
 
-```bash
-grep -rn "add_action( *'wp_ajax" .           # authenticated AJAX
-grep -rn "add_action( *'wp_ajax_nopriv"      # UNAUTHENTICATED AJAX — audit every one
-grep -rn "register_rest_route"               # REST routes
-grep -rn "admin_post_\|admin_post_nopriv_"   # form handlers
-grep -rn "add_shortcode\|do_shortcode"       # shortcode attributes are user input
-grep -rn "wp_schedule_event\|add_action( *'init'"  # cron and boot-time work
-```
+## Input, SQL, and output
 
-**Dangerous patterns to grep**
+Validate types before applying string sanitizers. Unslash superglobal input where appropriate, not already-parsed data indiscriminately. Select permitted fields, option names and meta keys; a sanitized option name can still refer to a privileged setting. Distinguish normalization from rejection and business rules.
 
-```bash
-grep -rn '\$wpdb->query\|\$wpdb->get_\|\$wpdb->prepare' .   # raw SQL: is every one prepared?
-grep -rn "__return_true" .                                   # permission_callback bypass
-grep -rn 'echo \$\|print \$' .                               # unescaped output
-grep -rn '\$_GET\|\$_POST\|\$_REQUEST\|\$_COOKIE' .          # raw superglobals
-grep -rn 'unserialize\|eval(\|extract(\|create_function' .   # code execution sinks
-grep -rn 'file_get_contents( *\$\|wp_remote_get( *\$' .      # potential SSRF
-grep -rn 'move_uploaded_file\|wp_handle_upload' .            # upload paths
-```
+Use data APIs where suitable and wpdb::prepare for dynamic SQL values. WordPress 6.2+ supports %i identifiers; on older supported versions use fixed/mapped identifiers. Allowlist which identifiers may be selected regardless of quoting. Look for unsafe fragments before or after preparation, and check authorization separately from SQL injection.
 
-Every hit is a question, not a finding. Trace it.
+Encode output by its actual HTML/attribute/URL context. Rich HTML needs a configured allowlist sanitizer; scripts and embedded JSON need safe serialization. A value saved by an administrator can still reach another principal, but only report XSS after identifying executable context and a realistic actor path.
 
-**Per finding, verify:** is the input attacker-controlled, is the path reachable by a role lower than the one intended, and is there a genuine control in between.
+## High-value invariants
 
-## Common WordPress vulnerability shapes
+| Operation | Verify |
+| --- | --- |
+| User/meta or option update | Caller cannot choose privileged keys or elevate roles |
+| File upload/read/delete | Allowed format, private-object access, path containment and safe serving |
+| REST serialization | Permitted fields only, including metadata registered for REST exposure |
+| User-provided outbound URL | Safe destination handling, redirects and bounded response processing |
+| Order/payment/refund | Correct order/provider/account, signature, amount/currency, state and replay safety |
+| Save/cron handler | Intended initiating authority, no unintended recursion or duplicate effects |
+| Multisite operation | Correct site/network scope and restoration after context switches |
 
-| Shape | What it looks like | Fix |
-| --- | --- | --- |
-| Missing capability check | `wp_ajax_` handler that trusts a nonce only | Add `current_user_can()` with the object ID |
-| `nopriv` handler doing privileged work | `wp_ajax_nopriv_save_settings` | Remove the `nopriv` registration, or restrict it to genuinely public work |
-| Public REST mutation | `'permission_callback' => '__return_true'` on POST/PUT/DELETE | A real capability plus ownership check |
-| SQL injection | `$wpdb->get_results( "... WHERE id = $id" )` | `$wpdb->prepare()` with placeholders |
-| Stored XSS | Option or meta echoed without escaping in admin | `esc_html()` / `esc_attr()` at output, `wp_kses_post()` for rich text |
-| Arbitrary option update | A handler that accepts an option name from the request | Allowlist the option keys |
-| Arbitrary file read or delete | A path parameter passed to a file function | Resolve and confirm containment in a fixed base directory |
-| Privilege escalation via meta | `update_user_meta` with a key from input, reaching `wp_capabilities` | Allowlist meta keys; never let input choose the key |
-| Unrestricted upload | `wp_handle_upload` with `test_type => false` | Keep type checking on; validate extension, detected type, and structure |
-| Data exposure | A REST route returning full user objects | Return only the fields the caller needs |
+Use WooCommerce CRUD and supported authorization APIs; direct order post-meta assumptions can fail with HPOS. Verify the installed checkout architecture and relevant alternate routes, not only one admin screen.
 
-## Site hardening
+## Hardening with compatibility
 
-- Remove, do not merely deactivate, unused plugins and themes. Deactivated code is still reachable in some attack paths and still needs updating.
-- Prefer plugins that are actively maintained. Check the last update date, the open-issue trail, and whether the vendor responds to security reports. An abandoned plugin with 100k installs is a scheduled incident.
-- Keep automatic updates on for security releases, with a staging environment for major ones.
-- Disable file editing in the admin: `define( 'DISALLOW_FILE_EDIT', true );`
-- Turn off debug output in production: `WP_DEBUG` and `WP_DEBUG_DISPLAY` false, `WP_DEBUG_LOG` to a file outside the web root if used at all.
-- Disable XML-RPC unless something genuinely needs it; it is a standing brute-force and amplification surface.
-- Block PHP execution inside `wp-content/uploads` at the web-server level.
-- Restrict `wp-login.php` and `wp-admin` by rate limit, and add a second factor for administrators.
-- Reduce user enumeration where it matters: author archives, the REST users endpoint, and login error differences.
-- Set correct file ownership and permissions; the web server should not own the whole tree.
-- Keep the database prefix decision in perspective: it is obfuscation, not a control. Do not present it as a fix.
-- Keep a tested restore path. Most WordPress incident response is "restore clean, patch the entry point, rotate credentials, then hunt for persistence".
+Prioritize supported versions, unused executable code, credential privilege, upload execution policy, diagnostic exposure and tested restoration. Remove unused plugins/themes only when that change is authorized and dependencies are understood; deactivation alone may not eliminate directly reachable files.
 
-## After a compromise
+Evaluate XML-RPC, REST and admin access against actual integration needs before disabling them. Rate limits and MFA should protect login/recovery without locking out required service identities. Use the server's supported ownership/permission model; there is no universal numeric filesystem mode for every host.
 
-1. Preserve evidence: file listing with timestamps, web-server logs, database dump, plugin versions.
-2. Rotate everything: database credentials, salts and keys in `wp-config.php`, admin passwords, API keys, and hosting panel access. Force logout of all sessions.
-3. Hunt for persistence: unfamiliar admin users, unexpected scheduled events (`wp_get_scheduled_event`), modified core files, PHP files in uploads, injected `mu-plugins`, and unknown entries in `active_plugins`.
-4. Find the entry point before restoring, or the restore will be reinfected.
-5. Patch the entry point, restore clean, then re-scan.
+Keep debug display off on public production responses; protected logging can remain useful. Disable dashboard code editing when consistent with operations. Treat database prefixes and hidden login URLs as exposure reduction at most, not replacements for authorization and patching.
+
+## Suspected compromise
+
+1. Determine scope and authorized containment; preserve minimal useful logs, hashes, version records and timestamps before destructive cleanup when feasible.
+2. Isolate affected execution and access. Rotate exposed or plausibly compromised credentials through a trusted control plane in a coordinated order; credentials rotated while malicious code still runs can be stolen again.
+3. Inspect persistence in users, scheduled tasks, mu-plugins, executable uploads, options and modified code. Compare to trusted artifacts; a malware scan alone cannot prove absence.
+4. Patch plausible entry points and restore/redeploy from known-good material. Record an unknown initial vector instead of blocking urgent recovery indefinitely.
+5. Verify business behavior and access controls, monitor for recurrence, and retain evidence with appropriate access and retention. Restoration alone does not prove eradication.
+
+## Primary references
+
+- [WordPress nonces](https://developer.wordpress.org/apis/security/nonces/): nonce limitations and intended use.
+- [wpdb::prepare](https://developer.wordpress.org/reference/classes/wpdb/prepare/): supported placeholders and version history.

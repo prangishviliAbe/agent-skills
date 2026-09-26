@@ -1,47 +1,68 @@
 ---
 name: token-efficiency
-description: Produce concise, high-signal responses without losing correctness, completion, safety, or essential context. Use when the user asks for a short answer, brief output, minimal explanation, just the code, a compact summary, direct recommendations, a tldr, or reduced token usage, and for straightforward tasks where narration, preamble, and background would add cost without adding value.
+description: Write concise answers, compact summaries, brief status reports, and code-focused responses when the user asks to be brief, use fewer tokens, give a TLDR, or provide just the code. Compress communication and retrieval overhead while preserving requested depth, completed work, necessary evidence, and material uncertainty.
 ---
 
 # Token Efficiency
 
-Minimize reading cost, not task quality. Deliver the smallest response that lets the user understand, use, or verify the result.
+Reduce the effort needed to understand and use the result. Complete the task at the requested depth, then remove communication and retrieval that do not change a decision, action, or confidence in the outcome.
 
-**Concision governs communication, never diligence.** Do less writing, not less work. The investigation, the verification, and the safety caveats stay; the narration around them goes.
+## Operating rules
 
-## Cut these, always
+1. **Preserve the task contract.** Respect the user's language, format, scope, and requested detail. A thorough explanation remains thorough; remove repetition, not necessary reasoning or examples.
+2. **Compress prose, not diligence.** Do the authorized work and appropriate verification. Brevity is not a reason to skip investigation, stop early, fabricate a result, or hide a failed check.
+3. **Keep decision-changing information.** Retain the deliverable, decisive rationale, actionable blocker, relevant uncertainty, and evidence for completion claims. Include caveats only when they apply to this task.
+4. **Keep required communication.** Provide required progress updates, clarifications, permissions, and citations. Report new findings, changed plans, or blockers; omit repetitive tool-by-tool narration.
+5. **Match certainty to evidence.** Distinguish observations, inferences, and unverified work when that affects use of the result. A shorter answer must not sound more certain.
+6. **Keep executable output complete.** Preserve exact commands, paths, prerequisites, configuration, and error handling needed to use the result. Do not replace requested working code with ellipses or illustrative placeholders.
 
-Preamble ("Great question!", "I'll help you with that"), restating the request, narrating tool use ("Let me search for…"), announcing structure ("First I'll explain, then…"), ceremonial summaries of what was just said, hedging that adds no information, filler offers ("Let me know if you need anything else"), and headings on a one-paragraph answer.
+## Procedure
 
-## Keep these, always
-
-The deliverable. Decisions and the reason that decided them. Constraints and blockers. Verification results, including failures. Uncertainty that changes what the user should do. Any material security, legal, financial, medical, or data-loss caveat. What you did *not* do or could not check.
+1. Identify the result and evidence the user needs. For a follow-up, answer the new question without repeating the full earlier answer.
+2. Retrieve targeted context: search before reading entire files, inspect relevant ranges, load references on demand, and summarize large outputs. Expand when missing context could change the conclusion; never treat truncated output as complete.
+3. Perform the work. Batch independent retrieval where available, reuse established facts, and stop repeating successful checks unless a change or unresolved concern justifies them. Preserve required current-source verification.
+4. Lead with the answer, result, or blocker. Add the rationale, instructions, evidence, and limitations needed to understand or use it.
+5. Remove restated prompts, decorative headings, filler praise, empty offers, and sentences that merely announce the next sentence. Keep enough connective prose to remain readable.
 
 ## Response shapes
 
-| Request | Shape |
+Adapt the shape to the information; these are defaults, not sentence limits.
+
+| Request | Useful shape |
 | --- | --- |
-| Direct question | 1–3 sentences. No preamble, no summary |
-| Recommendation | The decision, the reason, the decisive tradeoff |
-| Small code task | The code or the patch, then one verification line if it earns its place |
-| Debugging | Cause, fix, verification. Evidence only where it supports the diagnosis |
-| Status | Outcome, blocker if any, next action |
-| Comparison | A compact table when attributes repeat; prose when they do not |
-| Architecture | Recommendation first, then only the constraints needed to judge it |
-| "Just code" | Code only, unless a blocker or a safety issue makes silence dangerous |
+| Direct question | Answer, then the qualification or example that changes understanding |
+| Recommendation | Choice, decisive reason, material tradeoff |
+| Small implementation | Deliverable or changed-file link, effect, relevant verification |
+| Debugging | Supported cause or current hypothesis, fix, check that distinguishes success from recurrence |
+| Status | Current result, meaningful blocker or next step |
+| Comparison | Table when repeated attributes aid comparison; prose otherwise |
+| Architecture or explanation | Recommendation or concept first, then sufficient constraints and reasoning |
+| Summary | Conclusion, consequential facts, unresolved decision; preserve disagreement and uncertainty |
+| Just code | Complete code or patch; explain only blocking ambiguity or a material limitation that cannot safely remain implicit |
 
-## Density rules
+Use headings for long answers when they aid navigation. Keep lists and tables when they make parallel facts easier to scan, regardless of item count. Link artifacts to avoid duplication; still state the outcome and material limitations in the answer.
 
-- Specific nouns and precise verbs. One example instead of three similar ones.
-- One idea per sentence; delete the sentence that only introduces the next one.
-- Reference a changed file once, not in every paragraph.
-- No placeholder comments, no restating code in prose, no `// increment i`.
-- A list of one item is a sentence. A table of two rows is usually a sentence.
-- Answer the question that was asked. A follow-up question is not a request for a full re-explanation.
+## Failure modes
 
-## Final check
+| Failure | Correct move |
+| --- | --- |
+| “Done” without a usable result or evidence | Name the deliverable and relevant check; disclose failed or unavailable checks |
+| A one-line answer to a request for detailed reasoning | Preserve requested reasoning and remove redundancy |
+| Cryptic fragments, unexplained acronyms, or compressed code | Use plain sentences and maintainable code |
+| Repeating every tool call | Report what changed the conclusion or next action |
+| Omitting updates during sustained work | Send concise updates at the required cadence |
+| Caveats unrelated to the request | Retain only limitations that change this user's decision or use |
+| Rereading full files or rerunning unchanged checks | Use focused context and existing evidence; refresh what may have changed |
+| A word limit would remove material truth | Compress further, then retain the limiting fact; never invent certainty to fit |
 
-Delete every sentence whose removal changes nothing about the user's understanding or next action. Keep every sentence whose removal could cause misuse, ambiguity, a wrong decision, or an unverifiable claim.
+## Definition of done
+
+- [ ] The requested deliverable and material questions are addressed, or the exact blocker is stated.
+- [ ] The answer follows the user's language, format, and requested depth.
+- [ ] Completion claims match evidence; relevant failures and unverified work are visible.
+- [ ] Code, commands, and next steps retain the details needed to use them.
+- [ ] Required updates, attribution, and decision-changing qualifications are preserved.
+- [ ] Repetition, filler, and unnecessary background are removed without making the answer cryptic.
 
 ---
 

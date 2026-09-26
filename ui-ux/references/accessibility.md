@@ -1,90 +1,82 @@
-# Accessibility, operationally
+# Accessibility: requirements, patterns, and verification
 
-Read when designing or reviewing anything interactive. Targets are WCAG 2.2 AA unless the project sets a stricter bar.
+Read for interactive web design or review. Use the project's conformance target; absent one, design toward WCAG 2.2 AA. This is a practical subset, not a complete conformance audit. For native apps, apply the platform's accessibility semantics and units rather than treating CSS pixels as native points.
 
-## Numbers to design against
+## Requirements versus recommendations
 
-| Requirement | Threshold |
-| --- | --- |
-| Body text contrast | 4.5:1 against its actual background |
-| Large text (24px, or 19px bold) | 3:1 |
-| UI component boundaries, icons carrying meaning, focus indicators | 3:1 against adjacent colors |
-| Touch target | 44×44 CSS px, or 24×24 with adequate spacing where the platform allows |
-| Text resize | Usable at 200% zoom, no loss of content or function |
-| Reflow | No horizontal scrolling at 320 CSS px width |
-| Motion | Honor `prefers-reduced-motion`; no flashing above three times per second |
+| Concern | WCAG requirement or distinction | Practical check |
+| --- | --- | --- |
+| Text contrast, 1.4.3 AA | 4.5:1 for ordinary text; 3:1 for large text, at least 18pt (24 CSS px) or 14pt bold (about 18.67 CSS px). Defined exceptions include logos and inactive controls | Measure intended foreground/background colors including opacity and worst-case image/gradient regions; do not round a failing value up |
+| Non-text contrast, 1.4.11 AA | 3:1 for visual information needed to identify controls/states and meaningful graphics, against adjacent colors, with stated exceptions | A decorative card boundary need not meet 3:1; the line identifying an otherwise invisible input usually does |
+| Focus, 2.4.7 AA and 2.4.11 AA | Keyboard focus must be visible and not entirely hidden by author-created content | Inspect sticky headers, cookie banners, dialogs, and scroll containers; aim to keep the whole indicator visible |
+| Focus Appearance, 2.4.13 AAA | Additional indicator area and change-of-contrast requirements; not an AA minimum | A robust ring is good practice, but do not label every thin ring an AA failure. Custom focus indicators also need applicable non-text contrast |
+| Target size, 2.5.8 AA | At least 24×24 CSS px, or a specified exception | For undersized targets using the spacing exception, centered 24px-diameter circles must not intersect another target or another undersized target's circle. Check inline, equivalent, user-agent, and essential exceptions |
+| Larger targets | 44×44 CSS px belongs to 2.5.5 AAA with exceptions, and is a useful touch design aim | Use generous touch areas when possible; do not report every 32px control as an AA failure |
+| Resize text, 1.4.4 AA | Text can resize to 200% without loss, subject to criterion exceptions | Inspect text, controls, clipped labels, and available actions; include text-only enlargement where supported |
+| Reflow, 1.4.10 AA | Vertically scrolling content works at 320 CSS px width without two-dimensional scrolling, except content needing a two-dimensional layout | Test a 1280px viewport at 400% zoom or an equivalent 320 CSS px viewport. A necessary data-table scroller may be an exception; surrounding controls still reflow |
+| Text spacing, 1.4.12 AA | No loss when users apply specified spacing overrides | Test line-height 1.5×, paragraph spacing 2×, letter spacing 0.12×, and word spacing 0.16× font size where applicable to the language; these are overrides to tolerate, not mandatory default styling |
 
-Placeholder text, disabled controls, and text over images are the usual contrast failures. Check them against the real background, including the image at its darkest region and any gradient overlay.
+Sources: [text contrast](https://www.w3.org/WAI/WCAG22/Understanding/contrast-minimum.html), [non-text contrast](https://www.w3.org/WAI/WCAG22/Understanding/non-text-contrast.html), [focus not obscured](https://www.w3.org/WAI/WCAG22/Understanding/focus-not-obscured-minimum.html), [focus appearance](https://www.w3.org/WAI/WCAG22/Understanding/focus-appearance.html), [target minimum](https://www.w3.org/WAI/WCAG22/Understanding/target-size-minimum.html), [reflow](https://www.w3.org/WAI/WCAG22/Understanding/reflow.html), [text spacing](https://www.w3.org/WAI/WCAG22/Understanding/text-spacing.html).
 
-## Keyboard: the fastest audit
-
-Put the mouse down and traverse the whole flow with `Tab`, `Shift+Tab`, `Enter`, `Space`, arrows, and `Escape`.
-
-- [ ] Every interactive element is reachable and every reachable element is interactive.
-- [ ] Focus is always visible, with a 3:1 indicator that is not clipped by an overflow container.
-- [ ] Focus order follows the visual reading order.
-- [ ] No trap: you can always leave, including from dialogs and embeds.
-- [ ] Opening a dialog moves focus into it, `Escape` closes it, and focus returns to the trigger.
-- [ ] A skip link reaches the main content.
-- [ ] Nothing is reachable while hidden off-screen or behind a closed menu.
-- [ ] Custom controls follow their expected key pattern (below).
-
-| Component | Keys |
-| --- | --- |
-| Button | `Enter` and `Space` |
-| Link | `Enter` |
-| Checkbox / switch | `Space` |
-| Radio group | Arrows move and select; the group is one tab stop |
-| Tabs | Arrows move between tabs; `Tab` moves into the panel |
-| Menu | `Enter`/`Space`/`Down` opens, arrows move, `Escape` closes and restores focus |
-| Combobox | Arrows navigate options, `Enter` selects, `Escape` reverts |
-| Dialog | Focus trapped inside, `Escape` closes |
-| Slider | Arrows adjust, `Home`/`End` jump to bounds |
+Inactive controls have contrast exceptions; keep their purpose and unavailable state understandable. Placeholder text is not generally exempt. Do not infer exact contrast from antialiased screenshot pixels when the actual colors are unavailable.
 
 ## Semantics and names
 
-- Use the native element first. A `<button>` gives you focus, keyboard, role, and platform behavior for free; a `div` with a click handler gives you a bug list.
-- One `<h1>` per page, headings in order, and structural landmarks (`header`, `nav`, `main`, `footer`) present.
-- Every control has an accessible name that makes sense read alone: "Delete invoice 4211", not "Delete". Never rely on surrounding visual context.
-- Every input has a persistent, programmatically associated `<label>`. Placeholder is not a label — it disappears exactly when the user needs it.
-- Icon-only controls need a text alternative and a tooltip that is also reachable by keyboard.
-- Images: describe the meaning, not the file. Decorative images take an empty alt so they are skipped.
-- Errors are associated with their field (`aria-describedby`, `aria-invalid`) and announced.
-- Use ARIA only when no native element fits, and follow the pattern completely. A partially implemented ARIA widget is worse than a plain one.
+- Prefer native buttons, links, inputs, and tables. Use links for navigation and buttons for actions.
+- Give each control an accessible name reflecting its purpose. Include visible label text in the accessible name; add context to ambiguous repeated actions without gratuitously replacing visible labels.
+- Use persistent, associated labels for inputs; explain required formats before submission. Use fieldsets and legends for related control groups when appropriate.
+- Use meaningful headings and landmarks. One main page heading is a useful convention, not a standalone WCAG rule; review the actual structure and relationships.
+- Keep decorative images out of the accessibility tree; give informative images a useful alternative. Complex charts need the relevant values or takeaway in an accessible equivalent.
+- Ensure names, roles, values, and states are exposed. ARIA does not supply keyboard behavior and must not contradict native semantics.
+- Hidden or inert content must not leave actionable descendants in the tab sequence. Static content may legitimately receive programmatic focus to announce a heading or error summary.
 
-## Announcements
+## Keyboard and focus
 
-- A live region announces asynchronous changes the user would otherwise miss: search result counts, save confirmations, background failures.
-- `polite` for informational updates, `assertive` only for genuinely interrupting errors.
-- The live region must exist in the DOM before the content changes, or nothing is announced.
-- Do not announce everything. A region that fires on every keystroke is noise the user will disable.
+Traverse the actual primary flow with keyboard input. A logical order must preserve meaning and operation; it need not match every visual coordinate. Do not add positive tab indices to compensate for a broken DOM sequence.
 
-## Never rely on one channel
+| Pattern | What to verify |
+| --- | --- |
+| Button / link | Button activates with Enter and Space; link with Enter; browser navigation behavior remains available |
+| Radio group | Group navigation and selection follow the native or chosen pattern; check toolbar variants separately |
+| Tabs | Arrow keys navigate tabs; automatic activation only when switching is effectively immediate, otherwise Enter/Space activates; Tab reaches panel content |
+| Disclosure / site navigation | Use ordinary buttons and links where appropriate; do not impose application-menu semantics on normal site navigation |
+| Menu | Implement the selected menu pattern completely, including opening, arrow movement, dismissal, and return focus |
+| Combobox | Specify editable or select-only variant, popup behavior, option navigation, selection, dismissal, and retained input; Escape does not universally revert every edit |
+| Modal dialog | Move focus meaningfully inside; keep modal interaction inside while open; support dismissal according to the pattern and return focus to the trigger or another logical target if it no longer exists |
+| Slider or reorder control | Expose value and keyboard operation; dragging also needs a single-pointer non-drag alternative unless an exception applies |
 
-- Not color alone: pair status color with an icon, a label, or a pattern.
-- Not motion alone: an animated state change also needs a static difference.
-- Not position alone: "the button on the right" means nothing in a linearized reading order or an RTL layout.
-- Not hover alone: everything reachable by hover is reachable by focus and by touch.
+Follow the relevant [ARIA Authoring Practices patterns](https://www.w3.org/WAI/ARIA/apg/patterns/), especially [tabs](https://www.w3.org/WAI/ARIA/apg/patterns/tabs/), [comboboxes](https://www.w3.org/WAI/ARIA/apg/patterns/combobox/), and [dialogs](https://www.w3.org/WAI/ARIA/apg/patterns/dialog-modal/). APG is implementation guidance; validate the chosen pattern in the target browser/assistive-technology combination.
 
-## Forms
+Do not trap focus in nonmodal panels. Provide a working way to leave modal interaction; a focus loop while an open modal is active is intentional, not the forbidden trap itself.
 
-- Group related fields with a fieldset and a legend; do not fake it with a heading alone.
-- Correct `type`, `inputmode`, and `autocomplete` values. This is an accessibility and a conversion feature simultaneously.
-- Required fields are marked in text, not only with a colored asterisk.
-- On failed submit: focus the first invalid field, keep every value, and show a summary count that is announced.
-- Never impose a time limit that cannot be extended, and never auto-submit on the last character of a code without also offering an explicit action.
+## Forms, errors, and status
 
-## Cognitive load
+- Match input type, autocomplete, and input mode to the data without rejecting valid international input.
+- Describe errors in text and associate field messages programmatically. Preserve valid input where safe.
+- After failed submission, choose a linked error summary or the first invalid field based on form size and context. Specify focus and announcement once; avoid duplicate alert storms.
+- Expose asynchronous status without unnecessary focus movement. Use polite announcements for routine updates; reserve interrupting alerts for genuinely urgent changes. Test live-region timing, including repeated messages.
+- Allow password managers and paste. Do not make memorization or transcription the only authentication path when the criterion requires an alternative or assistance.
+- Reuse information already supplied within the same process or make it selectable, subject to the redundant-entry exceptions. Do not ask users to retype an address simply because the next step has a new form.
+- Keep recurring help in a consistent relative location. Describe timed-session warnings, extension, and safe recovery where applicable; do not invent a blanket ban on time limits.
 
-Accessibility is not only sensory. Reduce the number of decisions per screen, keep language plain, keep terminology consistent, break long flows into steps with visible progress, and let people save and return. Do not rely on memory across steps — show what they already entered.
+Sources: [accessible authentication](https://www.w3.org/WAI/WCAG22/Understanding/accessible-authentication-minimum.html), [redundant entry](https://www.w3.org/WAI/WCAG22/Understanding/redundant-entry.html), [dragging alternatives](https://www.w3.org/WAI/WCAG22/Understanding/dragging-movements.html).
 
-## Verification, in order of cost
+## More than color and sight
 
-1. Keyboard-only traversal of the primary flow.
-2. Automated check (axe or equivalent) — catches roughly a third of issues, so it is a floor, not a pass.
-3. Contrast check on the real rendered colors, including states and overlays.
-4. Zoom to 200% and reflow at 320px.
-5. Screen reader pass on the primary flow: does it make sense read aloud, in order, without the visuals?
-6. Reduced motion, dark mode, and a translated locale.
+Pair color with text, shape, pattern, or another meaningful indicator. Keep hover content available on focus where applicable; additional hover/focus content must satisfy its dismissible, hoverable, and persistent requirements. Touch users need a usable route too.
 
-Never claim conformance you have not tested. State which checks ran and which did not.
+For media and motion, check applicable captions, descriptions, audio controls, pause/stop behavior, and flashing criteria. Respect reduced-motion preferences as a design practice; this alone does not satisfy every WCAG motion requirement. Avoid flashing; the exact flash criteria include threshold and area conditions, not simply a universal animation-frequency rule.
+
+## Verification and reporting
+
+Choose checks proportional to the affected feature:
+
+1. Inspect semantic structure, names, roles, and relevant state announcements.
+2. Operate the whole affected journey using keyboard alone, including errors and dismissal.
+3. Measure contrast and hit areas in the actual rendered state.
+4. Check text enlargement, reflow, spacing overrides, and focus visibility under sticky layers.
+5. Use an automated accessibility checker to find machine-detectable issues, then inspect its results. There is no fixed percentage of all issues such a tool proves absent.
+6. Test a relevant browser/screen-reader combination for substantial interaction changes. Record the environment and scenario.
+7. Verify supported themes, reduced motion, and locale/input variants when affected.
+
+Report **passed**, **failed**, **not applicable**, or **not tested**, with evidence. A screenshot, heuristic review, or clean automated scan does not establish whole-site WCAG conformance. Use the [complete WCAG 2.2 standard](https://www.w3.org/TR/WCAG22/) for a formal audit.

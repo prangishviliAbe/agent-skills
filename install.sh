@@ -1,59 +1,113 @@
 #!/usr/bin/env bash
-# Install these skills for an AI agent runtime.
-#
-#   ./install.sh                    -> Codex        (~/.codex/skills)
-#   ./install.sh claude             -> Claude Code  (~/.claude/skills)
-#   ./install.sh antigravity        -> Antigravity  (~/.gemini/antigravity/skills)
-#   ./install.sh all                -> the three above
-#   ./install.sh ~/some/other/dir   -> any custom directory
-#
-# Each skill folder is replaced in full, so removed files do not linger.
-
+# Usage: ./install.sh [codex|claude|antigravity|all|<path>] [--dry-run]
+# Stages every skill before replacing any. Keeps backups outside active skills.
+# A transaction covers one destination; `all` processes destinations in order.
 set -euo pipefail
-
-SRC="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+SRC="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd -P)"
 TARGET="${1:-codex}"
+DRY_RUN=0
+if [ "$TARGET" = --dry-run ]; then TARGET=codex; DRY_RUN=1; fi
+if [ "${2:-}" = --dry-run ]; then DRY_RUN=1; elif [ "$#" -gt 1 ]; then echo 'Unknown option.' >&2; exit 1; fi
+if [ "$#" -gt 2 ]; then echo 'Too many arguments.' >&2; exit 1; fi
 
+# Normalize without creating a directory, and reject symlink ancestors.
+absolute_path() {
+  local value="$1" part result='' previous
+  local parts=()
+  case "$value" in /*) ;; *) value="$PWD/$value" ;; esac
+  local old_ifs="$IFS"; IFS='/'; read -r -a parts <<< "$value"; IFS="$old_ifs"
+  for part in "${parts[@]}"; do
+    case "$part" in ''|.) continue ;; ..) result="${result%/*}" ;; *) result="$result/$part" ;; esac
+    if [ -L "${result:-/}" ]; then echo "Refusing linked path: $result" >&2; return 1; fi
+  done
+  printf '%s\n' "${result:-/}"
+}
+within() { [ "$2" = "$1" ] || [[ "$2" == "$1/"* ]]; }
 skills=()
 for dir in "$SRC"/*/; do
+  [ -f "$dir/SKILL.md" ] || continue
   name="$(basename "$dir")"
-  [ -f "$dir/SKILL.md" ] && skills+=("$name")
+  [[ "$name" =~ ^[a-z0-9]+(-[a-z0-9]+)*$ ]] || { echo "Invalid skill name: $name" >&2; exit 1; }
+  [ ! -L "${dir%/}" ] || { echo "Linked skill: $dir" >&2; exit 1; }
+  [ -f "$dir/agents/openai.yaml" ] || { echo "Missing metadata: $name" >&2; exit 1; }
+  [ -z "$(find "$dir" -type l -print -quit)" ] || { echo "Linked source resource: $dir" >&2; exit 1; }
+  skills+=("$name")
 done
+[ "${#skills[@]}" -gt 0 ] || { echo 'No skills found.' >&2; exit 1; }
 
-if [ ${#skills[@]} -eq 0 ]; then
-  echo "No skills found in $SRC" >&2
-  exit 1
-fi
-
-install_to() {
-  local dest="$1"
-  mkdir -p "$dest"
+install_to() (
+  dest="$(absolute_path "$1")"
+  if [ "$dest" = / ] || within "$SRC" "$dest" || within "$dest" "$SRC"; then
+    echo 'Source and destination must not overlap, and destination must not be a filesystem root.' >&2; exit 1
+  fi
   for skill in "${skills[@]}"; do
-    rm -rf "${dest:?}/$skill"
-    cp -R "$SRC/$skill" "$dest/$skill"
-    echo "  $skill"
+    [ ! -L "$dest/$skill" ] || { echo "Linked destination skill: $dest/$skill" >&2; exit 1; }
+    if [ -e "$dest/$skill" ] && [ ! -d "$dest/$skill" ]; then echo "Destination skill is not a directory: $dest/$skill" >&2; exit 1; fi
   done
-  echo "Installed ${#skills[@]} skills to $dest"
-}
+  if [ "$DRY_RUN" = 1 ]; then printf 'Would replace %s skills in %s\n' "${#skills[@]}" "$dest"; exit 0; fi
+  mkdir -p "$dest"
+  lock="$dest/.agent-skills-install.lock"
+  if ! mkdir "$lock" 2>/dev/null; then
+    echo "Cannot acquire installation lock at $lock. If interrupted, inspect the backup and confirm the prior process stopped before removing it." >&2; exit 1
+  fi
+  stage=''; backup=''; committed=0
+  installed=(); saved=()
+  cleanup() {
+    status=$?
+    trap - EXIT HUP INT TERM
+    if [ "$committed" = 0 ]; then
+      for skill in "${installed[@]}"; do
+        [ ! -L "$dest/$skill" ] && within "$dest" "$dest/$skill" && rm -rf -- "$dest/$skill" || status=1
+      done
+      for skill in "${saved[@]}"; do
+        if [ ! -e "$dest/$skill" ] && [ ! -L "$dest/$skill" ]; then
+          mv -- "$backup/$skill" "$dest/$skill" || status=1
+        else
+          echo "Restore target already exists: $dest/$skill; recover manually from $backup" >&2; status=1
+        fi
+      done
+      [ -z "$backup" ] || echo "Recovery backup: $backup" >&2
+    fi
+    if [ -n "$stage" ] && [[ "$stage" == "$(dirname "$dest")/.agent-skills-stage-"* ]] && [ ! -L "$stage" ]; then rm -rf -- "$stage" || status=1; fi
+    rmdir "$lock" || status=1
+    exit "$status"
+  }
+  trap cleanup EXIT
+  trap 'exit 130' INT
+  trap 'exit 143' HUP TERM
+  parent="$(dirname "$dest")"
+  stage="$(mktemp -d "$parent/.agent-skills-stage-XXXXXXXX")"
+  backup_parent="$(absolute_path "$parent/.agent-skills-backups")"
+  mkdir -p "$backup_parent"
+  backup="$(mktemp -d "$backup_parent/$(date -u +%Y%m%dT%H%M%SZ)-XXXXXXXX")"
+  for skill in "${skills[@]}"; do
+    cp -Rp -- "$SRC/$skill" "$stage/$skill"
+    diff -qr -- "$SRC/$skill" "$stage/$skill" >/dev/null
+  done
+  for skill in "${skills[@]}"; do
+    [ ! -L "$dest/$skill" ] || { echo "Destination changed to a link: $skill" >&2; exit 1; }
+    if [ -e "$dest/$skill" ]; then
+      mv -- "$dest/$skill" "$backup/$skill"
+      saved+=("$skill")
+    fi
+    mv -- "$stage/$skill" "$dest/$skill"
+    installed+=("$skill")
+  done
+  committed=1
+  printf 'Installed %s skills to %s\nPrevious versions: %s\n' "${#skills[@]}" "$dest" "$backup"
+)
 
+codex_base="${CODEX_HOME:-$HOME/.codex}"
 case "$TARGET" in
-  codex)       install_to "$HOME/.codex/skills" ;;
-  claude)      install_to "$HOME/.claude/skills" ;;
+  codex) install_to "$codex_base/skills" ;;
+  claude) install_to "$HOME/.claude/skills" ;;
   antigravity) install_to "$HOME/.gemini/antigravity/skills" ;;
   all)
-    install_to "$HOME/.codex/skills"
+    install_to "$codex_base/skills"
     install_to "$HOME/.claude/skills"
     install_to "$HOME/.gemini/antigravity/skills"
     ;;
-  */*|~*|.*)
-    # anything that looks like a path is used verbatim
-    install_to "${TARGET/#\~/$HOME}"
-    ;;
-  *)
-    echo "Unknown target: $TARGET" >&2
-    echo "Usage: ./install.sh [codex|claude|antigravity|all|<path>]" >&2
-    exit 1
-    ;;
+  */*|~*|.*) install_to "${TARGET/#\~/$HOME}" ;;
+  *) echo "Unknown target: $TARGET. Use codex, claude, antigravity, all, or a path." >&2; exit 1 ;;
 esac
-
-echo "Start a new session so the updated metadata and triggers load."
+if [ "$DRY_RUN" = 0 ]; then echo 'Codex discovers updated skills on the next turn. Reload other runtimes if their skill list is cached.'; fi

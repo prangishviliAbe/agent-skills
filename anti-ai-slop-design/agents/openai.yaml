@@ -1,4 +1,4 @@
 interface:
   display_name: "Anti AI Slop Design"
-  short_description: "Brand-specific visual craft, zero generic AI styling"
-  default_prompt: "Use $anti-ai-slop-design for this interface: settle the structure first, state a one-sentence visual thesis drawn from the product itself, run the slop pass and replace rather than dim, and verify contrast, real content, and compact layout."
+  short_description: "Distinctive visual craft grounded in brand and content"
+  default_prompt: "Use $anti-ai-slop-design to refine this interface while preserving its intended aesthetic, improving visual hierarchy and craft, and checking real content and accessibility."

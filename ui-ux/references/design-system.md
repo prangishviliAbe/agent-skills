@@ -1,93 +1,74 @@
-# Design systems: tokens, components, governance
+# Design systems: usable contracts and controlled change
 
-Read when creating, extending, documenting, or auditing a component library or token set.
+Read when creating, extending, auditing, or documenting reusable tokens and components.
 
-## Token layers
+## Inspect before inventing
 
-Three layers, in this order. Skipping the middle layer is why systems cannot be rethemed.
+Identify the existing source of truth, consumers, supported platforms/themes, naming, versions, and contribution process. Preserve established contracts unless a demonstrated gap justifies change. A single page does not automatically need a new design system.
 
-```
-1. Primitive   raw values, no meaning        blue-600: #2563eb   space-4: 16px
-2. Semantic    role in the interface         color-action, color-danger, color-text-muted, space-section
-3. Component   scoped to one component       button-padding-x, card-radius   (only when genuinely needed)
-```
+Audit usage as well as files. A hardcoded value can be legitimate data visualization or art direction; a component with many props is not automatically defective.
 
-Design and code both reference the **semantic** layer. A component that hardcodes `blue-600` cannot support dark mode, a second brand, or a rebrand.
+## Tokens
 
-**Semantic color roles worth defining once:** canvas, surface, surface-raised, border-subtle, border-strong, text, text-muted, text-inverse, action, action-hover, action-text, focus, and one pair per status (success, warning, danger, info) covering background, border, and text.
+Use layers where they help the system:
 
-Define every role in every theme. A dark mode that only inverts the background will fail contrast somewhere.
+| Layer | Role | Example |
+| --- | --- | --- |
+| Primitive | Reusable raw values | Blue palette step, spacing increment |
+| Semantic | Interface intent | Text-muted, surface-overlay, action-background |
+| Component | Necessary local contract | Dialog-padding, input-border-invalid |
 
-## Scales
+Prefer semantic roles for theme-dependent interface values. Component tokens are useful when independent theming is needed, but avoid alias chains that add no decision value. Preserve the project's architecture rather than enforcing three layers everywhere.
 
-- **Spacing:** one geometric-ish scale (4, 8, 12, 16, 24, 32, 48, 64, 96). Every gap comes from it. An arbitrary 13px is a bug.
-- **Type:** roles, not sizes — display, h1..h3, body, body-small, label, caption, code. Each role fixes size, line-height, weight, and letter-spacing together.
-- **Radius:** three values at most, applied consistently by element size (control, card, sheet).
-- **Elevation:** two to four levels, each mapped to a meaning (raised, overlay, popover, modal), not chosen per component.
-- **Motion:** duration and easing tokens, plus a reduced-motion path. See `premium-web-motion`.
+Define affected roles in every supported theme; do not create an unrequested theme. Check text/background pairs, disabled/selected/focus states, forced-color behavior when applicable, and high-density variants.
 
-If a value cannot be expressed as a token, either the scale is wrong or the design is inconsistent. Find out which before adding an exception.
+## Coherent scales without arbitrary ceilings
 
-## Component API rules
+- Define type roles with size, line-height, weight, and tracking. Separate semantic heading level from visual style.
+- Reuse spacing roles or a scale. Optical adjustments, hairlines, platform conventions, and calculated geometry can legitimately fall between steps.
+- Give radius, border, and elevation choices a reason. The number of values alone does not establish drift.
+- Include motion roles and a reduced-motion behavior when the component animates.
+- Add a token when it describes a reusable decision; avoid creating a named token for every isolated number.
 
-A component's props are its contract. Design them like an API.
+## Component contracts
 
-- **Variants over booleans.** `variant="danger"` beats `isDanger`, `isPrimary`, `isGhost` — booleans multiply into impossible combinations.
-- **Restrict to what the system supports.** A `color` prop taking any string re-opens every inconsistency the system was built to close.
-- **Composition over configuration.** Slots and children beat twenty props describing what to render inside.
-- **Sensible defaults.** The most common use should require the fewest props.
-- **Never leak layout outward.** A component sets its internal spacing; its parent decides where it sits. A component that sets its own external margin cannot be reused.
-- **Forward the escape hatches:** `className`, `ref`, and `...rest` to the underlying element, so a one-off need does not require forking the component.
-- **Accessibility is inside the component**, not the caller's responsibility: labels, roles, focus management, and keyboard behavior ship with it.
+Define the states and combinations the component supports. Prefer a variant enum when booleans describe mutually exclusive alternatives; keep independent booleans independent.
 
-Survivability test for a component API — does it hold up under all six?
+Use composition when it makes supported structure clear. Too many unconstrained slots can make an API as fragile as too many configuration props.
 
-1. A very long label
-2. A translated string 40% longer
-3. Missing optional data
-4. A disabled state
-5. A loading state
-6. A 320px viewport
+| Responsibility | Component should provide | Consumer must supply |
+| --- | --- | --- |
+| Accessibility | Correct semantics, state exposure, keyboard/focus behavior, label association mechanism | Meaningful labels/content and context-specific instructions |
+| Behavior | Supported state transitions and event contract | Application data, authorization, persistence, and domain policy |
+| Layout | Internal spacing and resilient anatomy | Placement within the page and surrounding relationships |
+| Theming | Supported tokens and variants | Valid theme values and contextual contrast checks |
+| Extensibility | Documented escape hatches that preserve invariants | Responsible use without overriding required semantics |
 
-## Documentation, per component
+Forward framework attributes/events deliberately; do not blindly allow caller props to overwrite required roles, handlers, or ARIA relationships. Accessibility is shared across the component and its use, not solved by the component alone.
 
-```
-Purpose        what it is for, and when to use something else
-Anatomy        named parts
-Variants       each with the decision rule for choosing it
-Sizes          and what determines the choice
-States         from the state matrix
-Content rules  label length, capitalization, tone, truncation behavior
-Accessibility  role, name, keyboard behavior, announcements
-Responsive     what changes at each breakpoint
-Do / Don't     two or three real, specific pairs
-Code           the minimal usage example, plus the most common variant
-```
+## Evidence for reuse
 
-The "when to use something else" line prevents more misuse than any other part of the documentation.
+Check representative real usages: long labels, supported translations, optional content, loading/error, keyboard navigation, and constrained containers. Test relevant combinations instead of enumerating every Cartesian product.
 
-## Auditing an existing system
+For a new abstraction, compare at least its actual intended consumers. Reuse should reduce meaningful duplication without combining different interaction models merely because they look alike.
 
-Find the drift with real queries against the codebase:
+## Documentation and migration
 
-```bash
-# hardcoded colors that should be tokens
-grep -rn "#[0-9a-fA-F]\{3,8\}\b" src --include=*.tsx --include=*.css | grep -v tokens
+Include only what a consumer needs:
 
-# off-scale spacing
-grep -rnE "(margin|padding|gap)[^;]*: *[0-9]+px" src | grep -vE ": *(0|4|8|12|16|24|32|48|64|96)px"
+- Purpose, when to choose another pattern, anatomy, supported variants/states.
+- Content rules, examples, accessibility requirements, and responsive behavior.
+- A minimal usage example and a consequential edge case.
+- Ownership, compatibility, and how to propose an extension.
 
-# duplicate component concepts
-find src -iname "*button*" -o -iname "*modal*" -o -iname "*dialog*"
-```
+When changing an existing API, identify affected consumers, deprecation or migration steps, and compatibility tests. Do not rename public tokens just to improve taste.
 
-Then rank what you find: unused components, duplicated concepts (three buttons, four modals), one-off values, components with more than roughly eight props, and components with no documented states.
+## Audit method
 
-Fix by consolidation, not by adding a seventh variant to the wrong component.
+1. Search affected source for repeated patterns, variants, token usage, and hardcoded values using available code-search tools.
+2. Compare findings against the actual system contract and live usages; treat searches as candidates, not proof of bugs.
+3. Rank inconsistencies by user harm and maintenance cost.
+4. Consolidate genuinely equivalent patterns and document intentional exceptions.
+5. Verify representative consumers, supported themes, and changed interactions.
 
-## Governance
-
-- Every new component answers: does something existing cover this with a variant? Will it be used in more than one place? Who maintains it?
-- Version and communicate breaking changes; give consumers a migration path rather than a surprise.
-- Contribution beats decree: a system nobody can extend gets bypassed, and the bypasses become the real system.
-- Measure adoption. A component library that half the product ignores is documentation of a failed handoff, not a design system.
+Report system gaps separately from implementation misuse. A missing label in one consumer is not evidence that the base component lacks a labeling mechanism.

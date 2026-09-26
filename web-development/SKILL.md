@@ -1,97 +1,83 @@
 ---
 name: web-development
-description: Architect, build, debug, review, optimize, and ship production websites, web apps, APIs, plugins, themes, and integrations across WordPress, WooCommerce, Elementor, React, Next.js, Node.js, TypeScript, databases, caching, deployment, SEO, accessibility, performance, and build tooling. Use for any implementation, refactor, incident, or architecture task involving frontend, backend, CMS, data flow, third-party APIs, authentication, migrations, or release engineering where secure, scalable, testable, maintainable code is required.
+description: Build, debug, refactor, and review websites, web apps, APIs, WordPress plugins and themes, and integrations. Use for implementation and delivery work involving React, Next.js, TypeScript, Node.js, WooCommerce, databases, caching, or web deployment; preserve the existing stack and verify the changed behavior.
 ---
 
 # Web Development
 
-Act as the lead engineer accountable for this change in production. Ship complete, verified behavior that fits the existing system and survives real users, real data, hostile input, partial failure, and the next person who edits it.
-
-The deliverable is never "code that looks right". It is **observable behavior, verified by a command you actually ran.**
+Deliver the requested web behavior in the existing system, with evidence proportional to the change. Preserve product intent, public contracts, user edits, and operational constraints. Distinguish implemented, verified, and deployed work.
 
 ## Operating rules
 
-These are not preferences. Violating one is a defect.
-
-1. **Evidence before assertion.** Read the file before editing it. Grep the symbol before calling it. Check the installed version before using an API. Never state a framework behavior from memory when the repo can answer it.
-2. **Never claim a check passed unless it ran.** Quote the command and its result. "Should work" is a confession, not a status.
-3. **No fake completion.** No stubbed handlers, mocked success, `TODO: implement`, or swallowed errors in work presented as finished. If a piece is genuinely blocked, deliver everything else and name the gap explicitly.
-4. **The server is the only trust boundary.** Client-side validation, hidden fields, disabled buttons, and route guards are UX. Every mutation revalidates and re-authorizes on the server.
-5. **Secrets stay server-side.** Never in the repo, the client bundle, a public env prefix, logs, error pages, or build artifacts. A leaked secret is rotated, not just deleted.
-6. **Match the codebase.** Same naming, layering, error style, and test idiom. A diff that reads like a different author is a maintenance cost.
-7. **Smallest coherent change surface.** Fix the root cause, not the symptom, but do not refactor adjacent code the task did not require. Name the opportunity instead of taking it.
-8. **Dependencies must earn their place.** No new package for something the platform, the framework, or thirty lines already do. State the cost when you add one.
-9. **Destructive operations are confirmed, never assumed.** Migrations that drop or rewrite data, force pushes, cache purges, and bulk updates get a stated rollback path before they run.
+1. **Inspect before changing.** Read applicable project instructions, the affected code and callers, manifests, and available checks. Check the working tree; integrate with existing edits without overwriting them.
+2. **Use the installed contract.** Resolve uncertain APIs from local types/source or official documentation for the installed version. Do not upgrade frameworks or replace the stack merely to fit a familiar solution.
+3. **Keep the change coherent.** Include necessary callers, data changes, and failure handling; leave unrelated cleanup alone. Add dependencies when their maintained capability justifies cost, not according to a line-count rule.
+4. **Enforce trust at the receiving boundary.** Protected server operations validate input and authorize actor, action, and resource. Client checks support usability. Public operations still need input and abuse controls appropriate to their purpose.
+5. **Protect sensitive material.** Keep secrets out of client bundles, logs, screenshots, and commits. Report an exposure by location and arrange scoped rotation; do not print the value or silently rotate unrelated credentials.
+6. **Preserve authorization.** Existing instructions can authorize pushing, deploying, or data changes. Do not invent a new approval gate. When a consequential action lacks authorization or its target is ambiguous, prepare the concrete change and recovery plan before requesting the missing decision.
+7. **Bound side effects.** A timeout does not prove a write failed. Reconcile an uncertain result before retrying; retry only when the operation or its idempotency mechanism makes duplication safe.
+8. **Report evidence accurately.** A passing build is not a runtime check; a local fix is not a deployment. State unavailable checks and remaining uncertainty without fabricating success or leaving independent work unfinished.
 
 ## Procedure
 
-1. **Frame.** Write the observable behavior in one sentence: who does what, and what changes as a result. List acceptance criteria, edge cases, and explicit non-goals.
-2. **Survey.** Read project instructions (`AGENTS.md`, `CLAUDE.md`, `README`), manifests, framework config, the code path end to end, and the tests around it. Check the working tree for uncommitted user changes before touching files.
-3. **Trace.** Follow the request across UI, state, network, validation, authorization, persistence, cache, response, and render. Name every boundary you cross. Bugs live at boundaries.
-4. **Tier the risk** using the table below and commit to the matching verification depth *before* writing code.
-5. **Design.** Choose the simplest architecture that satisfies today's requirement without blocking the likely next one. Extend an existing pattern instead of inventing a parallel one.
-6. **Implement end to end**, including validation, authorization, loading, empty, error, partial failure, and success paths, wired to real data.
-7. **Verify** on the ladder the tier demands. Reproduce bugs before fixing and re-run the reproduction after.
-8. **Review your own diff** as a hostile reviewer: regressions, dead code, leaked secrets, N+1 queries, unbounded loops, missing `await`, swallowed errors, scope creep.
-9. **Report** outcome, changed files, commands run with their results, non-obvious tradeoffs, residual risk, and deploy steps.
+1. **Identify the mode.** Implement, debug, review, architecture, or release. A review produces findings; an architecture request produces decisions and tradeoffs. Neither implies unrequested edits or deployment.
+2. **Frame the result.** Establish the observable behavior and relevant constraints. Use a brief assumption for a recoverable choice; ask only about ambiguity that changes the product, contract, cost, or irreversible effects.
+3. **Trace the affected path.** Inspect the relevant UI, request, validation, access policy, persistence, cache, and response. Expand to other callers when a shared contract changes. Do not inventory the entire system for a local edit.
+4. **Choose verification.** Select checks from the risk table before making a substantive change. Use repository scripts and existing test patterns; account for the environment and service access actually available.
+5. **Implement or investigate.** Fix the cause, preserve compatibility, and handle relevant loading, error, permission, and retry states. Use synthetic data or approved test accounts for exercising behavior.
+6. **Verify and inspect the diff.** Run the checks that can detect the likely regression. Review scope, secrets, error propagation, access scope, concurrency, and compatibility. Stop repeating checks once evidence is sufficient unless something changed.
+7. **Finish the authorized delivery.** Update necessary docs or contracts, perform authorized release steps, and report the outcome, actual checks, and any unverified boundary. A blocked live action need not block a complete local change.
 
-## Risk tiers set verification depth
+## Verification by risk
 
-| Tier | Example | Minimum verification |
-| --- | --- | --- |
-| R0 cosmetic | copy, spacing, static asset | Build or dev-server render, visual check |
-| R1 local logic | one component, one pure function | Type check plus a focused test or a runtime exercise of the path |
-| R2 shared surface | API contract, shared hook, schema, auth-adjacent code | Focused tests, type check, lint, build, negative-path check |
-| R3 production risk | migration, payment, auth, permissions, cron, webhook, bulk data | R2 plus rollback plan, idempotency and replay check, staging or dry run, explicit sign-off before running |
+These are decision criteria, not a requirement to create a test suite for every edit. Explain meaningful gaps; do not replace a failed required project check with a weaker check and call it passed.
 
-Never quietly downgrade a tier. If the environment cannot run the required checks, say so and state exactly what remains unverified.
+| Change | Evidence to seek |
+| --- | --- |
+| Copy, spacing, static asset | Inspect the diff and affected rendering at relevant sizes; no new automated test solely to mirror the edit |
+| Local component or logic | Focused test or runtime exercise of the behavior; type/lint checks when they can catch a relevant defect |
+| Shared API, data layer, rendering contract | Affected callers, positive and negative cases, targeted tests and relevant build/type checks; repository-required checks |
+| Authentication, money, concurrent writes, migration, production operations | Access boundaries, replay/concurrency or data-integrity checks as applicable, compatibility and recovery plan; staged or dry-run evidence when feasible |
+| Diagnosis without a runnable environment | Code/log/config evidence, explicit hypotheses, and a reproducible verification procedure; label runtime behavior unverified |
 
-## Verification ladder
-
-Climb from the bottom and stop where the tier allows: type check, lint, focused tests, full suite, build, runtime exercise of the real path, negative paths (bad input, wrong user, no permission, empty set, huge set, slow network, repeated request), then performance and accessibility checks when relevant.
-
-For a bug fix the order is fixed: reproduce, capture the failing output, fix, re-run, then add a regression test that fails without the fix.
+For bugs, reproduce first when feasible. For intermittent failures or incidents, use captured evidence and safe containment while narrowing the cause. Add a regression test where it protects meaningful behavior; do not make impossible deterministic reproduction a prerequisite to useful work.
 
 ## Reference map
 
-Load only what the task needs.
+Read only references relevant to the affected boundary.
 
 | When the task involves | Read |
 | --- | --- |
-| Planning, verification depth, diff review, reporting format | [delivery.md](references/delivery.md) |
-| React, Next.js, state, rendering, Core Web Vitals, SEO | [frontend.md](references/frontend.md) |
-| APIs, validation, authorization, SQL, migrations, caching, jobs | [backend.md](references/backend.md) |
-| WordPress, WooCommerce, Elementor, ACF, plugins, themes | [wordpress.md](references/wordpress.md) |
-| A bug, a regression, an incident, "it works locally" | [debugging.md](references/debugging.md) |
-| Environments, secrets, CI, releases, monitoring, rollback | [operations.md](references/operations.md) |
+| Scoping, compatibility, verification selection, handoff | [delivery.md](references/delivery.md) |
+| React, Next.js, forms, accessibility, performance, SEO | [frontend.md](references/frontend.md) |
+| APIs, validation, SQL, migrations, caching, jobs and webhooks | [backend.md](references/backend.md) |
+| WordPress, WooCommerce, Elementor, plugins and themes | [wordpress.md](references/wordpress.md) |
+| Regressions, intermittent failures, production incidents | [debugging.md](references/debugging.md) |
+| Configuration, CI, deployment, monitoring, recovery | [operations.md](references/operations.md) |
 
-Pair with `security` for threat modeling and security-critical code, `ui-ux` for flows and interaction systems, `anti-ai-slop-design` for visual quality, and `premium-web-motion` for the motion layer. This skill owns technical integration and production delivery.
+## Failure modes
 
-## Failure modes and the correct move
-
-| Failure mode | Correct move |
+| Failure | Correct move |
 | --- | --- |
-| Rewriting a subsystem to fix one bug | Fix the bug, then name the refactor as a separate opportunity |
-| Adding a library for a twenty-line problem | Write the twenty lines |
-| `catch (e) { console.log(e) }` | Handle it, surface it, or rethrow with context. Never absorb |
-| Patching a symptom in the view layer | Trace upstream to where the wrong value was produced |
-| Guessing an API signature | Grep the source or the type definition in the installed package |
-| Reporting "tests pass" without running them | Run them, or state plainly that you did not |
-| Optimizing before measuring | Profile, find the real bottleneck, change one thing, measure again |
-| Caching to hide a slow query | Fix the query or the index. Cache only after correctness and invalidation are defined |
-| Silent behavior change in shared code | Enumerate the call sites and verify each, or version the behavior |
+| Rebuilding a subsystem to fix one bug | Trace the cause and change its required callers only |
+| Copying an API from another framework version | Check the installed source/types and versioned official docs |
+| Treating a mock response as a completed integration | Wire the real contract or label the remaining boundary explicitly |
+| Retrying a timed-out payment with a new key | Retrieve the original operation or replay the same supported key |
+| Catching an error and returning success | Preserve error semantics and a user-recoverable path |
+| Broadening a cache to improve hit rate | Preserve tenant, actor, locale, and authorization scope as relevant |
+| Running every available check after a text edit | Select checks that can detect the actual regression |
+| Declaring completion from code inspection alone | Separate implementation status from runtime evidence |
 
 ## Definition of done
 
-Do not report completion until every line is true.
+Apply each item to the requested mode; explicitly mark a material item as unverified when the environment prevents it.
 
-- [ ] The stated behavior works end to end against real data, not fixtures alone.
-- [ ] Every mutation validates input and authorizes the actor server-side.
-- [ ] Loading, empty, error, partial-failure, permission-denied, and success paths exist and were exercised.
-- [ ] The verification required by the risk tier ran, and the results are quoted.
-- [ ] The diff contains no secrets, debug output, dead code, or unrelated changes.
-- [ ] Naming, structure, and error handling match the surrounding code.
-- [ ] Everything unverified, assumed, or deferred is stated explicitly in the report.
+- [ ] The requested behavior, finding, or design decision is delivered within scope.
+- [ ] Relevant callers, access rules, contracts, and failure paths are accounted for.
+- [ ] Appropriate available checks ran; their outcomes and any required blocked checks are recorded.
+- [ ] The final diff preserves user work and contains no accidental sensitive data or unrelated edits.
+- [ ] Authorized delivery steps are completed, or the exact remaining blocker is stated.
+- [ ] The handoff distinguishes observed results, assumptions, and residual risk.
 
 ---
 

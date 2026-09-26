@@ -1,119 +1,64 @@
-# Delivery: planning, review, and reporting
+# Delivery: scope, verification, and handoff
 
-Read when scoping work, deciding how much verification is enough, reviewing a diff, or writing the final report.
+Read for nontrivial planning, shared contracts, review, or release handoff. A local edit usually needs a brief acceptance statement and focused verification, not a separate planning artifact.
 
-## Frame the work in four lines
+## Establish the contract
 
-Before any code exists, be able to fill these in:
+Identify who can do what, the visible result, and which existing behavior must remain. Recover constraints from the request, tests, callers, schema, and project instructions. Do not infer that a confusing implementation is the intended policy.
 
-```
-Behavior:   <who> can <do what>, and <what observably changes>
-Done when:  <acceptance criteria, testable>
-Not doing:  <explicit non-goals that a reader might assume>
-Risk tier:  R0 | R1 | R2 | R3  ->  verification: <the checks you will run>
-```
+| Choice | Action |
+| --- | --- |
+| Recoverable implementation detail | Follow the existing convention and proceed |
+| Ambiguity changes product behavior or a public contract | Present the concrete alternatives and get the missing decision; continue independent work |
+| Action already authorized in the session | Carry it through within that target and scope |
+| Consequential live mutation with missing authorization | Prepare the diff, affected target, verification and recovery procedure before asking |
+| Environment cannot run a needed check | Complete available work, record the limit, and give the exact remaining check |
 
-If "Behavior" needs more than two sentences, the task is two tasks. Split it and say so.
+Preserve uncommitted work. Do not reset, stash, reformat, or regenerate unrelated files to manufacture a clean workspace. Inspect generated changes and lockfile diffs just as carefully as source changes.
 
-## Decide alone or ask
+## Inspect enough of the system
 
-Decide and proceed when the answer is recoverable, conventional, or inferable from the codebase: naming, file placement, which existing util to reuse, how to shape an internal type, which of two equivalent libraries already in the manifest to use.
+Start with applicable instructions, manifest/lockfile, relevant config, affected code and tests. Expand to callers and integration points when the contract changes. Read sensitive configuration by key names or redacted values; avoid dumping secret-bearing files into logs.
 
-Ask before proceeding only when a wrong guess is expensive and unrecoverable:
+For a shared change, identify:
 
-- Data loss, irreversible migration, or destructive bulk operation
-- A public API or URL contract that other consumers depend on
-- Money, permissions, personal data, or legal/compliance surface
-- Two readings of the request produce materially different products
+- API consumers, schema readers/writers, serialized formats, and cache keys.
+- Deployed versions that may coexist during rollout.
+- Error and retry behavior consumers rely on.
+- Whether data needs migration, backfill, versioning, or an explicit compatibility period.
 
-Everywhere else: state the assumption in one line, build under it, and keep going. A blocking question with nothing delivered is the expensive choice.
+Keep required changes and necessary enabling refactors in the diff. Mention unrelated improvements only when they matter; do not bury the handoff in a backlog of observations.
 
-## Survey checklist
+## Choose evidence for the failure mechanism
 
-- [ ] `AGENTS.md` / `CLAUDE.md` / `CONTRIBUTING.md` / `README` read
-- [ ] Package manifest and lockfile checked for what is actually installed and at which major version
-- [ ] Framework config read (`next.config`, `vite.config`, `tsconfig`, `wp-config`, build scripts)
-- [ ] The full code path read, not only the file named in the request
-- [ ] Existing tests around the path read: they document intended behavior
-- [ ] `git status` clean or the user's uncommitted work identified and left alone
-- [ ] Existing conventions identified: error style, validation library, data-access layer, naming
+| Concern | Useful evidence |
+| --- | --- |
+| Layout or interaction | Render at relevant viewport sizes; keyboard/focus check for changed controls |
+| Pure logic | Boundary cases and a meaningful invariant |
+| API contract | Request/response exercise including invalid input and affected callers |
+| Authorization | Allowed actor succeeds; forbidden actor cannot read or change the object |
+| Cache | Write → read freshness, key isolation and invalidation behavior |
+| External write | Duplicate delivery, timeout ambiguity, reconciliation and supported idempotency |
+| Migration | Old/new code compatibility, resumability, lock/runtime estimate and recovery |
+| Performance | Same workload/tool before and after; distinguish lab results from field data |
 
-## Change surface budget
+Use existing project checks. Broaden tests when shared callers, failures, or unresolved risks warrant it. A check that cannot observe the changed behavior is not evidence for that behavior. Synthetic fixtures are valid when they exercise the real contract; production data is not a prerequisite.
 
-Every change has three surfaces. Keep them separate and name each in the report.
+For regressions, make the check fail against the old behavior when feasible using an isolated fixture or temporary checkout. Do not revert unrelated user changes to demonstrate a failure. Small copy/style changes do not need tests that merely assert their new wording or CSS values.
 
-| Surface | Contents | Rule |
-| --- | --- | --- |
-| Required | Code that must change for the behavior | Do it |
-| Enabling | Small refactors without which the required change would be ugly or unsafe | Do it, keep it minimal, call it out |
-| Adjacent | Unrelated improvements you noticed | Do not do it. List it |
+## Review the final diff
 
-If enabling changes exceed the required change in size, stop and re-plan. That imbalance usually means the abstraction is wrong or the task is mis-scoped.
+Check against the task and observed failure, not a universal rewrite checklist:
 
-## Diff review, as a hostile reviewer
+- Error branches cannot silently fall through to success; asynchronous work is awaited or deliberately supervised.
+- Valid falsy values, date-only values, time zones, currency precision and limits retain intended meaning.
+- Access scope survives serialization, caching, jobs, and alternate routes.
+- Growing datasets have bounded work or deliberate streaming/batching; avoid accidental N+1 requests.
+- Shared contracts, generated artifacts and migrations agree; deployment order is viable.
+- No debug credentials, temporary files, unrelated lockfile churn, or accidental formatting changes remain.
 
-Run this pass over your own diff before reporting. Read the diff, not your memory of what you wrote.
+## Handoff
 
-**Correctness**
-- Every `async` call awaited or deliberately fire-and-forget with a comment saying why
-- Error branches return or throw; nothing falls through to a success response
-- Off-by-one, empty array, `null` vs `undefined`, `0` and `""` treated as falsy where they are valid values
-- Date, timezone, currency, and locale handling explicit rather than accidental
-- Concurrency: two simultaneous requests cannot corrupt state or double-charge
+Lead with the result and its verification status. For a small edit, one paragraph can be enough. For a substantive change, include the reason, relevant locations, checks actually run with outcomes, and material operational limits.
 
-**Security**
-- Input validated server-side, at the boundary, before use
-- Authorization checked on the object, not just the route
-- Queries parameterized, output encoded for its context
-- No secrets, tokens, internal hostnames, or stack traces in responses or logs
-
-**Performance**
-- No query inside a loop; no fetch inside a render path that could be hoisted
-- Bounded result sets: every list endpoint paginates or has a hard limit
-- Indexes exist for the columns actually filtered and sorted on
-- No unnecessary client bundle growth; no blocking resource added to the critical path
-
-**Maintenance**
-- No dead code, commented-out blocks, stray `console.log`, or leftover debug flags
-- Names describe intent, not type or implementation
-- Comments explain *why*, never restate *what*
-- Public behavior changes are reflected in types, tests, and docs
-
-## Reporting template
-
-Lead with the outcome. Keep it scannable.
-
-```
-<One sentence: what now works, or what decision was made.>
-
-Changes
-- path/to/file.ts:120 — what changed and why
-- path/to/other.php — what changed and why
-
-Verification
-- `pnpm typecheck` — pass
-- `pnpm test src/foo.test.ts` — 12 passed
-- Manual: created an order as a non-owner, got 403 as expected
-
-Tradeoffs
-- <only the non-obvious ones>
-
-Residual risk / next steps
-- <unverified areas, deploy order, follow-ups>
-```
-
-Rules for the report:
-
-- Quote real command output. Never paraphrase a result you did not see.
-- If a check could not run, write "not run: <reason>" instead of omitting it.
-- Do not list every file you read, every idea you rejected, or a narration of the process.
-- One line per tradeoff. If a tradeoff needs a paragraph, it needed a decision from the user earlier.
-
-## Definition of done, expanded
-
-A change is done when a competent stranger could:
-
-1. Read the report and know what changed and why.
-2. Re-run your verification and get your result.
-3. Revert the change cleanly if it misbehaves in production.
-4. Extend the code without reverse-engineering an undocumented assumption.
+Use accurate labels: `passed`, `failed`, `not run`, `inferred from code`, `verified locally`, `deployed and checked`. Summarize output rather than pasting long logs. Preserve enough command and environment detail for a teammate to repeat important checks. Do not imply a local build proves a live release.

@@ -1,93 +1,60 @@
-# Writing findings
+# Findings, confidence, and verification
 
-Read when producing an audit result, a single finding, or a remediation plan.
+Read when producing an audit result or remediation plan. Write for someone deciding what to fix and how to verify it, not for a vulnerability count.
 
-## Finding template
+## Classify the evidence
 
-```
-[SEVERITY] Title that names the flaw and the location
-Confidence: Confirmed | High | Medium | Low
-Location:   path/to/file.ts:120  (and every other call site)
-Class:      Broken access control / Injection / Exposure / Logic / Configuration
-
-Path
-  Entry:   POST /api/orders/:id  (any authenticated user)
-  Flow:    req.params.id -> getOrder(id) -> render, with no ownership check
-  Sink:    the full order record, including customer address and totals
-
-Preconditions
-  A valid session of any role. Order IDs are sequential.
-
-Impact
-  Any logged-in user can read every order in the system, including personal data.
-
-Evidence
-  <minimal redacted trace or code excerpt that shows the missing control>
-
-Remediation
-  <concrete code, at the root cause>
-
-Verification
-  <the test or check that proves the fix, and that fails without it>
-
-Residual risk
-  <what remains, what was not tested, what depends on deployment config>
-```
-
-Order the report by severity, not by file. The first finding is the one that would appear in the incident report.
-
-## Severity
-
-Judge impact against realistic exploitability. State them separately when they diverge.
-
-| Severity | Meaning |
-| --- | --- |
-| Critical | Unauthenticated remote code execution, full database read/write, authentication bypass, or mass personal-data exposure |
-| High | Privilege escalation, cross-tenant access, stored XSS in a privileged context, exposure of a live production secret, financial manipulation |
-| Medium | Authenticated injection with limited scope, CSRF on a meaningful action, SSRF without a proven internal reach, sensitive data in logs |
-| Low | Information disclosure with limited value, missing hardening header, rate-limit gap on a non-sensitive endpoint |
-| Informational | Defense-in-depth improvement with no demonstrated attack path |
-
-Adjust up when the flaw is unauthenticated, silent, scalable, persistent, or touches money, credentials, or personal data. Adjust down when it requires an already-compromised administrator, an unreachable configuration, or an unrealistic user action.
-
-**Confidence is a separate axis.** "High severity, low confidence" is a legitimate and useful finding, as long as you say what would confirm it.
-
-## Proof of concept ethics
-
-- Non-destructive by default: read, do not write; one record, not the table; your own test account, not a real user's.
-- Never include a working exploit against a live third-party system.
-- Redact tokens, keys, personal data, and internal hostnames. A trace showing *that* the control is missing is sufficient; a payload that hands someone the keys is not necessary.
-- Get written authorization before any active testing against systems you do not own. "The user asked me to" is not authorization for a third party's infrastructure.
-
-## Remediation guidance
-
-Every fix answers three questions:
-
-1. **What is the root cause?** Not "the endpoint lacked validation" but "validation lives in the controller instead of the data layer, so every other caller is unprotected."
-2. **What is the smallest complete fix?** Complete means it covers every path to the same sink.
-3. **How is it verified?** A test that fails on the vulnerable version, or a documented manual check with the exact request and expected response.
-
-Rank remediation by risk reduction per unit of effort, and say which fixes are quick wins versus structural work. Give the user a sequence they can actually execute this week, not a list of thirty equal-weight items.
-
-## Scope statement
-
-End every audit with what you did **not** cover. Without it, silence reads as safety.
-
-```
-Reviewed:      the API layer (routes, auth middleware, data access) at commit <sha>
-Not reviewed:  frontend bundle, infrastructure config, third-party integrations,
-               the admin panel, background jobs
-Not tested:    no active exploitation; findings are from code trace only
-Depends on:    deployment configuration for headers and TLS, not visible in this repo
-```
-
-## Reporting anti-patterns
-
-| Anti-pattern | Why it hurts | Instead |
+| Status | Meaning | Report action |
 | --- | --- | --- |
-| Thirty low-severity findings ahead of the real one | The important one gets skipped | Rank ruthlessly; group hardening notes at the end |
-| "Potential SQL injection" on a prepared query | Destroys trust in every other finding | Trace it and drop it |
-| Severity inflated to force attention | The next report is discounted | Argue impact honestly |
-| A fix that only patches the reported endpoint | Leaves the other callers exploitable | Fix the shared sink |
-| A clean report with no scope statement | Reads as "the system is secure" | Always state coverage |
-| Copying a scanner's output verbatim | No reachability analysis, no value added | Verify each item against the code |
+| Demonstrated | A safe test or complete code/config trace establishes the policy violation under stated conditions | Report a finding and identify which evidence is runtime versus static |
+| Supported hypothesis | A plausible path has a material missing condition, deployment detail or control | State the gap and smallest confirming/disproving check |
+| Hardening | Improvement without an established policy violation or attack path | Separate from vulnerabilities and explain expected benefit/cost |
+| Disproved or out of scope | Effective control, unreachable configuration, or unrelated surface | Do not retain as an active finding; note only if it resolves the user's concern |
+
+A code review can establish a defect without executing an exploit. Conversely, inability to access the deployment cannot prove the deployment is safe. Keep uncertainty visible in both directions.
+
+## Finding format
+
+Use only fields needed to make the claim reviewable:
+
+- **Title and priority:** name the violated behavior and affected surface.
+- **Location and revision:** precise path/line, route or configuration; include related callers where they share the cause.
+- **Actor and prerequisites:** initial privilege, input/control, deployment conditions and required interaction.
+- **Evidence and path:** observed or traced steps, effective controls considered, and why the invariant fails.
+- **Impact:** data, operations, tenants or availability affected; distinguish proven extent from potential amplification.
+- **Confidence:** certainty in the path and the material missing evidence, separate from impact.
+- **Correction and verification:** smallest complete fix, legitimate behavior to preserve and meaningful regression check.
+
+For a single simple finding, paragraphs can convey this more clearly than a large template. Group repeated symptoms by root cause while retaining actionable locations. Do not paste live credentials, personal records or unnecessary exploit output.
+
+## Severity and priority
+
+Use the project's severity system when one exists. Otherwise explain the qualitative judgment using reachability, required privileges/interaction, scope and consequence. Class names do not dictate severity: stored XSS, SSRF, exposed keys and auth bypasses vary by actual capability and context.
+
+| Priority direction | Evidence that supports it |
+| --- | --- |
+| Immediate containment | Ongoing exploitation or readily usable access to critical production authority/data |
+| Urgent correction | Practical substantial unauthorized access, state corruption or availability loss |
+| Scheduled correction | A demonstrated boundary failure with narrower consequence or stronger prerequisites |
+| Hardening/backlog | Reduced exposure without a demonstrated violation |
+
+When CVSS is required, identify the version and vector and justify its metrics. Do not manufacture a precise score from a scanner label. Remediation priority may differ from severity because exposure, compensating controls and deployment urgency differ.
+
+## Safe proof and regression
+
+Use synthetic data, test actors and minimal effects. A provided local application can be tested in isolation; a live target must be within the authorized scope. Avoid reading real third-party records or extracting credentials to demonstrate a flaw. Stop on unexpected sensitive exposure or unintended mutation.
+
+For a requested fix, verify both the rejected attack shape and legitimate use. Add alternate entry points, encoding variants, tenancy, replay or concurrency only where they exercise the same failure mechanism. Prefer a test that can demonstrate old-versus-new behavior safely; a documented manual check is valid when automation is impractical. State whether it actually ran.
+
+## Coverage statement
+
+Include the reviewed revision/components, mode of assessment, tests run, material excluded surfaces and deployment assumptions. Example structure, not a result to copy:
+
+```
+Reviewed: <revision and affected components>
+Evidence: <static traces, local tests, or authorized environment checks actually performed>
+Not covered: <material boundaries outside this assessment>
+Unresolved: <missing control/configuration facts and the check that would resolve them>
+```
+
+A no-findings outcome means no actionable issue was established within that scope. It does not mean every input or system path is safe. Keep hardening notes separate and avoid filling a clean report with speculative vulnerabilities.

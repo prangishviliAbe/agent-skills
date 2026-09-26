@@ -1,67 +1,46 @@
-# Files, cryptography, and personal data
+# Files, cryptography, sensitive data, and logs
 
-Read when handling uploads, downloads, encryption, tokens, personal data, logging, or retention.
+Read for uploads/downloads, encryption, credentials, personal data or telemetry. Define what the control must protect and from whom before choosing a mechanism.
 
-## File uploads
+## File lifecycle
 
-Validate in this order and reject early:
+Validate size before buffering, allow permitted types, and compare extension, reported media type and detected structure. None alone proves safety. Run parsers with resource limits and isolation appropriate to the format; a valid file can still exploit a vulnerable decoder or expand dramatically.
 
-1. **Size**, before reading the whole file into memory. Enforce it at the proxy or web server too, not only in application code.
-2. **Extension**, against an allowlist. Never a denylist: `.php5`, `.phtml`, `.svg`, `.htaccess`, and double extensions all get through a denylist.
-3. **Detected content type from the bytes**, not the client-supplied `Content-Type` header, which is attacker-controlled.
-4. **Structural validity** — actually parse it as the claimed type. A file that is a valid JPEG parses as a JPEG.
+Generate storage identifiers instead of accepting paths. Prevent script execution in upload storage. Authorize private upload, read and delete operations; public content may use deliberately public storage with a safe serving policy.
 
-Storage rules:
+For images, re-encoding can remove some embedded content and metadata, but is not a complete sanitizer or parser-exploit defense. Treat SVG, HTML and active document formats according to their rendering context: use format-aware sanitization, isolated serving or attachment delivery as appropriate. Do not silently destroy required vector or document features to claim safety.
 
-- Store outside the web root, or in object storage, and serve through an application route that applies authorization.
-- Generate the stored filename yourself (a random identifier). Keep the user's name only as a display label, escaped at output.
-- Never allow the upload directory to execute code. Where the platform allows, disable script execution at the server level as well.
-- Re-encode images where feasible: it strips embedded payloads and metadata in one step.
-- SVG is executable content. Sanitize it with an SVG-aware sanitizer or serve it with a content type and disposition that prevents inline rendering.
-- Archives: cap the entry count, the total decompressed size, and the compression ratio, and reject entries whose resolved path escapes the extraction directory.
+For archives, bound entry count, expanded bytes and processing time; reject traversal, unsafe symlinks and entries escaping the extraction root. A compression-ratio cap alone does not stop every resource-exhaustion case.
 
-Serving rules:
+When serving, set a correct media type and content disposition, with nosniff where supported. Separate untrusted content from the application origin and ambient cookies; consider same-site and cookie Domain behavior too. A signed URL is a bearer grant: constrain object, operation and lifetime and assess revocation requirements. Never make it long-lived simply to avoid authorization on subsequent requests.
 
-- Set `Content-Type` explicitly and `X-Content-Type-Options: nosniff`.
-- Use `Content-Disposition: attachment` for anything not intended to render inline.
-- Serve user content from a separate origin when possible, so a stored HTML payload cannot reach your session cookies.
-- Authorize on the object, and make direct or pre-signed URLs short-lived and scoped.
+## Cryptographic design
 
-## Cryptography
+Prefer maintained high-level APIs that provide authenticated encryption and safe defaults. Select algorithms and parameters from current platform guidance and relevant compliance constraints; do not invent schemes or copy parameters from unrelated algorithms.
 
-- Use a maintained library at a modern default. Never design a scheme, a mode, or a padding.
-- Encryption for confidentiality means authenticated encryption. Encryption without integrity permits tampering.
-- Never reuse a nonce or an initialization vector with the same key. Generate randomly per operation from a cryptographically secure source.
-- Random values used for security (tokens, identifiers, salts, reset codes) come from a CSPRNG, never from a general-purpose random function.
-- Passwords are hashed with a memory-hard algorithm, never encrypted. Encryption implies you can recover them, which is the wrong property.
-- Hashing is not encryption, encoding is not encryption, and base64 is not a security control.
-- Key management is the hard part: keys live in a secret manager, are separated from the data they protect, are scoped per environment, and have a rotation plan that includes re-encrypting or versioning existing ciphertext.
-- Compare secrets, signatures, and tokens with a constant-time function.
+Follow the chosen algorithm's nonce/IV requirements, including length, uniqueness, unpredictability and message limits. Some modes use counters and others random values; a universal random-IV rule is wrong. Prevent reuse across restarts and multiple writers when uniqueness is required. Use a cryptographic random source for secrets and tokens.
 
-## Personal data
+Use password-hashing APIs for passwords, not reversible encryption or fast general-purpose hashes. Authenticate encrypted data before using plaintext. Use supported verification functions and key identifiers/versioning; do not silently fall back to an insecure mode on failure.
 
-- **Collect the minimum.** Every field you do not store cannot be leaked.
-- Classify what you hold: identifiers, contact details, financial data, government identifiers, health data, location, biometrics, and anything about children. The classification determines the controls and the legal obligations.
-- Encrypt sensitive fields at rest when the threat model includes database access, and always encrypt in transit.
-- Define retention per data class and enforce it with a scheduled deletion job, not a policy document. Include backups, exports, logs, analytics, and third-party processors in the deletion path.
-- Support access and deletion requests as a real, tested code path.
-- Third parties are part of your surface: know what each analytics script, session recorder, error tracker, and support widget receives. Session recording tools capture form contents unless explicitly masked.
+Keep keys separate from protected data with scoped access. Define rotation and old-key retirement against existing ciphertext and backup needs. Encryption at rest mitigates some disk/backup exposures; it does not stop a compromised service that can both read data and request decryption.
 
-## Logging and telemetry
+## Data minimization and retention
 
-Never log: passwords, tokens, session identifiers, API keys, full card numbers, security answers, one-time codes, raw request bodies of authentication endpoints, or personal data beyond what the log's purpose requires.
+Identify necessary data, access roles, third-party recipients and retention requirements. Do not invent legal obligations or promise compliance from a technical checklist. Legal holds, jurisdiction and backup architecture may require policy input.
 
-Do log, in structured form: who acted, what they acted on, when, from where, and the outcome — especially for authentication events, permission changes, admin actions, exports, and deletions. An audit trail is what turns an incident into a bounded, explainable event.
+Map retention to working records, exports, logs, caches, processors and backups. Where immutable backups expire rather than allowing individual deletion, document expiry/access rules and how deletion is reapplied after restore. Preserve required audit evidence without retaining unnecessary content.
 
-Protect the logs themselves: access-controlled, retention-limited, and tamper-evident for the audit-relevant subset. Log injection is real — encode newlines and control characters from untrusted values before writing them.
+Inspect analytics and session-replay configuration for actual capture/masking behavior. Do not assume all products record or protect the same fields. Use synthetic values for verification rather than submitting real sensitive information to a third party.
 
-## Error handling
+## Logs and errors
 
-- Users get a stable, non-descriptive message plus a correlation ID.
-- Operators get the full detail server-side, keyed by that same ID.
-- Debug modes, stack traces, SQL, framework version banners, and directory listings must be off in production. Verify by requesting a deliberately broken URL and reading what comes back.
-- Do not let error differences become an oracle: distinct messages or timings for "user not found" versus "wrong password" leak account existence.
+Record safe event metadata: actor identifier as appropriate, action, resource identifier, timestamp, decision and correlation ID. Avoid passwords, tokens, credential-bearing URLs, raw authentication bodies and unnecessary personal content. Redact at collection as well as presentation; output masking does not remove a value already sent to telemetry.
 
-## Backups
+Use structured logging and safe handling of untrusted control characters. Restrict access, set retention and protect audit-relevant records from tampering. Collect only the diagnostic detail required for the question.
 
-A backup contains everything the production database contains, usually with fewer controls. Encrypt it, restrict access to it, keep it out of publicly reachable storage, and test the restore. Deletion obligations apply to backups too — document how a deletion request eventually reaches them.
+Give users useful safe messages and field guidance; give operators redacted diagnostics. Distinguish authentication failures consistently where enumeration matters, without hiding every actionable validation error. Verify production error responses and debug exposure with authorized low-impact checks.
+
+## Primary references
+
+- [OWASP File Upload Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/File_Upload_Cheat_Sheet.html): layered validation, storage and serving controls.
+- [OWASP Cryptographic Storage Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/Cryptographic_Storage_Cheat_Sheet.html): algorithm selection and key-management considerations.

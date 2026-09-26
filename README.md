@@ -2,44 +2,22 @@
 
 **ავტორი: [Abe Prangishvili](https://github.com/prangishviliAbe)**
 
-Portable, production-grade სქილების ნაკრები **ნებისმიერი AI კოდირების აგენტისთვის** — Codex, Claude Code, Antigravity, Cursor, Windsurf ან საკუთარი harness.
+პორტაბელური, პრაქტიკული სქილების ნაკრებია Codex-ისთვის, Claude Code-ისთვის, Antigravity-ისთვის და ნებისმიერი აგენტისთვის, რომელსაც Markdown ინსტრუქციის წაკითხვა შეუძლია. თითოეული სქილი იწყება მოკლე, გადაწყვეტილებაზე ორიენტირებული წესებით და საჭიროებისას გადადის შესაბამის reference ფაილში.
 
-თითოეული სქილი დაწერილია როგორც **სამუშაო პროცედურა** — მკაცრი წესები, გადაწყვეტილების ცხრილები, failure-mode-ების რუკა და დასრულების ბინარული კრიტერიუმები. ეს არ არის ზოგადი რჩევების კრებული: ყოველი წესი ან კონკრეტულ ქმედებას კარნახობს, ან კონკრეტულ შეცდომას კეტავს.
-
-**ფორმატი მოდელისთვისაა და არა runtime-ისთვის.** სქილი უბრალო markdown-ია სტანდარტული YAML frontmatter-ით (`name` + `description`), ამიტომ მუშაობს ყველგან, სადაც აგენტს ფაილის წაკითხვა შეუძლია — მაშინაც კი, თუ runtime-ს საერთოდ არ აქვს „skills" სისტემა.
-
-## სტრუქტურა
-
-```
-<skill>/
-├── SKILL.md            # პროცედურა: წესები, ნაბიჯები, reference-ების რუკა, definition of done
-├── agents/openai.yaml  # Codex-ის UI metadata (სხვა runtime-ები უბრალოდ უგულებელყოფენ)
-└── references/         # სიღრმე — იტვირთება მხოლოდ მაშინ, როცა ამოცანა მას ითხოვს
-```
-
-**პრინციპი — progressive disclosure.** `SKILL.md` მოკლეა (< 220 ხაზი) და მარშრუტიზაციას აკეთებს; დეტალები `references/`-შია, რომ კონტექსტი მხოლოდ საჭიროებისას დაიხარჯოს.
-
-**თითოეული ფოლდერი თვითკმარია.** სქილებს შორის ბმულები აკრძალულია, რადგან ინსტალაცია ფოლდერობრივად ხდება — `scripts/validate-skills.mjs` ამას ამოწმებს.
+სქილი არ ცვლის მომხმარებლის არჩევანს. ის ეხმარება აგენტს სწორად შეაფასოს მოცულობა, მტკიცებულება, რისკი და შემდეგი ქმედება — ზედმეტი პროცესის ან დაუმოწმებელი დაპირებების გარეშე.
 
 ## სქილები
 
-| სქილი | დანიშნულება | References |
+| სქილი | როდის გამოიყენება | რა აუმჯობესებს |
 | --- | --- | --- |
-| `web-development` | Production-ის არქიტექტურა და end-to-end delivery: risk tier-ები, verification ladder, diff review, reporting | delivery, frontend, backend, wordpress, debugging, operations |
-| `ui-ux` | Flow-ები, IA, სრული state matrix, accessibility, design system, responsive, კრიტიკა | discovery, flows, states, accessibility, design-system, responsive, critique |
-| `anti-ai-slop-design` | ბრენდზე მიბმული ვიზუალური ხარისხი generic AI-სტილის გარეშე | visual-thesis, slop-catalog, craft, multilingual, review |
-| `premium-web-motion` | მიზნობრივი, შეწყვეტადი და პროფილირებული motion | motion-system, patterns, implementation, performance |
-| `security` | Exploitability-first აუდიტი, threat modeling და root-cause hardening | threat-model, access-control, injection, data-protection, wordpress, supply-chain, reporting |
-| `token-efficiency` | სრული პასუხი მაქსიმალური signal density-ით | — |
+| `web-development` | ვებსაიტის, API-ის, ინტეგრაციის, WordPress-ის ან რელიზის შექმნა, შეცდომის გამოსწორება და რევიუ | არსებული კონტრაქტის დაცვა, თანაზომიერი ვერიფიკაცია, idempotency, ავტორიზაცია და რეალური handoff |
+| `ui-ux` | UX flow, ფორმა, dashboard, navigation, responsive ან accessibility სამუშაო | მიზნობრივი flow/state specification, recovery, ფოკუსი და რეალურად შემოწმებული მტკიცებულება |
+| `anti-ai-slop-design` | ვიზუალური მიმართულება, ინტერფეისის polish, ბრენდზე დაფუძნებული დიზაინი | გამორჩეული, მაგრამ ბრენდისა და კონტენტის შესაბამისი ვიზუალური გადაწყვეტილებები generic „ანტი-პატერნების“ ბრმად აკრძალვის გარეშე |
+| `premium-web-motion` | motion, hover, dialog, transition, scroll, gesture ან animation audit | interruption-safe state, motion შემცირების გზა, progressive enhancement და შესრულების სწორი შემოწმება |
+| `security` | threat model, code audit, exploitability analysis, incident ან hardening | კონკრეტული trust boundary, მტკიცებულებაზე დაფუძნებული finding, ზუსტი confidence და უსაფრთხო remediation |
+| `token-efficiency` | მოკლე პასუხი, TL;DR, concise status, „just code“ | ნაკლები ტექსტი ისე, რომ არ დაიკარგოს შედეგი, მტკიცებულება, საჭირო სიღრმე ან მნიშვნელოვანი გაურკვევლობა |
 
-### რას აკეთებს თითოეული კონკრეტულად
-
-- **web-development** — R0–R3 risk tier-ები განსაზღვრავს ვერიფიკაციის სიღრმეს; „არასდროს თქვა რომ შემოწმება გაიარა, თუ არ გაუშვი"; server-side validation/authorization ყოველ mutation-ზე; ცალკე reference WordPress/WooCommerce/Elementor-ისთვის და ცალკე — debugging-ისა და incident-ისთვის.
-- **ui-ux** — სრული state matrix (loading, empty, error, partial failure, permission, content extremes); WCAG AA-ს ოპერაციული ზღვრები რიცხვებით; keyboard pattern-ები კომპონენტების მიხედვით; token-ების სამშრიანი არქიტექტურა.
-- **anti-ai-slop-design** — slop catalog: ნიმუში → რატომ იკითხება როგორც გენერირებული → რითი ჩაანაცვლო; visual thesis-ის გამოყვანის მეთოდი; ცალკე reference ქართული და მრავალენოვანი ტიპოგრაფიისთვის.
-- **premium-web-motion** — motion inventory კოდის წერამდე; duration/easing token-ები; შეწყვეტადობა და reduced-motion როგორც დაპროექტებული გზა და არა გლობალური გამორთვა; frame budget და პროფილირების პროცედურა.
-- **security** — ნაპოვნი უნდა იყოს **გზა და არა ნიმუში**: attacker-controlled input + reachable path + სახიფათო sink; priority sweep; AI agent-ებისა და prompt injection-ის თავი; finding-ის და severity-ის შაბლონი.
-- **token-efficiency** — რას ჭრი და რას ინარჩუნებ; პასუხის ფორმა მოთხოვნის ტიპის მიხედვით.
+`SKILL.md`-ში არის როდის გამოიყენო რომელ reference-ი. სხვა სქილთან მიბმულობა არ არსებობს — ერთი საქაღალდის კოპირებაც სრულფასოვან ინსტრუქციას ტოვებს.
 
 ## ინსტალაცია
 
@@ -51,11 +29,12 @@ cd agent-skills
 ### macOS / Linux
 
 ```bash
-./install.sh              # Codex
-./install.sh claude       # Claude Code
-./install.sh antigravity  # Antigravity
-./install.sh all          # სამივე
-./install.sh ~/my/dir     # ნებისმიერი სხვა დირექტორია
+./install.sh                 # Codex
+./install.sh claude          # Claude Code
+./install.sh antigravity     # Antigravity
+./install.sh all             # სამივე
+./install.sh ./my-skills     # სხვა საქაღალდე
+./install.sh all --dry-run   # მხოლოდ გეგმის ნახვა
 ```
 
 ### Windows PowerShell
@@ -65,68 +44,46 @@ cd agent-skills
 .\install.ps1 claude
 .\install.ps1 antigravity
 .\install.ps1 all
-.\install.ps1 D:\my\dir
+.\install.ps1 D:\my-skills
+.\install.ps1 all -DryRun
 ```
 
-ორივე სკრიპტი ფოლდერს **მთლიანად** ანაცვლებს, ამიტომ წაშლილი ფაილები არ რჩება. ინსტალაციის შემდეგ გახსენი ახალი session, რომ განახლებული metadata და trigger-ები ჩაიტვირთოს.
+ინსტალატორი ანაცვლებს მხოლოდ ამ რეპოზიტორიის ექვსი სქილის არსებულ ვერსიას. სხვა სქილებს, მათ შორის runtime-ის სისტემურ სქილებს, არ ეხება. ჯერ ყველა ახალი საქაღალდე staging-ში კოპირდება და შიგთავსი მოწმდება; შემდეგ იცვლება არსებული ვერსიები. ძველი ვერსიები ინახება target-ის მშობელ საქაღალდეში `.agent-skills-backups/`-ში. შეცდომისას ინსტალატორი ცდილობს სრულ აღდგენას და backup-ის მდებარეობას აჩვენებს.
 
-## Runtime-ები
-
-| Runtime | სად იდება | როგორ გამოიძახება |
-| --- | --- | --- |
-| **Codex** | `~/.codex/skills` | ავტომატურად `description`-ის მიხედვით, ან `$web-development ...` |
-| **Claude Code** | `~/.claude/skills` | ავტომატურად `description`-ის მიხედვით, ან „use the security skill" |
-| **Antigravity** | `~/.gemini/antigravity/skills` | ავტომატურად, სესიის დაწყებისას |
-| **Cursor / Windsurf / Zed** | პროექტში, მაგ. `.ai/skills/` | rules-ში მიუთითე: „For security work, read and follow `.ai/skills/security/SKILL.md`" |
-| **სხვა ნებისმიერი აგენტი** | ნებისმიერი გზა | „Read `<path>/SKILL.md` and follow it for this task" |
-
-ბოლო ორ შემთხვევაში სქილი მაინც სრულად მუშაობს: `SKILL.md` თავადვე ამბობს, რომელი reference ფაილი როდის უნდა წაიკითხოს აგენტმა.
+Codex განახლებულ სქილებს შემდეგ user turn-ზე იპოვის. სხვა runtime-ში ხელახლა გახსენი სესია, თუ მისი skill list cache-დება.
 
 ## გამოყენება
 
 ```text
-$web-development implement this Next.js feature end to end
-$ui-ux review this onboarding flow and specify every state
-$anti-ai-slop-design remove generic AI styling from this landing page
-$premium-web-motion design an accessible, interruptible motion system
-$security audit this API authorization boundary
-$token-efficiency summarize the result briefly
+$web-development fix this checkout retry without duplicate charges
+$ui-ux specify recovery states for this onboarding flow
+$anti-ai-slop-design refine this landing page without changing the brand
+$premium-web-motion make this dialog interruption-safe and accessible
+$security audit this export authorization boundary
+$token-efficiency summarize the completed work briefly
 ```
 
-`$` პრეფიქსი Codex-ის სინტაქსია; სხვა runtime-ებში უბრალოდ სქილის სახელი ახსენე.
+`$` Codex-ის გამოძახების სინტაქსია. სხვა runtime-ში ახსენე სქილის სახელი და მიეცი მისი `SKILL.md`.
 
-### კომბინაციები
-
-| ამოცანა | სქილები |
-| --- | --- |
-| ახალი feature ნულიდან | `ui-ux` → `anti-ai-slop-design` → `web-development` → `security` |
-| Landing page-ის რედიზაინი | `anti-ai-slop-design` + `premium-web-motion` |
-| WordPress პლაგინის აუდიტი | `security` + `web-development` |
-| Production-ის ინციდენტი | `web-development` (debugging.md) → `security` |
-| სწრაფი პასუხი | `token-efficiency` |
-
-## ვალიდაცია
+## ხარისხის შემოწმება
 
 ```bash
-node scripts/validate-skills.mjs
+npm ci --ignore-scripts
+npm run check
 ```
 
-ამოწმებს: frontmatter-ის სისწორეს, `name`-ისა და ფოლდერის დამთხვევას, description-ის სიგრძეს, `SKILL.md`-ის მოცულობას, Codex metadata-ს ველებს, ყველა markdown ბმულის არსებობას, ფოლდერს გარეთ გამავალ ბმულებს და მიუბმელ reference ფაილებს. Exit code 1 — შეცდომაზე.
+`npm run check` ამოწმებს სქილების frontmatter-ს, metadata-ს, attribution-ს, reachable local რესურსებს, ბმულების self-containment-სა და symlink-ების საფრთხეს. ასევე ტესტავს Bash და PowerShell ინსტალატორების staging, rollback, lock, dry-run, source/destination overlap და ძველი ვერსიის შენარჩუნების სცენარებს.
 
-## ავტორინგის კონვენციები
+`tests/evals/` შეიცავს ხელით გასაშვებ, რეალისტურ სცენარებს სქილის ქცევის შესაფასებლად. ისინი არ არის ავტომატურად შესრულებული ტესტები; დეტალური ინსტრუქციაა [tests/evals/README.md](tests/evals/README.md).
 
-დეტალები — [AGENTS.md](AGENTS.md). მოკლედ:
+## სხვა runtime-ები
 
-1. `SKILL.md` არის პროცედურა, არა ესსე. თუ 220 ხაზს გადააჭარბა — სიღრმე `references/`-ში გადადის.
-2. ყოველი წესი კონკრეტულია და შესამოწმებელი. „იყავი ფრთხილად" არ არის წესი.
-3. Anti-pattern-ს ყოველთვის მიყვება სწორი ქმედება — მარტო აკრძალვა არ მუშაობს.
-4. რიცხვები ზედსართავების ნაცვლად: `4.5:1`, `44×44`, `180ms`, `45–75 სიმბოლო`.
-5. Cross-skill ბმულები აკრძალულია; საერთო ცოდნა თითოეულ სქილში ცალკე იწერება.
-6. ყოველ `SKILL.md`-ს ბოლოში აქვს ავტორის ხაზი — სქილები ფოლდერობრივად კოპირდება, ამიტომ ატრიბუცია თან უნდა მიჰყვეს. ვალიდატორი ამას აიძულებს.
-7. Commit-მდე — `node scripts/validate-skills.mjs`.
+| Runtime | ინსტალაციის ადგილი | გამოძახება |
+| --- | --- | --- |
+| Codex | `~/.codex/skills` | ავტომატურად description-ით ან `$skill-name` |
+| Claude Code | `~/.claude/skills` | სქილის სახელის მითითებით ან ავტომატურად |
+| Antigravity | `~/.gemini/antigravity/skills` | სესიის skill discovery-ით |
+| Cursor / Windsurf / Zed | პროექტში, მაგალითად `.ai/skills/` | rule-ში მიუთითე შესაბამისი `SKILL.md` |
+| Custom harness | ნებისმიერი ხელმისაწვდომი გზა | წააკითხე `<path>/SKILL.md` დავალებამდე |
 
-## ავტორი
-
-**Abe Prangishvili** — [github.com/prangishviliAbe](https://github.com/prangishviliAbe)
-
-ყველა სქილი — `SKILL.md`, `references/` და ინსტრუმენტები — ავტორის შექმნილია. თუ სქილს იყენებ ან ავრცელებ, შეინარჩუნე ატრიბუციის ხაზი `SKILL.md`-ის ბოლოში.
+სრული ავტორინგისა და ცვლილების წესები იხილე [AGENTS.md](AGENTS.md).

@@ -1,93 +1,79 @@
-# Craft: typography, color, space, surface, detail
+# Craft: typography, color, composition, and assets
 
-Read when making or reviewing concrete visual decisions. Numbers here are defaults to depart from deliberately, not laws.
+Read for concrete visual decisions. Preserve an effective existing system. Numerical examples are starting points, except where explicitly identified as standards.
 
 ## Typography
 
-**Roles, not sizes.** Define display, h1–h3, body, body-small, label, and caption. Each role fixes size, line-height, weight, tracking, and color together. A size without a defined role is where inconsistency starts.
+Define only needed roles: display, section heading, body, label, caption, data, or code. Keep semantic heading structure independent of visual size.
 
-**Scale.** A ratio between roughly 1.2 (dense, utilitarian) and 1.333 (editorial, spacious). Larger ratios need larger jumps in content importance to justify them. Round to whole pixels at small sizes.
+Choose a font for the actual script, reading task, tone, license/availability, and delivery cost. Inspect real weights and fallback behavior rather than trusting a font name.
 
-**Line-height.** Roughly 1.5–1.6 for body text, 1.2–1.35 for headings, tighter as size grows. Non-Latin scripts with tall ascenders and descenders need more — see [multilingual.md](multilingual.md).
+| Decision | Starting point | Judge by |
+| --- | --- | --- |
+| Body measure | Roughly 45–75 characters can suit Latin prose | Font, script, reading task, line tracking, and viewport; not a universal limit |
+| Body line-height | Around 1.5 can be useful | Actual glyph metrics, size, script, line length, and spacing overrides |
+| Heading leading | Often tighter than body | No collisions/clipping; readable wrapping at supported widths |
+| Type scale | A small set of meaningful roles | Clear hierarchy with actual content, not adherence to one ratio |
+| Weight | Distinguishable emphasis using available weights | Font rendering and readability; adjacent weights can be valid |
+| Tracking | Natural spacing first | Display intent and script behavior; avoid blanket letter-spacing tricks |
 
-**Measure.** 45–75 characters for prose. Below 40, wrapping becomes choppy and the eye works harder; above 85, the return sweep loses the line. Use `ch` units so the constraint follows the font.
+The CSS unit `ch` measures the advance of the "0" glyph, not an exact count of arbitrary characters. Validate the rendered measure. Use bounded fluid type where appropriate and check zoom; do not rely only on viewport units.
 
-**Weight contrast.** Two or three weights, with real distance between them (400 / 600, or 400 / 700). 500 next to 600 reads as an accident rather than a decision.
+Avoid fixed-height text boxes, nonresponsive manual line breaks, and ellipsis that hides essential differences. A one-word final heading line is a composition choice to inspect, not an automatic defect.
 
-**Tracking.** Leave body text alone. Tighten large display type slightly (-0.01 to -0.02em). Loosen uppercase and small labels (+0.02 to +0.06em). Never track non-Latin scripts by Latin instinct.
+## Color and themes
 
-**Practical checks:** the longest real heading does not break into a one-word orphan line; numerals in tables are tabular; a `<strong>` inside body text is distinguishable; text over an image is legible at the image's lightest region.
+Assign roles rather than a palette without purpose: canvas, surface, text, muted text, action, focus, and relevant statuses. Reuse the supplied brand palette and build needed accessible pairings around it.
 
-## Color
+A colorful identity can use several accents. Ensure actions, selected states, categories, and warnings remain distinguishable and that color is not the only signal.
 
-**Build roles, not a swatch collection.**
+Tune supported themes independently. Pure black, warm neutrals, cool neutrals, saturation, and tonal elevation are choices to validate in context, not universal quality rules. Do not add dark mode unless it is requested or part of the existing product.
 
-```
-canvas, surface, surface-raised
-text, text-muted, text-inverse
-border-subtle, border-strong
-action, action-hover, action-text, focus
-success / warning / danger / info  — each with background, border, and text
-```
+## Accessibility for visual decisions
 
-Every role is defined in every theme. A dark theme is not an inversion; muted text and borders need re-tuning or they vanish.
+| Check | Standard distinction / action |
+| --- | --- |
+| Text | WCAG 1.4.3 AA uses 4.5:1 ordinary text and 3:1 large text: at least 24 CSS px regular or about 18.67 CSS px bold, with defined exceptions |
+| Contrast measurement | Evaluate intended rendered color pairs including opacity and worst-case media/gradient regions; screenshot samples can be approximate |
+| Non-text information | WCAG 1.4.11 AA applies 3:1 to necessary control/state identification and meaningful graphics, not every decorative border |
+| Focus | Keep keyboard focus visible and not entirely obscured; inspect custom indicator contrast. Extra area/change-of-contrast criteria in 2.4.13 are AAA |
+| Targets | WCAG 2.5.8 AA uses 24×24 CSS px with specified exceptions; 44×44 is a useful touch aim and the AAA enhanced criterion, not a universal AA minimum |
+| Reflow and scaling | Inspect 200% text enlargement and 320 CSS px reflow or equivalent 400% zoom; necessary two-dimensional content has defined reflow exceptions |
+| Text spacing | Layout must tolerate the applicable user spacing overrides; fixed label heights and clipped controls often fail |
+| Meaning | Supplement color with another cue, provide image alternatives, and keep essential information available as text |
+| Motion | Keep interaction usable with reduced motion and avoid blocking content behind effects; inspect applicable motion/media criteria separately |
 
-**Neutrals carry the design.** Most surfaces, text, and borders come from one neutral ramp with a consistent slight temperature. A neutral ramp that drifts between warm and cool grays looks broken without anyone being able to say why.
+Sources: [text contrast](https://www.w3.org/WAI/WCAG22/Understanding/contrast-minimum.html), [non-text contrast](https://www.w3.org/WAI/WCAG22/Understanding/non-text-contrast.html), [focus not obscured](https://www.w3.org/WAI/WCAG22/Understanding/focus-not-obscured-minimum.html), [focus appearance](https://www.w3.org/WAI/WCAG22/Understanding/focus-appearance.html), [target size](https://www.w3.org/WAI/WCAG22/Understanding/target-size-minimum.html), [reflow](https://www.w3.org/WAI/WCAG22/Understanding/reflow.html), [text spacing](https://www.w3.org/WAI/WCAG22/Understanding/text-spacing.html).
 
-**Accent discipline.** One accent for action. If a second exists, it must have a stated, different job (navigation state, a data category), not decoration. Semantic status colors are reserved for status — never used to add visual interest.
+This subset helps visual work; it does not establish complete WCAG conformance. A design file can specify focus treatment but cannot prove keyboard or screen-reader behavior.
 
-**Contrast is measured, not judged.** 4.5:1 for body text, 3:1 for large text and for component boundaries and meaningful icons. Check against the actual rendered background, including gradients and image overlays at their worst point.
+## Space and composition
 
-**Dark themes.** Canvas near #0e1013–#16181d rather than pure black, which causes halation against light text. Desaturate accents slightly; a color tuned for a white background is usually too loud on a dark one. Signal elevation with lighter tonal steps rather than heavier shadows, which are invisible on dark surfaces.
+Use proximity, alignment, contrast, repetition, and rhythm to express relationships. Consistent section spacing can be appropriate; vary it when a real grouping or pacing benefit exists.
 
-## Space
+Reuse a spacing scale where practical. Permit deliberate optical corrections, calculated dimensions, and expressive composition. A 13px value is not intrinsically a bug; unexplained divergence between equivalent roles is a useful audit target.
 
-**One scale.** 4, 8, 12, 16, 24, 32, 48, 64, 96, 128. Every gap comes from it. An off-scale value is either a bug or a documented exception.
+Distinguish large-screen breathing room from unused space that separates related information. Inspect both a content-heavy region and the hero. Align icons and text optically after establishing stable layout rules.
 
-**Space is grouping.** Proximity says "these belong together" more clearly than any border. Before adding a divider or a card, try increasing the gap between groups and decreasing it within them.
+## Surfaces and details
 
-**Vertical rhythm carries meaning.** Uniform spacing between all sections makes a page read as an undifferentiated stack. Tight within a topic, generous at a genuine change of topic.
+Choose space, tone, border, or shadow according to the needed separation and visual language. Shadow can suit a static card, and a strong border can be a brand feature. Make each recurring use predictable.
 
-**Optical over mathematical.** Equal numbers do not always look equal: text has visual sidebearings, icons have internal padding, round shapes need slight overshoot. Trust the eye at the final pass, but only after the system is in place.
+Define radius relationships by role, geometry, and nesting; do not require every element size to map to a different radius. Nested outlines need appropriate inset relationships, not identical numbers everywhere.
 
-## Surfaces, borders, elevation
+Use a coherent icon vocabulary and optical sizing. Icon-only controls need an accessible name; labels or discoverable help can clarify unfamiliar actions. Tooltips must not contain the only essential instruction.
 
-Establish a separation strategy and use it consistently:
+## Imagery and asset direction
 
-1. **Space** — the quietest and usually the best
-2. **Tone** — a slightly different surface value
-3. **Hairline** — a 1px subtle border
-4. **Elevation** — shadow, reserved for things that genuinely float above the page
+Give an asset a job: evidence, atmosphere, instruction, recognition, or deliberate expression. Specify relevant subject, context, composition, crop, treatment, and placement. A useful image can be photographic, generated, illustrated, or abstract.
 
-Most interfaces need only the first two. Shadow is for overlays, popovers, dropdowns, and dragged objects — things that are literally above the surface. A shadow on a static card is decoration.
+- Prefer supplied brand assets and real product material when they fit.
+- Check permitted use and attribution requirements for sourced assets; do not invent permission or provenance.
+- Label conceptual/product-demo imagery so it does not masquerade as evidence of real people, events, or capabilities.
+- Preserve a useful focal point at compact and wide crops, with readable text over media and a sensible missing-image fallback.
+- Inspect generated content for distorted detail, invented text/logos, and inconsistent series treatment.
+- Account for payload, dimensions, animation cost, and font loading when implementing; a small visual gain may not justify a large dependency.
 
-**Radius logic**, stated once and applied by element size: small controls take the small radius, cards the medium, sheets and modals the large. A pill radius is a deliberate statement, not a default for every button.
+## Inspect the delivered artifact
 
-**Borders:** two tokens. Subtle for structure, strong for emphasis or a focused state. Anything more is drift.
-
-## Icons
-
-One set, one stroke weight, one optical size, aligned to a shared grid. Icons sit on a consistent baseline with their labels. An icon that does not add recognition speed (a generic star beside a heading) is noise — remove it. Icon-only controls always carry an accessible name and, ideally, a visible label at larger sizes.
-
-## Imagery
-
-Every image has one of four jobs: **evidence** (this is the real thing), **atmosphere** (this is the world it lives in), **instruction** (this is how it works), or **recognition** (this is who we are). An image with no job is a filled rectangle.
-
-Direct it concretely: subject, context, composition, crop ratio, lighting, treatment, and placement. "Professional photo of a team" is not direction; "three people at a shared workbench, shot from above, cool daylight, cropped to 3:2, hands and tools in frame, faces incidental" is.
-
-Consistency: one crop ratio family, one grade, one treatment. Mixed color grading across a page is the fastest way to look assembled from stock.
-
-## The detail pass
-
-Run last, in one sitting, on the real rendered page:
-
-- [ ] All radii from the defined set, applied by the stated logic
-- [ ] All borders from the two tokens
-- [ ] All spacing on-scale
-- [ ] Icons: one set, one weight, optically aligned with labels
-- [ ] Focus ring: visible, on-brand, 3:1 contrast, not clipped by an overflow container
-- [ ] Hover, active, and disabled states defined for every interactive element
-- [ ] Text over media legible at the worst point of the image
-- [ ] Numbers tabular where they align in columns
-- [ ] Long strings, empty states, and missing images do not break the layout
-- [ ] Dark mode checked for muted text, borders, elevation, and accent saturation
+Check actual fonts, content, images, focal hierarchy, repeated-role consistency, meaningful states, compact/wide behavior, and relevant accessibility criteria. If implementation is available, inspect the rendered artifact and operate its affected controls. Record what could not be checked instead of calling the design "verified" from a single frame.

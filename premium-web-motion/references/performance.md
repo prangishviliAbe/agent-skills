@@ -1,114 +1,72 @@
 # Motion performance and accessibility
 
-Read when implementing anything nontrivial, and always before claiming that motion is smooth.
+Use for costly or complex motion, accessibility reviews, and any performance claim. Record the scenario and environment before changing implementation.
 
-## The frame budget
+## Rendering costs
 
-At 60fps you have 16.7ms per frame; at 120fps, 8.3ms. The browser needs part of that, so treat 8–10ms as the working budget for your own work.
-
-Property cost, cheapest first:
-
-| Property | Pipeline stages | Verdict |
+| Property / technique | Likely cost | Decision |
 | --- | --- | --- |
-| `transform`, `opacity` | composite only | Animate freely |
-| `filter`, `backdrop-filter` | paint plus composite, GPU-heavy | Use sparingly, always measure |
-| `box-shadow`, `border-radius`, `background-position` | repaint every frame | Avoid animating; fake shadow with an overlaid pseudo-element whose opacity animates |
-| `width`, `height`, `top`, `left`, `margin`, `padding`, `font-size` | full layout, every frame, for the whole subtree | Never animate |
+| Transform, opacity | Often compositor eligible; layer allocation, rasterization, and large surfaces still matter | Start here, then inspect the trace |
+| Filter, backdrop filter, shadow, clip effects | Cost varies with browser, effect, and painted area | Measure; consider a static effect with an opacity transition |
+| Height, width, positions, margins, grid tracks | Layout and potentially paint of affected content | Use deliberately for actual reflow; constrain scope and profile |
+| FLIP / shared layout | Measurement at state changes plus animated transforms | Batch reads/writes; preserve identity and handle interruption |
 
-Substitutions that keep the effect and drop the cost: animate `transform: scale()` instead of size; `transform: translate()` instead of position; an overlay's opacity instead of a shadow; `grid-template-rows: 0fr → 1fr` instead of height.
+Do not replace real layout change with scale when it distorts text, preserves unwanted layout space, or creates hit-testing surprises. A short measured disclosure can be better than an elaborate transform workaround.
 
-## Avoiding layout thrash
+A 60Hz display refreshes about every 16.7ms; 120Hz about every 8.3ms. This is total frame time, not a JavaScript allowance. Main-thread tasks below 50ms can still miss several frames. Select a budget from the target device and interaction rather than declaring a universal 8–10ms allowance.
 
-Reading a layout property (`offsetHeight`, `getBoundingClientRect`, `scrollTop`, `getComputedStyle`) after a style write forces a synchronous layout. In a loop, that is one forced layout per iteration.
+The [browser animation guide](https://web.dev/articles/animations-guide) explains why rendering stages and compositing matter. Treat its property guidance as a starting point, not a guarantee for a particular page.
 
-**Batch reads, then writes.**
+## Reads, writes, and scroll
 
-```js
-// bad: read/write/read/write
-items.forEach((el) => { const h = el.offsetHeight; el.style.height = `${h * 2}px`; });
+Layout-sensitive reads after invalidating writes can force synchronous calculation. Batch all starting measurements, apply the state/layout mutation, batch all final measurements, then start effects. Do not interleave final reads with animation writes in a loop.
 
-// good: all reads, then all writes
-const heights = items.map((el) => el.offsetHeight);
-items.forEach((el, i) => { el.style.height = `${heights[i] * 2}px`; });
-```
+Use IntersectionObserver for visibility thresholds. For a progress fallback, cache stable geometry, invalidate it on relevant resize/content changes, and keep per-frame work small. Use requestAnimationFrame to coordinate visual writes; it does not inherently reduce the frequency of scroll events. A separate time interval can throttle lower-frequency work. Passive listeners help only for cancelable input events when default prevention is unnecessary; the scroll event itself is not cancelable. See [scroll event guidance](https://developer.mozilla.org/en-US/docs/Web/API/Document/scroll_event).
 
-## will-change and compositing
+Do not create endless animation-frame loops for an offscreen or inactive effect. Stop work when it has no visible or functional purpose, and restore the correct state on resumption.
 
-- Apply `will-change` only to elements that are about to animate, and remove it afterwards. It costs memory per layer.
-- Never put it on a broad selector. A page of promoted layers is slower than a page with none.
-- Prefer letting the browser decide; add it only when profiling shows a promotion problem.
+## Ownership and cleanup
 
-## Scroll work
+Add will-change only when a trace demonstrates a benefit, scope it narrowly, and release it when no longer needed. It is a hint with memory costs, not a performance fix.
 
-- Never do layout reads inside a `scroll` handler. Use IntersectionObserver for visibility, and CSS scroll-driven animations for progress-bound effects where supported.
-- If a scroll handler is unavoidable, mark it `{ passive: true }`, and do the work in a `requestAnimationFrame` callback with a dirty flag rather than on every event.
-- Unobserve entries after they have fired once. An observer holding a thousand elements after the reveal is finished is a leak.
+Release owned observers, event listeners, animation frames, timers, media-query listeners, WAAPI handles, and timelines on teardown. Observation is not automatically a memory leak; unnecessarily retained components and redundant work are the problem.
 
-## Cleanup
+When an operation completes after cancellation, prevent it from changing a newer state. Use a generation identifier, abort signal, or handle identity check. Do not swallow every promise rejection as if it were an expected cancellation.
 
-Every one of these must be released on unmount, route change, or teardown: observers, event listeners, `requestAnimationFrame` handles, timeouts, media-query listeners, running Web Animations, and library timelines. A leak is invisible on the first page and obvious after the fifth navigation.
+## Reduced motion and accessibility scope
 
-## Interruption
+Use the initial motion preference and subscribe to runtime changes for JavaScript effects. When reduction becomes active, settle or cancel current decorative effects into the correct semantic state. Remove travel, zoom, parallax, decorative loops, and staged delays; immediate state changes are valid. A brief fade is optional, not universally comfortable or required.
 
-- Cancel or reverse a running animation when the state changes. Never queue a stale transition behind fresh user input.
-- With the Web Animations API, keep the handle and call `cancel()` or `reverse()`. With CSS, change the class and let the transition retarget from the current computed value.
-- Test by clicking rapidly, opening and closing repeatedly, and navigating mid-transition. Anything that ends in the wrong visual state is a bug, not a rough edge.
+Provide motion-independent feedback, keyboard focus, and equivalent content. A static loading label or determinate value can replace a spinner; do not announce animation frames through a live region. Prefer owned component rules over an indiscriminate global override, and inspect third-party effects separately. Business logic must never require an animation event that may not fire.
 
-## Reduced motion
+Separate relevant requirements instead of claiming that a media query establishes compliance:
+- [WCAG 2.3.3 Animation from Interactions](https://www.w3.org/WAI/WCAG22/Understanding/animation-from-interactions.html) is Level AAA and addresses disabling nonessential interaction-triggered motion.
+- [WCAG 2.2.2 Pause, Stop, Hide](https://www.w3.org/WAI/WCAG22/Understanding/pause-stop-hide.html) is Level A. Automatically started moving, blinking, or scrolling content lasting more than five seconds alongside other content needs pause, stop, or hide controls unless essential. Auto-updating content has related controls without that five-second condition.
+- Flashing is a separate hazard: avoid introducing it; assess flash thresholds if the requested content contains flashes. Reduced motion alone is not a flash-safety test.
 
-`prefers-reduced-motion` is a request from someone who may experience nausea, dizziness, or migraine from motion. Honor it as a designed alternative.
+## Web Vitals and perceptual stability
 
-Remove: parallax, large translation, scale on entry, scroll-linked movement, autoplaying loops, spinning, bouncing, and staged sequences.
+Keep important content renderable without waiting for motion initialization. An opacity-zero reveal can delay when content becomes eligible for paint metrics; do not predict an exact LCP delay from duration alone.
 
-Keep: opacity changes, instant state changes, color feedback, and progress indicators. The interface must still explain itself.
+Reserve known media and placeholder dimensions. Unexpected layout changes can hurt CLS; some shifts near user input are excluded from the score, but can still feel disruptive. Transform movement generally does not contribute to CLS, yet can still disorient the user. See [CLS definitions and exclusions](https://web.dev/articles/cls).
 
-```css
-@media (prefers-reduced-motion: reduce) {
-  .motion-reveal,
-  .motion-card,
-  .motion-sheet {
-    transition-duration: 1ms;
-    animation: none;
-    transform: none;
-  }
-}
-```
+Keep input handlers and their immediate render work small. A smooth animation does not prove good INP, and a good INP value does not prove smooth sustained scrolling. Measure the metric that corresponds to the reported problem.
 
-**Scope it to your own utilities.** A global `*, *::before, *::after { animation: none !important }` breaks third-party widgets, assistive interactions, and transitions that are load-bearing for comprehension.
+## Verification scenarios
 
-In JavaScript, read it *and* subscribe to changes — users toggle it mid-session:
+Select cases applicable to the changed interaction:
 
-```js
-const mq = matchMedia('(prefers-reduced-motion: reduce)');
-let reduced = mq.matches;
-mq.addEventListener('change', (e) => { reduced = e.matches; });
-```
+| Scenario | Observe |
+| --- | --- |
+| Open → close → reopen before exit completes | Final state follows last intent; no stale removal or invisible input blocker |
+| Keyboard use while content enters/exits | Correct focus location, visible ring, no focusable hidden descendants |
+| Reduce motion at startup and mid-effect | Equivalent information, no stranded partial state, current effects settle |
+| Disable/delay enhancement; unsupported API | Existing content and product behavior remain available |
+| Resize, zoom, change text/images during expansion | No clipping, stale height, or obscured focused control |
+| Navigate away and back repeatedly | Owned work stops; no duplicate callbacks or growing retained component count |
+| Scroll forward/back, jump by anchor, keyboard scroll | Native behavior and content reachability survive |
+| Rapid input on representative hardware | Responsive state, bounded work, no accumulating effects |
 
-## Motion and Core Web Vitals
+For a performance comparison, use the same build mode, browser, viewport, device or throttle setting, data, and interaction. Capture a trace before and after when claiming improvement. Inspect long tasks, missed frames, forced layout, paint area, and retained resources relevant to the symptom.
 
-- **LCP:** never animate the largest element in, and never hide it behind a reveal. A hero that fades in at 500ms has an LCP of at least 500ms.
-- **CLS:** animating layout properties, injecting elements, or revealing content that pushes other content all produce shift. Reserve space up front.
-- **INP:** a handler that starts a heavy animation delays the visual response to the input. Keep the handler small; let the animation run on the compositor.
-
-## Verification
-
-1. Profile in the browser's performance panel with 4–6× CPU throttling, on the actual interaction and the actual scroll path.
-2. Look for: long tasks over 50ms, forced synchronous layouts, dropped frames, and layer explosions.
-3. Check for layout shift during the animation, not only at load.
-4. Navigate away and back five times; watch memory and listener counts.
-5. Test on a real mid-range phone. A desktop with a discrete GPU proves nothing.
-6. Run the reduced-motion, keyboard-only, and JavaScript-disabled passes.
-
-Never report "smoother" without a before-and-after measurement from the same profile.
-
-## Quick audit checklist
-
-- [ ] Only `transform` and `opacity` in continuous or scroll-linked animations
-- [ ] No `transition: all` anywhere
-- [ ] No layout property animated
-- [ ] Observers unobserved after firing, listeners removed on teardown
-- [ ] `will-change` scoped and temporary
-- [ ] Reduced-motion path scoped to owned components and actually tested
-- [ ] LCP element not animated in
-- [ ] Interruption tested with rapid input
-- [ ] Profiled on a throttled or real low-end device
+A throttled desktop is diagnostic, not proof of mobile behavior. Name real-device testing separately. If browser execution is unavailable, report static findings and proposed verification instead of marking checks passed.

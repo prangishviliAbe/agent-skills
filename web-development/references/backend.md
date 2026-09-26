@@ -1,97 +1,68 @@
-# Backend: APIs, data, migrations, caching, jobs
+# Backend: contracts, data, migrations, and integrations
 
-Read when designing or reviewing an endpoint, a database change, a background job, or an integration with a third party.
+Read for endpoints, persistence, jobs, webhooks, and third-party calls. Adapt the contract to the service rather than requiring every possible mechanism for every endpoint.
 
-## Endpoint contract
+## Endpoint boundary
 
-Every endpoint answers these before it is written:
+Establish the caller, resource policy, accepted fields, output shape, side effects, resource limits and error contract. Authenticate before expensive parsing where the transport permits; parse enough to identify and authorize the target without trusting an unvalidated identifier.
 
-```
-Method + path
-Who may call it        (auth requirement, role, ownership/tenant scope)
-Input schema           (types, required, ranges, max lengths)
-Output schema          (success shape, and every error shape)
-Failure modes          (400 / 401 / 403 / 404 / 409 / 422 / 429 / 5xx and when each is returned)
-Idempotency            (safe to retry? keyed how?)
-Side effects           (writes, emails, webhooks, payments, jobs enqueued)
-Limits                 (page size cap, payload cap, rate limit, timeout)
-```
+- Work with validated values. Reject or strip unknown write fields consistently with the API contract; explicitly select writable properties so raw input never becomes a database update object.
+- Derive identity from verified credentials. A requested tenant or object ID is a selector that must be authorized, not proof of access.
+- Scope protected reads and writes to permitted resources before returning data. Include counts, search, exports and nested resources. A deliberately public endpoint needs explicit public policy, not invented login requirements.
+- Recheck sensitive state-dependent conditions atomically with the write where races matter.
+- Return stable machine-readable errors and useful safe messages. Follow existing HTTP semantics, including consistent handling when resource existence must be hidden.
+- Log redacted diagnostic context with a correlation identifier. Do not echo raw query text, credentials, request bodies or infrastructure details to clients.
 
-If any line is blank, the endpoint is not designed yet.
+## Data integrity and query shape
 
-## Validation and authorization, in that order
+Use schema constraints for invariants the database can enforce: uniqueness, references, nullability and valid ranges. Application checks alone are insufficient under concurrency. Use transactions, conditional updates, version checks or locks according to the actual contention pattern.
 
-1. **Parse, then use.** Validate against an explicit schema at the boundary and work only with the parsed value afterwards. Never validate one variable and then use the raw one.
-2. **Reject unknown fields** on write endpoints so a client cannot smuggle `role`, `isAdmin`, `price`, or `userId` into a mass assignment.
-3. **Authorize the object, not the route.** A user with a valid session is not authorized for row 4211. Check ownership or tenant scope on the specific record.
-4. **Scope the query, do not filter after.** `where tenant_id = :actor_tenant` at the database, not `records.filter(...)` in application code. Broad-then-filter leaks through counts, pagination, and future refactors.
-5. **Deny by default.** New routes are private until explicitly opened. A missing permission check must fail closed.
-6. **Never trust an identifier as proof of access.** IDs in URLs, hidden inputs, JWT claims not verified server-side, and client-sent tenant hints are all attacker-controlled.
+Inspect query plans against the database engine and representative volume before prescribing indexes. Composite index order depends on predicates, sorting, selectivity and engine behavior, not the textual order of a WHERE clause. Avoid accidental N+1 work; bounded loops or streaming batches may legitimately issue repeated queries.
 
-## Errors
+Bound user-facing lists with pagination and maximum sizes. For large exports/backfills, use streaming or batching with a stable cursor; compare keyset pagination to offset when deep pages matter.
 
-- Stable machine-readable `code`, human-readable `message`, and optional `details` for field errors.
-- Never leak stack traces, SQL, internal hostnames, file paths, or dependency versions to clients.
-- Distinguish 401 (who are you) from 403 (I know who you are, and no). Use 404 instead of 403 only when existence itself is sensitive, and do it consistently.
-- Log the full context server-side with a correlation ID, and return that ID to the client so support can trace it.
-
-## Database
-
-**Query health**
-
-- Every list query is bounded: a page size with a hard maximum, or an explicit limit. No unbounded `SELECT *` on a growing table.
-- No query inside a loop. Batch with `IN`, a join, or a dataloader.
-- Indexes match the real access pattern: the columns you filter on, in the order you filter them, including the sort column when it drives the plan. Verify with the query planner rather than assuming.
-- Watch for the silent killers: a function wrapped around an indexed column, a leading wildcard `LIKE`, an implicit type cast, and `OFFSET` deep-paging on a large table (prefer keyset pagination).
-
-**Integrity**
-
-- Enforce invariants in the schema: `NOT NULL`, unique constraints, foreign keys, check constraints. Application-level uniqueness loses to concurrency.
-- Wrap multi-step invariants in a transaction, keep the transaction short, and never perform network calls inside one.
-- Concurrency: use a unique constraint plus upsert, an atomic conditional update, or explicit row locking. Read-then-write without protection is a race.
-- Money is never a float. Use integer minor units or a decimal type, and store the currency alongside it.
-- Store timestamps in UTC with timezone awareness; convert at the presentation edge only.
+Represent money with suitable exact arithmetic and an explicit currency; minor units vary by currency. Store instants with unambiguous time-zone semantics. Preserve local dates and time zones for calendar events and recurring schedules instead of converting every domain value blindly to UTC.
 
 ## Migrations
 
-Treat every migration as a production event.
+Choose rollout complexity based on data volume, availability and coexistence requirements.
 
-1. **Expand, migrate, contract.** Add the new nullable column or table. Backfill in batches. Dual-write and read from the new path. Only then drop the old one, in a later release.
-2. **Never destructive and deploy-coupled in one step.** A `DROP COLUMN` in the same release as the code that stops using it makes rollback impossible.
-3. **Backfill in batches** with a bounded loop and a resumable cursor, not one statement across millions of rows.
-4. **Know the lock behavior** of your engine for the specific operation. Adding an index on a large table can block writes; use the concurrent variant where available.
-5. **Write the rollback before running the migration.** If a clean rollback is impossible, say so explicitly and get confirmation first.
-6. **Test on a realistic data volume.** A migration that takes 40ms on 200 rows can take 40 minutes on 20 million.
+1. Inspect the exact engine/version, table size, lock behavior and transactional DDL support.
+2. When old/new application versions coexist, use an expand/backfill/contract sequence with explicit read/write transition and reconciliation. Dual writes add consistency work; do not add them reflexively.
+3. Bound and checkpoint substantial backfills. Make interruption, rerun and partial completion safe; verify counts and representative invariants.
+4. Define rollback, forward repair or restoration before consequential execution. Code rollback cannot reconstruct deleted data. Confirm backup freshness and actual restoration capability when relying on backups.
+5. Run a dry run or representative rehearsal when feasible. Inspect for concurrent writes and version skew, not just small-fixture execution time.
+6. Apply authorized changes to the verified target. Ask only for missing authorization or an unresolved consequential choice; do not invent a second sign-off.
 
-## Idempotency and external calls
+## Retry and idempotency
 
-- Any endpoint that can be retried by a client, a queue, or a payment provider must be safe to run twice. Use an idempotency key, a unique constraint on a natural key, or a state machine that ignores repeats.
-- Webhook receivers: verify the signature over the **raw** body before parsing, reject stale timestamps, deduplicate by event ID, respond fast, and do the work asynchronously.
-- Outbound calls always have a timeout, a bounded retry with exponential backoff and jitter, and a defined behavior when the dependency is down. Unbounded retries turn a partner outage into your outage.
-- Never let a third party's latency hold a database transaction or a user's request open.
+An operation being retryable in transport does not make its effects idempotent.
+
+| Result | Action |
+| --- | --- |
+| Read failed transiently | Retry within attempt and elapsed-time limits when appropriate |
+| Validation/authentication/permission failure | Correct the cause; do not blind-retry |
+| Rate limit | Respect provider guidance such as Retry-After within the caller's deadline |
+| Write timed out after dispatch | Look up operation status or reconcile; do not assume failure |
+| Provider supports an idempotency key | Persist and reuse the same key for the same logical operation, within its documented lifetime |
+| Duplicate delivery or concurrent request | Deduplicate atomically with durable state; in-memory flags are insufficient |
+
+Set per-call timeouts, total deadlines, response-size limits and cancellation behavior. Use bounded backoff with jitter only for retry-safe transient failures. Avoid retry multiplication across several layers. When a provider gives an unknown outcome, surface a pending/reconciliation state rather than claiming failure or success.
+
+## Webhooks and jobs
+
+Follow the provider's signature protocol exactly: some require unmodified raw bytes, timestamp tolerance, or a particular canonical form. Verify identity before side effects, check account/resource scope, and avoid logging signing secrets.
+
+Durably accept the event before acknowledging successful receipt. Deduplicate by the provider's event identity and business operation when necessary; duplicate event IDs are not the only way one logical action can repeat. Expect out-of-order delivery and retrieve authoritative state or validate transitions. A queue consumer must make side effects replay-safe and record completion atomically where possible.
+
+Do not mark an event processed before its effect succeeds. Avoid holding database transactions across slow external calls; use a durable outbox or state machine when committing data and publishing a message must stay consistent. Specify maximum attempts, retryable failures, a dead-letter/reconciliation path and useful alerts. Acknowledgement or enqueue success alone is not proof that the business action completed.
 
 ## Caching
 
-Add a cache only after these four are answered: what is cached, what is the key, when is it invalidated, and what breaks if it serves stale data.
+Define key inputs, authorization scope, freshness tolerance and invalidation. Include tenant, actor or permission scope when they affect the representation; a client UI filter cannot repair an overly broad server cache. Distinguish a private browser cache from a shared cache.
 
-- Prefer deriving the key from every input that changes the output, including the actor when the output is user-specific. A cache keyed too broadly is a data leak.
-- Never cache authorized responses in a shared cache without including the authorization scope in the key or marking them private.
-- Invalidate on write at the source of truth. Time-based expiry is a fallback, not a strategy.
-- Measure the hit rate. A cache below a meaningful hit rate is complexity with no benefit.
+TTL can be a valid freshness strategy for data that tolerates staleness. For stricter invariants use invalidation, versioned keys or an uncached read. Consider stampedes, negative caching and failed writes. Measure benefit against consistency cost before adding another cache layer.
 
-## Background jobs
+## Primary reference
 
-- Jobs are retried, so they must be idempotent.
-- Set a maximum attempt count and a dead-letter path. A job retrying forever is an outage with no alert.
-- Pass identifiers, not whole objects: the payload can be stale by the time it runs.
-- Make progress observable: enqueue time, start time, duration, outcome, failure reason.
-- Long jobs must be resumable and cancellable, and must not hold a lock or a transaction open.
-
-## Observability
-
-Every meaningful operation emits: what happened, who triggered it, which resource, how long it took, and the outcome. Structured fields, not string concatenation.
-
-- Log at the boundary and at failures. Do not log inside tight loops.
-- Never log secrets, tokens, passwords, full card numbers, or personal data beyond what is necessary.
-- Propagate a correlation ID from the inbound request through jobs and outbound calls.
-- Alert on symptoms users feel (error rate, latency, queue depth), not on individual log lines.
+[Stripe webhook documentation](https://docs.stripe.com/webhooks) illustrates provider-specific raw-body verification, repeated events and delivery ordering. Apply each integration's own protocol instead of assuming Stripe's rules are universal.

@@ -1,78 +1,109 @@
-# The state matrix
+# States, transitions, and recovery
 
-Read whenever specifying a screen or a component. Most incomplete designs are incomplete here.
+Read for inputs, asynchronous work, transactions, permissions, and failure handling. Select relevant states; the table is a discovery aid, not a demand to draw every combination.
 
-## The matrix
+## State inventory
 
-Walk every row for every screen and every component that displays data or accepts input. Mark each cell as designed, not applicable, or open.
-
-| Group | States |
+| Concern | Candidates to consider |
 | --- | --- |
-| Interaction | default, hover, focus-visible, active/pressed, selected, disabled, read-only |
-| Data loading | initial load, skeleton, background refresh, optimistic, stale-while-revalidating, timeout |
-| Emptiness | empty first use, empty after filtering, empty after deletion, no permission, feature unavailable |
-| Errors | field validation, form-level error, request failure, partial failure, offline, permission denied, not found, conflict, rate limited, server error |
-| Success | inline confirmation, toast, redirect with context, undo window, next-step prompt |
-| Content extremes | one item, many items, very long string, missing image, missing optional field, huge number, negative number, zero |
-| Identity and access | signed out, signed in, expired session, restricted role, trial or quota exceeded |
-| Environment | small viewport, keyboard only, touch, reduced motion, dark mode, slow network, RTL, translated text |
+| Interaction | Default, hover where supported, focus-visible, pressed, selected/expanded, disabled, read-only |
+| Data lifecycle | Initial loading, loaded, refreshing, stale, optimistic update, timeout, canceled request |
+| Emptiness | First use, no matches, no remaining work, empty after deletion |
+| Failure | Field/form validation, offline, request failure, partial failure, denied access, not found, conflict, rate limit |
+| Outcome | Confirmed success, confirmed failure, pending external processing, unknown result |
+| Access | Signed out, expired session, changed permission, quota exceeded |
+| Content | Long/missing text, missing image, zero/one/many items, large/negative/unknown values |
+| Environment | Relevant widths, keyboard/touch, zoom, reduced motion, supported themes/locales, slow network |
 
-## The four that get skipped, and what each must contain
+Model mutually exclusive states and allowed transitions. Independent flags such as "saving" and "has unsaved changes" may coexist; avoid impossible combinations such as confirmed success and confirmed failure for the same attempt.
 
-**Empty state.** Never just "No data". It contains: what belongs here, why it is empty right now, and the single action that fills it. Distinguish *"you have not created one yet"* (teach and invite) from *"your filter matched nothing"* (offer to clear the filter). These are different states with different copy and different actions.
+## A state needs a contract
 
-**Error state.** Contains: what happened in the user's terms, whether their data was lost, what they can do now, and a way to retry or get help. Never expose a stack trace or a raw code alone. Never blame the user. Preserve everything they typed.
+For each meaningful transition, specify:
 
-**Loading state.** First load and background refresh are different. First load: a skeleton that matches the final layout so nothing shifts when data arrives. Background refresh: keep the old data visible with a subtle indicator; do not blank the screen. Anything over roughly ten seconds needs progress or a cancel option, not a spinner that spins forever.
+| Field | Question |
+| --- | --- |
+| Trigger / condition | What event enters the state? Which response is authoritative? |
+| Visible result | What changes, and what remains available? |
+| Data | What is retained, committed, discarded, or potentially stale? |
+| Controls | Which actions remain possible? What prevents accidental repeats? |
+| Focus / announcement | Where does focus remain or move? What status is announced? |
+| Recovery / exit | What can the user do next, including leaving or returning? |
 
-**Partial failure.** One widget failing must not blank the page. Design the degraded view: which parts still work, how the broken part reports itself, and how to retry just that part.
+For a component, a small table often suffices. For branching transactions, use a state diagram or written transition list with acceptance criteria.
+
+## Loading and asynchronous behavior
+
+- Give immediate acknowledgement of activation without flashing a distracting spinner for every fast response. Choose indicator timing from measured latency and context; timing heuristics are not accessibility standards.
+- Use skeletons when layout is predictable and they aid orientation; use concise status or progress when they better explain the work.
+- Preserve useful previous data during refresh where safe, with stale status when freshness matters. Do not make outdated transactional data appear current.
+- Show determinate progress only when the quantity is known. Do not fabricate a percent or completion estimate.
+- Distinguish canceling a request, dismissing the view, and undoing a completed operation. A closed dialog does not necessarily cancel server work.
+- For long jobs, state whether the user may leave and how they find the result. Offer cancellation only if supported and describe any partial effects.
+- Prevent duplicate submission at the interface, but treat server idempotency or authoritative result reconciliation as an implementation dependency for consequential writes.
+- Preserve focus on a busy action when possible. Disabling or replacing a focused control can disrupt navigation; test the actual implementation.
+
+## Failure and uncertain outcome
+
+| Situation | Response |
+| --- | --- |
+| Known validation failure | Identify the correction, associate messages with fields, preserve valid input |
+| Known request rejection | State what did not change and the available retry or alternative |
+| Timeout after payment/save/send | Say the outcome is being checked or remains unknown; reconcile using an operation identifier/status before prompting a duplicate attempt |
+| Background refresh failure | Keep useful loaded data with appropriate stale/error feedback; retry refresh without blanking the page |
+| Partial bulk success | Identify succeeded and failed items, preserve actionable selection, retry only eligible failed work |
+| Concurrent edit conflict | Explain newer data and offer a supported comparison, merge, reload, or copy path; do not overwrite silently |
+| Expired session | Protect unsaved work where safe, authenticate, then return to the intended task |
+| Rate limit | Explain when or how to retry using actual server information; preserve work |
+
+Do not claim that data was preserved, an operation was canceled, or nothing was charged unless the system can establish it. Error copy should state the known condition and actionable next step without blaming the user or exposing sensitive internals.
+
+## Sensitive drafts and consequential transactions
+
+For money movement, identity changes, legal submissions, or similarly consequential flows, specify these related boundaries together when drafts or retries exist:
+
+- The stable operation identifier and authoritative status lookup used to reconcile an unknown outcome.
+- The server-side idempotency or state-transition guarantee that makes a repeat safe; a disabled submit control is only interface protection.
+- Which data is a client draft versus an accepted operation, where the draft may be stored, who can access it, and when it expires or is cleared.
+- What happens after session expiry, reauthentication, return from verification, process restart, or a second device.
+
+Do not place sensitive drafts in a URL or promise persistence, cancellation, or retry safety without a corresponding system capability. Preserve a draft only where its privacy and lifecycle are designed, then require an explicit user action before a consequential operation resumes.
+
+## Empty and unavailable states
+
+Give the reason and useful next action when one exists. "No alerts" may be a successful resting state and need no creation CTA. "No results" needs query/filter recovery. "No access" needs permission guidance, not onboarding copy. A tiny component may need a clear label rather than a full illustration and explanation.
 
 ## Validation timing
 
-| Moment | Behavior |
+| Moment | Decision |
 | --- | --- |
-| While typing, first attempt | Silent. Do not shout at someone mid-word |
-| On blur | Validate if the field has content and a clear format rule |
-| After a failed submit | Validate live on every keystroke so the user sees the fix land |
-| On submit | Validate everything, focus the first invalid field, and summarize the count |
+| First input | Avoid premature errors while an answer is incomplete; immediate assistance such as a character limit may be useful |
+| Blur | Validate complete values when the rule is clear and the feedback helps; avoid unnecessarily validating untouched fields |
+| After an error | Clear or update feedback as the value becomes valid; avoid announcing every keystroke |
+| Submit | Validate the complete request, preserve data, and guide focus to an error summary or relevant field |
+| Async validation | Mark pending where necessary; ignore stale responses and avoid exposing account existence or other sensitive information |
 
-Error messages say what is wrong **and** what correct looks like: "Password needs at least 12 characters" beats "Invalid password". Never clear the field. Never lose the rest of the form.
+Use product rules actually supplied. An example password length is not authorization to change the password policy.
 
-## Destructive actions
+## Consequential actions
 
-Scale the friction to the consequence:
+Choose protection according to reversibility, scope, user expectation, and harm, not a fixed confirmation recipe.
 
-| Consequence | Pattern |
-| --- | --- |
-| Reversible, low value | Do it immediately, offer undo |
-| Reversible, high value | Do it, offer undo prominently and for longer |
-| Irreversible, low value | One confirmation naming the object |
-| Irreversible, high value | Confirmation that states the consequence, plus typed confirmation of the name for the highest tier |
+- Low-risk reversible actions often suit immediate execution with accessible undo.
+- Irreversible or broad actions need clear scope and consequences before commitment; show the affected count and object identity.
+- High-impact reversible actions may still warrant review because restoration can be costly or incomplete.
+- Use typed confirmation only where it adds meaningful protection; never make it a ritual for every deletion.
+- Keep undo available long enough for the actual task and accessible without chasing a disappearing toast. A durable recovery path may be more suitable.
+- Do not use a disabled control as the sole explanation of a prerequisite.
 
-Undo beats confirmation whenever it is technically possible: it does not interrupt the confident user and it still protects the mistaken one. Never place a destructive action adjacent to a frequent one without visual and spatial separation.
+## Example acceptance criteria
 
-## Async feedback rules
+For an invoice update:
 
-- Under ~100ms: no indicator. An indicator that flashes is worse than none.
-- 100ms to ~1s: subtle inline indicator on the control that was activated.
-- Over ~1s: skeleton or progress, and the control stays visibly busy and non-repeatable.
-- Over ~10s: progress with an estimate if possible, a cancel option, and a promise about what happens if they leave.
-- Announce meaningful changes to assistive technology through a live region, and keep focus predictable.
-- After an action, the confirmation appears where the user is looking — near the control, not in a corner they are not watching.
+- A confirmed validation failure retains edits and identifies the fields that need correction.
+- A network timeout shows "We could not confirm the save" and checks the operation status before inviting another write.
+- When the record changed elsewhere, the user can preserve their draft while reviewing the newer version.
+- A confirmed save communicates success and leaves focus in a useful location.
+- Refreshing or navigating back behaves according to the explicitly specified draft/persistence policy.
 
-## State specification format
-
-For handoff, specify each state as a row rather than a separate mockup:
-
-```
-Component: OrderRow
-State           Trigger                 Visual                     Copy                          Announce
-default         —                       surface, border            —                             —
-hover           pointer over            surface-hover              —                             —
-focus-visible   keyboard focus          2px focus ring, offset 2   —                             —
-loading         action pending          button spinner, disabled   "Cancelling…"                 polite
-error           request failed          border-danger, inline msg  "Could not cancel. Try again"  assertive
-empty           no orders               illustration + CTA         "No orders yet" + "Create one" —
-```
-
-This table is worth more to a developer than five polished screens, and it is what makes the implementation match the design.
+These are scenarios to adapt and test, not evidence that an implementation already supports them.

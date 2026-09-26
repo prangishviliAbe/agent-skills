@@ -1,91 +1,58 @@
-# Threat modeling
+# Threat modeling and privileged automation
 
-Read when scoping an audit, designing a sensitive feature, or deciding what deserves attention.
+Read for a sensitive feature, broad audit, business-logic change or AI/tool boundary. Scale the model to the decision: a focused boundary table can be enough for one endpoint; a large service may need a diagram and several linked decisions.
 
-## The four questions
+## Model the invariant
 
-1. **What are we building?** A diagram in words: components, data stores, trust boundaries, and who talks to whom.
-2. **What can go wrong?** Per boundary, per asset.
-3. **What are we going to do about it?** A control, an accepted risk, or a design change.
-4. **Did we do a good job?** A verification for each control.
+Identify the assets, actors, data/control flow and trust boundaries. For each plausible misuse, name the invariant, existing control, remaining gap and way to verify it.
 
-Keep it to one page. A threat model nobody reads protects nothing.
+| Boundary | Questions |
+| --- | --- |
+| Browser or API client → service | Which identity is verified, and which action/resource is permitted? |
+| Service → storage/cache | Are tenant and field permissions preserved in queries, keys and outputs? |
+| Webhook/job → privileged operation | Who authenticated the event; what if it repeats or arrives out of order? |
+| Upload/URL → parser or network | What bytes and destinations are reachable, and what resource limits apply? |
+| CI → production artifact | Can untrusted contributors influence code that receives release credentials? |
+| Retrieved content → agent/tool | Can document text trigger a capability beyond the user's authorized task? |
 
-## Map trust boundaries
+Do not assume every boundary requires the same authorization mechanism. Separate authentication, authorization, validation, isolation and integrity controls, then choose the applicable ones.
 
-A trust boundary is any place where data or control crosses from one level of trust to another. Every one of them needs validation and authorization on the receiving side.
+## Attacker and abuse cases
 
-Common boundaries, all of which are crossed by attacker-controlled data at some point:
+Use actors with concrete starting access: anonymous visitor, registered user, another tenant, content author, staff member, compromised integration or build dependency. Model insiders only when relevant; encryption at rest does not stop a database user who can issue authorized reads or retrieve the same keys.
 
-- Browser to server (every request, including ones your UI would never send)
-- Server to database, cache, queue, or file system
-- Your service to a third-party API, and their webhook back to you
-- One tenant's data to another's, inside the same table
-- Unauthenticated to authenticated, and user to admin
-- Build pipeline to production runtime
-- User-generated content to another user's browser
-- Untrusted document, page, or tool output to an AI agent's context
+For each consequential operation, test the assumption behind:
 
-## Attacker profiles
+- Object selection, nested parent/child relationships, ownership and tenant membership.
+- Allowed fields, server-authoritative values and output projection.
+- Counts, searches, bulk operations, files and caches that bypass the main route.
+- Repeats, simultaneous requests, state changes between check and use, and failure after only part of the work commits.
+- Resource exhaustion from cheap requests triggering expensive work.
 
-Model concrete actors rather than a generic hacker. For each, ask what they can already do and what they want next.
+## Business logic
 
-| Actor | Already has | Wants |
-| --- | --- | --- |
-| Anonymous internet | Public routes, registration, password reset, public content | Any authenticated access, data, or resource abuse |
-| Registered user | A valid session, their own data, their own IDs | Other users' data, admin functions, free goods |
-| Other tenant | A valid account in the same system | Cross-tenant reads and writes |
-| Malicious content author | The ability to store text, HTML, files, or a name | Stored XSS, phishing, admin session theft |
-| Low-privilege staff | An internal login | Privilege escalation, bulk export, audit-log gaps |
-| Compromised dependency | Code execution inside your build or runtime | Secrets, persistence, outbound exfiltration |
-| Insider with database access | Direct data reads | Undetected exfiltration — this is why logging and encryption at rest matter |
+Write the invariant before choosing the mechanism: a coupon has a usage limit, stock cannot fall below its allowed bound, a refund cannot exceed the captured balance, an invitation applies only to its intended scope.
 
-## Per-boundary questions
+Use server-authoritative prices and transitions. Validate state atomically with writes using appropriate constraints, conditional updates or locks. Trace side effects outside the transaction: retries can duplicate money movement, notifications or grants even when a database row is unique. Define reconciliation for an ambiguous external result.
 
-For every entry point, answer:
+Check positive cases too. Preventing every refund would stop refund abuse while breaking the product.
 
-- Who may call this, and is that enforced on the server for **this specific object**?
-- What happens if a field is missing, oversized, the wrong type, an unexpected type, an array instead of a string, or negative?
-- What happens if it is called twice, out of order, or concurrently?
-- What does it return that the caller did not ask for and should not see?
-- What does it write to logs, analytics, or an error tracker?
-- What downstream system does it reach, and can the caller influence which one?
+## AI agents and LLM tools
 
-## Ranking without theater
+Treat pages, documents, repository text and tool results as untrusted content unless a higher-trust instruction explicitly delegates authority to them. Preserve provenance through retrieval and summarization; repeated or confidently worded text gains no authority by appearing in more sources.
 
-Rank by **impact times realistic exploitability**, then sanity-check against the question: "If this were exploited tomorrow, what would the incident report say?"
+A prompt can instruct separation of instructions from data, but cannot guarantee it. Enforce independent tool permissions, narrow credentials and resource/destination restrictions. For material side effects, verify the concrete action against the user's authorized scope at execution time. Require confirmation when authority is missing or a consequential new action exceeds that scope, not for every previously authorized write.
 
-Raise the priority when the flaw is: reachable without authentication, silent (no logs, no alerts), scalable (one request reads all records), persistent (stored payload, backdoor, key theft), or attached to money, credentials, or personal data.
+Avoid putting credentials in the model context. Validate model outputs before treating them as commands, queries, URLs or HTML. Bound tool loops, cost, recursion and retries, and stop when the goal changes or repeated attempts add no evidence.
 
-Lower it when: exploitation requires an already-compromised admin, the path is unreachable in shipped configurations, or an effective control sits in front of it.
+Record redacted action metadata, provenance and outcomes sufficient for audit. Do not log entire private prompts, retrieved documents, credentials or tool payloads by default. Test malicious content within realistic allowed tasks, including instructions embedded in otherwise useful data; assess actual tool effects rather than judging only the final prose.
 
-## AI agents, LLM features, and tool use
+## Prioritization and output
 
-Any system where a model reads untrusted content and can take actions has a new class of boundary. Treat model output as untrusted input.
+Prioritize reachable boundary failures with substantial consequence, broad scope or easy repeatability. A fixed list of vulnerability classes is a reminder, not evidence about this system. Distinguish existing controls, proposed controls and accepted residual risk.
 
-**Prompt injection is the default assumption.** Content fetched from a web page, an email, a document, a database field written by a user, a code comment, or another agent's output can contain instructions. The model may follow them.
+Deliver the model as a small table or diagram plus decisions. Each important proposed control needs an owner or implementation location and an observable verification; unresolved policy choices should be visible.
 
-Controls that actually work:
+## Primary reference
 
-- **The model's context is data; only the user's direct instruction is a command.** Enforce this in the system prompt and in the tool layer.
-- **Authorize tools, not intent.** The tool executes with a scoped credential and its own permission check. A model asking to delete a record must fail if the acting user cannot delete that record.
-- **Human confirmation for irreversible or outbound actions** — sending, publishing, paying, deleting, granting access. Confirmation must describe the concrete action, not "proceed?".
-- **Constrain the blast radius**: least-privilege credentials per tool, allowlisted destinations for outbound requests, rate limits, and no shell or file access unless the feature genuinely requires it.
-- **Never place secrets in the context window.** A model that can read a key can be convinced to print it.
-- **Treat generated code as untrusted** until reviewed: it may include an unsafe sink, a hallucinated dependency name (a typosquat target), or a hardcoded credential.
-- **Log the full chain**: what content entered the context, which tool ran with which arguments, and what came back. Without this, an incident cannot be reconstructed.
-- **Guard the output boundary too.** Model output rendered as HTML is XSS; passed to a shell is command injection; passed to a query is SQL injection. Escape by context exactly as with any other untrusted string.
-
-## Design-review triggers
-
-Escalate to a full threat model, rather than a code read, when the change involves:
-
-- Authentication, session, or password/recovery flows
-- A new permission, role, or sharing mechanism
-- Multi-tenancy or any query that spans users
-- Payments, refunds, credits, or balances
-- File upload, download, or rendering of user content
-- A new third-party integration or webhook
-- Anything that fetches a URL supplied by a user
-- An agent, automation, or job that acts with elevated privilege
-- Data export, bulk operations, or admin tooling
+[OWASP LLM prompt-injection prevention](https://cheatsheetseries.owasp.org/cheatsheets/LLM_Prompt_Injection_Prevention_Cheat_Sheet.html) provides layered mitigation guidance. Treat model-based filtering as one layer, not a security boundary that eliminates the risk.

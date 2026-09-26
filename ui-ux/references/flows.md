@@ -1,87 +1,74 @@
-# Flows, navigation, forms, dashboards
+# Flows, navigation, forms, and data work
 
-Read when designing or reviewing a multi-step experience, a navigation structure, a form, or a data-dense screen.
+Read for journeys, information architecture, forms, onboarding, or data-heavy interfaces.
 
-## Map a flow before drawing a screen
+## Map the affected journey
 
-Write it as a list, not a diagram, and it will be honest:
+Choose prose, a state diagram, a flow map, or an interactive prototype based on branching complexity. Capture:
 
-```
-Trigger        what makes the user start
-Precondition   what must already be true (account, permission, data, payment method)
-Steps          1..n, each with: the decision made, the information needed to make it
-Branches       what happens for each alternate answer
-Failures       per step: what can fail, what the user sees, how they recover
-Exit           success state, and what the user does next
-Return         what happens if they leave halfway and come back
-```
+- Entry points and deep links, prerequisites, relevant identity and permissions.
+- The decision or action at each step, and information needed before making it.
+- Success, failure, uncertain outcome, cancellation, and partial completion.
+- Back, refresh, interruption, session expiration, and later return.
+- Persisted values and selection, completion evidence, and the next useful action.
 
-The "Return" line is the one most often missing, and it is where users are actually lost.
+For consequential transactions, distinguish a client timeout from a server-declared failure. The user may have succeeded despite losing the response. See [states.md](states.md).
 
-## Reduce the flow before improving it
+## Reduce friction without removing control
 
-In order:
+| Opportunity | Apply when | Guardrail |
+| --- | --- | --- |
+| Remove a step | It adds no necessary decision, obligation, or value | Keep review where mistakes are consequential |
+| Defer setup | The task can safely provide value first | Do not hide prerequisites until after the user invests effort |
+| Preselect a default | It is predictable, reversible, and visible | Do not default consent, paid extras, or a risky scope from guesswork |
+| Reuse data | The source is reliable and the user can correct it | Browser locale does not establish country, currency, timezone, or legal address |
+| Offer progressive disclosure | Complexity is conditional or infrequent | Keep costs, consequences, and necessary alternatives discoverable |
 
-1. **Remove** steps that serve internal process rather than the user.
-2. **Defer** anything not needed to complete the primary task. Ask for it when it matters.
-3. **Default** intelligently — most users take the same path; make it the pre-selected one.
-4. **Derive** what you can infer instead of asking (locale, currency, timezone, plan).
-5. **Only then** design the remaining steps well.
+## Navigation and orientation
 
-A three-field form is better design than a beautiful eight-field one.
+Use labels grounded in the audience's vocabulary. Preserve stable location and route behavior. Make current selection visible where it helps orientation, and supply a route out of missing, forbidden, or expired content.
 
-## Navigation
+Choose visible navigation, a menu, search, or a combination based on number of destinations, frequency, and available space. A fixed count of menu items is not a usability rule. Test direct entry, browser Back, and return to a list without losing relevant position or filters.
 
-- Structure by user intent, not by department. Users look for "Billing", not "Finance Operations".
-- Depth over breadth fails for discovery; breadth over depth fails for scanning. Keep the primary level to a scannable set and put the long tail behind search.
-- The current location is always indicated. Every page shows where it sits.
-- Provide an escape from every dead end: an empty search, a 404, an expired link, a permission wall.
-- Label with the user's words, checked against what they actually search for. Never use an internal codename in the interface.
-- Mobile navigation is a decision, not a hamburger by default: the two or three most-used destinations deserve to be visible.
+## Forms and onboarding
 
-## Onboarding
-
-- Deliver value before demanding setup. Let people see the product working with sample or partial data.
-- Never front-load a tour. Teach one thing at the moment it is needed.
-- Progress must be visible, resumable, and skippable, with a way back to the skipped parts.
-- The first-run empty state is the most important screen in the product: it teaches what this thing is for and creates the first object.
-
-## Forms
-
-- One column. Multi-column forms break the reading order and the tab order.
-- Group into short, labeled sections. Long forms get a step indicator with a visible position.
-- Labels above fields, persistent. Placeholders only for format examples.
-- Ask in the order the user thinks, not the order the database stores.
-- Field width signals expected length: a postcode field should not be as wide as an address field.
-- Mark optional fields rather than required ones when most are required, and the reverse when most are optional. Be consistent within a form.
-- Explain why you need anything sensitive, at the field.
-- Save drafts for anything long. Losing a half-finished form is the most avoidable failure in software.
-- Submit is a single, clearly labeled action naming the outcome: "Create account", not "Submit".
+- Use a clear reading order. A single column is a reliable default; related short fields may share a row when grouping and keyboard order remain clear.
+- Keep labels persistent and associated. Above-field placement often helps flexible layouts; preserve a working system when another placement is appropriate.
+- Group related questions, explain sensitive requests, and show requirements before submission. Choose field widths that support valid input rather than guessing a universal maximum.
+- Label the submission by its outcome. Make optionality consistent and understandable; indicate required fields programmatically too.
+- Choose one page versus steps based on task structure, branching, review, and resumability, not an arbitrary field count.
+- Save drafts when useful and safe. Specify storage, expiry, cross-device behavior, and privacy limits rather than promising persistence the system cannot provide.
+- Introduce help at the point of need. Tours and setup can be appropriate for complex products; let optional parts be skipped or revisited and explain genuinely mandatory steps.
+- Distinguish first-use emptiness from no results, no permission, and a correctly empty workload.
+- Preserve entered data during validation and navigation where safe; provide an explicit completion state.
 
 ## Search and filtering
 
-- Show the result count and the active filters as removable chips.
-- Preserve the query and filters in the URL so results can be shared, bookmarked, and returned to via the back button.
-- "No results" is a distinct state from "nothing exists": offer to clear filters, relax the query, or suggest near matches.
-- Sensible defaults beat a wall of empty filter controls. Sort by what most users need first.
+Show the applied query, relevant active filters, result count when known, and clear/remove controls. Preserve state on return. Store shareable nonsensitive query state in the URL when appropriate; do not put secrets or sensitive personal search content there automatically.
+
+Choose immediate versus explicit application based on cost and complexity. If requests overlap, prevent older responses from replacing newer results. Keep sorting stable, and explain no matches separately from a request failure.
 
 ## Tables and lists
 
-- Decide what the row *is* and what the primary action on it is before styling anything.
-- Column priority: the identifying column first and always visible, then the columns people actually scan. Everything else is secondary and hideable.
-- Right-align numbers, use tabular figures, and keep the unit visible.
-- Bulk actions need clear selection state, a count, and an undo.
-- Long lists need sticky headers, stable pagination or a stable virtual position, and a visible total.
-- For compact widths, transform the table rather than shrinking it: a card per row with the identifying field as the title and two or three key fields beneath it.
+Define the row's identity, comparison task, and primary actions first. Use semantic tables for tabular relationships, not a grid role by default; a grid brings additional keyboard responsibilities.
+
+- Align numeric values for comparison; keep units, precision, missing values, and totals interpretable.
+- State whether selection applies to visible rows, the current page, or all matching results. Make bulk-action scope visible before execution.
+- Preserve selection and position deliberately across filters, pagination, refresh, and deletion.
+- Choose pagination, load more, or virtualization from retrieval tasks and scale. Virtualization must retain accessible navigation and a workable route to the relevant item.
+- At compact widths, compare stacked rows, optional-column disclosure, and contained horizontal scrolling. Preserve row/column relationships for comparison-heavy data; cards are not always an equivalent replacement.
+- Describe partial bulk failures and which records changed. Offer undo only where the system can reliably restore them.
 
 ## Dashboards
 
-Design from the decisions, not the data:
+Begin with decisions: what requires attention, what comparison supports the decision, and what action follows. Different roles may need different emphasis; do not force every dashboard into a single dominant metric.
 
-1. What decisions does this person make with this screen?
-2. What number or comparison drives each decision?
-3. What is the action they take once they decide?
+Show relevant units, denominator, period, timezone, freshness, and definitions. Distinguish zero, unknown, unavailable, and not applicable. Use comparable scales or clearly disclose differences. Supply useful chart summaries or data alternatives.
 
-Then: one primary metric with context (versus what — a target, a previous period, a peer), supporting metrics beneath, and the action reachable from the insight. A grid of twelve equal-weight numbers is not a dashboard; it is a data dump that forces the user to do the analysis themselves.
+Do not invent a business metric, trend, target, or dataset to make the composition look complete. Label sample data and specify required data dependencies.
 
-Every metric states its time range and its refresh time. A number without a period is not information.
+## Handoff example
+
+"After applying a status filter, the result count and active filter update. Returning from an item restores the filter and list position. If refresh fails, previously loaded records remain visible with their freshness stated and a retry action. Bulk selection is limited to the current page and cleared only when the user changes the query."
+
+Adjust this contract to actual system capabilities; do not copy it as a universal rule.

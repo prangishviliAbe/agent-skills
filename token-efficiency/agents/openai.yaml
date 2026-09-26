@@ -1,4 +1,4 @@
 interface:
   display_name: "Token Efficiency"
-  short_description: "Complete answers at maximum signal density"
-  default_prompt: "Use $token-efficiency for this task: do the full work, then deliver the smallest response that preserves the decision, the verification, and any material caveat. No preamble, no narration, no ceremonial summary."
+  short_description: "Concise answers with complete work and evidence"
+  default_prompt: "Use $token-efficiency to complete this task and communicate the result concisely, preserving requested depth, necessary progress updates, verification, and material uncertainty."

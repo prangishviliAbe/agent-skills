@@ -37,7 +37,7 @@ cd agent-skills
 ./install.sh all --dry-run   # მხოლოდ გეგმის ნახვა
 ```
 
-### Windows PowerShell
+### PowerShell 7.2+ (Windows)
 
 ```powershell
 .\install.ps1

@@ -29,7 +29,7 @@ function fixture(t, shell) {
   write(join(dest, 'unrelated', 'SKILL.md'), 'Keep unrelated skill');
   write(join(dest, '.system', 'keep.txt'), 'Keep system skill');
   copyFileSync(join(repo, shell.script), join(source, shell.script));
-  function run(target = dest, { dryRun = false, fault, env = {} } = {}) {
+  function run(target = dest, { dryRun = false, fault, env = {}, rawTarget = false } = {}) {
     const script = join(source, shell.script);
     let args, extraEnv = {};
     if (shell.name === 'PowerShell') {
@@ -39,7 +39,7 @@ function fixture(t, shell) {
         args = ['-NoProfile', '-File', harness, script, target];
       } else args = ['-NoProfile', '-File', script, target, ...(dryRun ? ['-DryRun'] : [])];
     } else {
-      args = [shellPath(script), target.startsWith(root) ? shellPath(target) : target, ...(dryRun ? ['--dry-run'] : [])];
+      args = [shellPath(script), rawTarget ? target : target.startsWith(root) ? shellPath(target) : target, ...(dryRun ? ['--dry-run'] : [])];
       if (fault) {
         const harness = join(root, 'fault.sh'), command = fault === 'copy' ? 'cp' : 'mv';
         write(harness, `${command}() {\n if [[ "$*" == *${fault === 'copy' ? '/beta' : '.agent-skills-stage-'}* ]] && [[ "$*" == */beta* ]] && [ ! -f "$FAULT_MARKER" ]; then\n  touch "$FAULT_MARKER"; echo 'Injected failure' >&2; return 19\n fi\n command ${command} "$@"\n}\n`);
@@ -92,6 +92,20 @@ for (const shell of shells) {
     const result = f.run(f.source); assert.notEqual(result.status, 0); assert.match(result.stdout + result.stderr, /overlap/);
     assert.ok(readFileSync(join(f.source, 'alpha', 'SKILL.md'), 'utf8').includes('New alpha'));
   });
+  spec('source overlap through a linked ancestor is rejected before replacement', (f, t) => {
+    const alias = join(f.root, 'source-alias');
+    try { symlinkSync(f.source, alias, process.platform === 'win32' ? 'junction' : 'dir'); }
+    catch (e) { if (e.code === 'EPERM') { t.skip('symlink privilege unavailable'); return; } throw e; }
+    const result = f.run(join(alias, 'nested', 'skills'));
+    assert.notEqual(result.status, 0); assert.match(result.stdout + result.stderr, /overlap/);
+    assert.equal(existsSync(join(f.source, 'nested', 'skills', 'alpha', 'SKILL.md')), false);
+  });
+  spec('parent traversal is rejected before replacement', f => {
+    const separator = process.platform === 'win32' ? '\\' : '/';
+    const result = f.run(`${f.dest}${separator}..${separator}outside`);
+    assert.notEqual(result.status, 0); assert.match(result.stdout + result.stderr, /Parent traversal/);
+    f.unchanged();
+  });
   spec('a destination file is rejected without loss', f => {
     rmSync(join(f.dest, 'beta'), { recursive: true }); f.write(join(f.dest, 'beta'), 'not a directory');
     const result = f.run(); assert.notEqual(result.status, 0); assert.equal(readFileSync(join(f.dest, 'beta'), 'utf8'), 'not a directory');
@@ -116,4 +130,17 @@ for (const shell of shells) {
     catch (e) { if (e.code === 'EPERM') { t.skip('symlink privilege unavailable'); return; } throw e; }
     const result = f.run(); assert.notEqual(result.status, 0); assert.equal(readFileSync(join(outside, 'precious.txt'), 'utf8'), 'keep');
   });
+  if (shell.name === 'Bash' && process.platform === 'win32') {
+    spec('accepts a native Windows custom destination', f => {
+      const result = f.run(f.dest, { rawTarget: true });
+      assert.equal(result.status, 0, result.stdout + result.stderr);
+      assert.equal(readFileSync(join(f.dest, 'alpha', 'SKILL.md'), 'utf8'), readFileSync(join(f.source, 'alpha', 'SKILL.md'), 'utf8'));
+    });
+    spec('refuses a drive root in dry run', f => {
+      const driveRoot = `${process.env.SystemDrive || 'C:'}\\`;
+      const result = f.run(driveRoot, { dryRun: true, rawTarget: true });
+      assert.notEqual(result.status, 0); assert.match(result.stdout + result.stderr, /filesystem root/);
+      f.unchanged();
+    });
+  }
 }

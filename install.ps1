@@ -6,6 +6,7 @@ Codex respects CODEX_HOME. Installation is transactional per destination, not ac
 param([string]$Target = 'codex', [switch]$DryRun)
 $ErrorActionPreference = 'Stop'
 Set-StrictMode -Version Latest
+if ($PSVersionTable.PSVersion -lt [Version]'7.2') { throw 'PowerShell 7.2 or newer is required for safe symlink and junction handling.' }
 $sourceRoot = [IO.Path]::GetFullPath($PSScriptRoot)
 $comparison = if ([IO.Path]::DirectorySeparatorChar -eq '\') { [StringComparison]::OrdinalIgnoreCase } else { [StringComparison]::Ordinal }
 
@@ -13,28 +14,54 @@ function Is-Within([string]$Root, [string]$Path) {
     $base = $Root.TrimEnd([IO.Path]::DirectorySeparatorChar, [IO.Path]::AltDirectorySeparatorChar)
     return $Path.Equals($base, $comparison) -or $Path.StartsWith($base + [IO.Path]::DirectorySeparatorChar, $comparison)
 }
-function Assert-NoLink([string]$Path) {
-    $cursor = [IO.Path]::GetFullPath($Path)
-    while ($cursor) {
-        if (Test-Path -LiteralPath $cursor) {
-            if ((Get-Item -Force -LiteralPath $cursor).Attributes -band [IO.FileAttributes]::ReparsePoint) { throw "Refusing linked path: $cursor" }
-        }
-        $parent = [IO.Directory]::GetParent($cursor)
-        $cursor = if ($parent) { $parent.FullName } else { $null }
+function Assert-NotLink([string]$Path) {
+    if ((Test-Path -LiteralPath $Path) -and ((Get-Item -Force -LiteralPath $Path).Attributes -band [IO.FileAttributes]::ReparsePoint)) {
+        throw "Refusing linked path: $Path"
     }
+}
+function Assert-NoParentTraversal([string]$Path) {
+    if ($Path -match '(^|[\\/])\.\.([\\/]|$)') { throw "Parent traversal is not supported: $Path" }
+}
+function Get-PhysicalPath([string]$Path) {
+    Assert-NoParentTraversal $Path
+    $absolute = [IO.Path]::GetFullPath($Path)
+    $root = [IO.Path]::GetPathRoot($absolute)
+    $relative = $absolute.Substring($root.Length)
+    $separators = [char[]]@([IO.Path]::DirectorySeparatorChar, [IO.Path]::AltDirectorySeparatorChar)
+    $segments = @($relative.Split($separators, [StringSplitOptions]::RemoveEmptyEntries))
+    $resolved = $root
+    for ($index = 0; $index -lt $segments.Count; $index++) {
+        $candidate = Join-Path $resolved $segments[$index]
+        try { $item = Get-Item -LiteralPath $candidate -Force -ErrorAction Stop }
+        catch [System.Management.Automation.ItemNotFoundException] {
+            for ($remaining = $index; $remaining -lt $segments.Count; $remaining++) {
+                $resolved = Join-Path $resolved $segments[$remaining]
+            }
+            return [IO.Path]::GetFullPath($resolved)
+        }
+        if ($item.Attributes -band [IO.FileAttributes]::ReparsePoint) {
+            $target = $item.ResolveLinkTarget($true)
+            if ($null -eq $target -or -not $target.Exists) { throw "Cannot resolve linked path: $candidate" }
+            $resolved = [IO.Path]::GetFullPath($target.FullName)
+        } else {
+            $resolved = $item.FullName
+        }
+    }
+    return [IO.Path]::GetFullPath($resolved)
 }
 function Assert-Child([string]$Root, [string]$Path) {
     $absolute = [IO.Path]::GetFullPath($Path)
     if (-not (Is-Within $Root $absolute) -or $absolute.Equals($Root, $comparison)) { throw "Path escapes intended directory: $absolute" }
-    Assert-NoLink $absolute
+    Assert-NotLink $absolute
 }
-Assert-NoLink $sourceRoot
+Assert-NotLink $sourceRoot
+$sourceRoot = Get-PhysicalPath $sourceRoot
 $skills = @(Get-ChildItem -LiteralPath $sourceRoot -Directory -Force | Where-Object { Test-Path -LiteralPath (Join-Path $_.FullName 'SKILL.md') } | Sort-Object Name | Select-Object -ExpandProperty Name)
 if ($skills.Count -eq 0) { throw "No skills found in $sourceRoot" }
 foreach ($skill in $skills) {
     if ($skill -notmatch '^[a-z0-9]+(-[a-z0-9]+)*$') { throw "Invalid skill name: $skill" }
     $folder = Join-Path $sourceRoot $skill
-    Assert-NoLink $folder
+    Assert-NotLink $folder
     foreach ($item in Get-ChildItem -LiteralPath $folder -Recurse -Force) {
         if ($item.Attributes -band [IO.FileAttributes]::ReparsePoint) { throw "Linked source resource: $($item.FullName)" }
     }
@@ -47,10 +74,12 @@ function Get-Manifest([string]$Folder) {
     })
 }
 function Install-Skills([string]$Destination) {
+    Assert-NoParentTraversal $Destination
     $destinationRoot = [IO.Path]::GetFullPath($ExecutionContext.SessionState.Path.GetUnresolvedProviderPathFromPSPath($Destination))
+    Assert-NotLink $destinationRoot
+    $destinationRoot = Get-PhysicalPath $destinationRoot
     if ((Is-Within $sourceRoot $destinationRoot) -or (Is-Within $destinationRoot $sourceRoot)) { throw 'Source and destination must not overlap.' }
     if ($destinationRoot -eq [IO.Path]::GetPathRoot($destinationRoot)) { throw 'A filesystem root is not a skills directory.' }
-    Assert-NoLink $destinationRoot
     foreach ($skill in $skills) {
         $path = Join-Path $destinationRoot $skill
         Assert-Child $destinationRoot $path

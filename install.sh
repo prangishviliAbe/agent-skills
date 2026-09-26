@@ -9,20 +9,48 @@ DRY_RUN=0
 if [ "$TARGET" = --dry-run ]; then TARGET=codex; DRY_RUN=1; fi
 if [ "${2:-}" = --dry-run ]; then DRY_RUN=1; elif [ "$#" -gt 1 ]; then echo 'Unknown option.' >&2; exit 1; fi
 if [ "$#" -gt 2 ]; then echo 'Too many arguments.' >&2; exit 1; fi
+TARGET="${TARGET//\\//}"
+windows_bash=0
+case "$(uname -s)" in MINGW*|MSYS*|CYGWIN*) windows_bash=1 ;; esac
 
-# Normalize without creating a directory, and reject symlink ancestors.
+# Normalize through any existing parent without creating a directory. A user may
+# intentionally install below an OS-provided symlink such as macOS /var. Parent
+# traversal is refused because lexical normalization changes symlink semantics.
 absolute_path() {
-  local value="$1" part result='' previous
+  local value="$1" part result='' candidate base suffix='' drive rest
   local parts=()
-  case "$value" in /*) ;; *) value="$PWD/$value" ;; esac
+  value="${value//\\//}"
+  case "/$value/" in */../*) echo "Parent traversal is not supported: $1" >&2; return 1 ;; esac
+  case "$value" in
+    /*|[A-Za-z]:/*) ;;
+    *) value="$PWD/$value" ;;
+  esac
+  case "$value" in
+    [A-Za-z]:/*)
+      drive="${value%%:*}"
+      rest="${value#?:}"
+      drive="$(printf '%s' "$drive" | tr '[:upper:]' '[:lower:]')"
+      value="/$drive$rest"
+      ;;
+  esac
   local old_ifs="$IFS"; IFS='/'; read -r -a parts <<< "$value"; IFS="$old_ifs"
   for part in "${parts[@]}"; do
     case "$part" in ''|.) continue ;; ..) result="${result%/*}" ;; *) result="$result/$part" ;; esac
-    if [ -L "${result:-/}" ]; then echo "Refusing linked path: $result" >&2; return 1; fi
   done
-  printf '%s\n' "${result:-/}"
+  candidate="${result:-/}"
+  base="$candidate"
+  while [ ! -d "$base" ]; do
+    part="${base##*/}"
+    suffix="/$part$suffix"
+    base="${base%/*}"
+    [ -n "$base" ] || base=/
+  done
+  base="$(cd -P -- "$base" && pwd -P)"
+  if [ "$windows_bash" = 1 ]; then base="$(cygpath -ma "$base")"; fi
+  printf '%s%s\n' "$base" "$suffix"
 }
 within() { [ "$2" = "$1" ] || [[ "$2" == "$1/"* ]]; }
+SRC="$(absolute_path "$SRC")"
 skills=()
 for dir in "$SRC"/*/; do
   [ -f "$dir/SKILL.md" ] || continue
@@ -37,7 +65,7 @@ done
 
 install_to() (
   dest="$(absolute_path "$1")"
-  if [ "$dest" = / ] || within "$SRC" "$dest" || within "$dest" "$SRC"; then
+  if [ "$dest" = / ] || { [ "$windows_bash" = 1 ] && [[ "$dest" =~ ^([A-Za-z]:/|/[A-Za-z])$ ]]; } || within "$SRC" "$dest" || within "$dest" "$SRC"; then
     echo 'Source and destination must not overlap, and destination must not be a filesystem root.' >&2; exit 1
   fi
   for skill in "${skills[@]}"; do

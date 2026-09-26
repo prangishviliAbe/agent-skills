@@ -14,12 +14,20 @@ function Is-Within([string]$Root, [string]$Path) {
     $base = $Root.TrimEnd([IO.Path]::DirectorySeparatorChar, [IO.Path]::AltDirectorySeparatorChar)
     return $Path.Equals($base, $comparison) -or $Path.StartsWith($base + [IO.Path]::DirectorySeparatorChar, $comparison)
 }
+function Is-MacSystemLink([string]$Path) {
+    return $IsMacOS -and $Path -in @('/var', '/tmp', '/etc')
+}
 function Assert-NotLink([string]$Path) {
-    try { $item = Get-Item -LiteralPath $Path -Force -ErrorAction Stop }
-    catch [System.Management.Automation.ItemNotFoundException] { return }
-    $nativeItem = if ($item.PSIsContainer) { [IO.DirectoryInfo]::new($Path) } else { [IO.FileInfo]::new($Path) }
-    if (($item.Attributes -band [IO.FileAttributes]::ReparsePoint) -or -not [string]::IsNullOrEmpty($nativeItem.LinkTarget)) {
-        throw "Refusing linked path: $Path"
+    $cursor = [IO.Path]::GetFullPath($Path)
+    while ($cursor) {
+        if (Test-Path -LiteralPath $cursor) {
+            $item = Get-Item -Force -LiteralPath $cursor
+            if (($item.Attributes -band [IO.FileAttributes]::ReparsePoint) -and -not (Is-MacSystemLink $cursor)) {
+                throw "Source and destination must not overlap or include a linked path: $cursor"
+            }
+        }
+        $parent = [IO.Directory]::GetParent($cursor)
+        $cursor = if ($parent) { $parent.FullName } else { $null }
     }
 }
 function Assert-NoParentTraversal([string]$Path) {

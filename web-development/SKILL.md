@@ -1,83 +1,111 @@
 ---
 name: web-development
-description: Build, debug, refactor, and review websites, web apps, APIs, WordPress plugins and themes, and integrations. Use for implementation and delivery work involving React, Next.js, TypeScript, Node.js, WooCommerce, databases, caching, or web deployment; preserve the existing stack and verify the changed behavior.
+description: >-
+  Build, fix, review, refactor, and ship web software in the existing stack: React, Next.js, and
+  TypeScript front ends; Node, Python, and PHP back ends; REST and GraphQL APIs; SQL databases and
+  migrations; payments, webhooks, and third-party integrations; forms and sign-in flows; WordPress
+  and WooCommerce plugins and themes; CI, deploys, and incident debugging. Use whenever the user
+  wants a feature implemented, a bug or flaky test diagnosed, a slow page or query sped up, a diff
+  or pull request reviewed, a framework upgraded, or a release prepared, including vague asks like
+  "make this work" or "why is this broken". Reads the project first, uses the installed versions'
+  real APIs, protects secrets and data, and proves behavior by running it before reporting.
 ---
 
 # Web Development
 
-Deliver the requested web behavior in the existing system, with evidence proportional to the change. Preserve product intent, public contracts, user edits, and operational constraints. Distinguish implemented, verified, and deployed work.
+Deliver working web behavior inside the project that exists: its stack, conventions, contracts, and half-finished edits. A change is done when you can say what you ran and what it showed.
 
-## Operating rules
+## How to work
 
-1. **Inspect before changing.** Read applicable project instructions, the affected code and callers, manifests, and available checks. Check the working tree; integrate with existing edits without overwriting them.
-2. **Use the installed contract.** Resolve uncertain APIs from local types/source or official documentation for the installed version. Do not upgrade frameworks or replace the stack merely to fit a familiar solution.
-3. **Keep the change coherent.** Include necessary callers, data changes, and failure handling; leave unrelated cleanup alone. Add dependencies when their maintained capability justifies cost, not according to a line-count rule.
-4. **Enforce trust at the receiving boundary.** Protected server operations validate input and authorize actor, action, and resource. Client checks support usability. Public operations still need input and abuse controls appropriate to their purpose.
-5. **Protect sensitive material.** Keep secrets out of client bundles, logs, screenshots, and commits. Report an exposure by location and arrange scoped rotation; do not print the value or silently rotate unrelated credentials.
-6. **Preserve authorization.** Existing instructions can authorize pushing, deploying, or data changes. Do not invent a new approval gate. When a consequential action lacks authorization or its target is ambiguous, prepare the concrete change and recovery plan before requesting the missing decision.
-7. **Bound side effects.** A timeout does not prove a write failed. Reconcile an uncertain result before retrying; retry only when the operation or its idempotency mechanism makes duplication safe.
-8. **Report evidence accurately.** A passing build is not a runtime check; a local fix is not a deployment. State unavailable checks and remaining uncertainty without fabricating success or leaving independent work unfinished.
+1. **Orient before touching anything.** Read project instructions (AGENTS.md, CLAUDE.md, CONTRIBUTING, README), the manifest and lockfile, the available scripts, the files you will change and their callers, and `git status`. Find the closest existing example of what you are building and match its shape. Diffs that look native get merged; clever ones get rewritten.
+2. **Use the installed contract, not memory.** Take versions from the lockfile, then read docs for that version: bundled docs (Next.js 16 ships them in `node_modules/next/dist/docs/`), type definitions, `--help`, or versioned official docs. APIs change between majors, and remembered APIs are the most common source of confident, broken code.
+3. **Define done as observable behavior.** State one success path and the most likely failure path as given/when/then. For a bug, reproduce it first and keep the reproduction as the regression test.
+4. **Enforce trust at the server boundary.** Authenticate, then authorize (actor, action, this specific resource), then validate shape and bounds, then act. Identity comes from verified credentials, never from a request field; scope every query by owner or tenant. Client checks are usability, not protection.
+5. **Make writes safe to repeat.** Back invariants with unique constraints, transactions, or conditional updates, and give external side effects an idempotency key. After a timeout the outcome is unknown: look the operation up before retrying.
+6. **Treat secrets as radioactive.** Refer to them by variable name, never print values, and keep them out of client bundles (`NEXT_PUBLIC_*`, `VITE_*` and similar are public), logs, commits, and screenshots. If one is exposed, report the location and arrange scoped rotation.
+7. **Make the smallest complete change.** Fix the cause and update every caller, type, test, doc, and migration it touches, and nothing else. No drive-by refactors, reformatting, or new dependencies without a stated reason. Preserve the user's uncommitted work.
+8. **Act within the authority you have.** Do what the request and standing instructions allow (edit, commit, push, deploy, migrate); do not add approval gates the user did not ask for, and do not stretch an approval past its target. When a live or destructive step lacks authorization or its target is ambiguous, finish everything reviewable (diff, plan, rollback), then ask for that one decision.
+9. **Verify the way a user would meet the failure.** Run the project's tests, types, lint, and build, then exercise the behavior itself: open the page and look, call the endpoint with a valid and an invalid request. Never weaken or delete a failing check to get green.
+10. **Report with labeled evidence.** Use *Verified* (ran it, saw the result), *Inferred* (read the code), *Assumed*, and *Not run*. A passing build is not a runtime check, and a local fix is not a deployment.
 
-## Procedure
+## Pick the mode
 
-1. **Identify the mode.** Implement, debug, review, architecture, or release. A review produces findings; an architecture request produces decisions and tradeoffs. Neither implies unrequested edits or deployment.
-2. **Frame the result.** Establish the observable behavior and relevant constraints. Use a brief assumption for a recoverable choice; ask only about ambiguity that changes the product, contract, cost, or irreversible effects.
-3. **Trace the affected path.** Inspect the relevant UI, request, validation, access policy, persistence, cache, and response. Expand to other callers when a shared contract changes. Do not inventory the entire system for a local edit.
-4. **Choose verification.** Select checks from the risk table before making a substantive change. Use repository scripts and existing test patterns; account for the environment and service access actually available.
-5. **Implement or investigate.** Fix the cause, preserve compatibility, and handle relevant loading, error, permission, and retry states. Use synthetic data or approved test accounts for exercising behavior.
-6. **Verify and inspect the diff.** Run the checks that can detect the likely regression. Review scope, secrets, error propagation, access scope, concurrency, and compatibility. Stop repeating checks once evidence is sufficient unless something changed.
-7. **Finish the authorized delivery.** Update necessary docs or contracts, perform authorized release steps, and report the outcome, actual checks, and any unverified boundary. A blocked live action need not block a complete local change.
+| Request | Mode | Deliver | Start with |
+| --- | --- | --- | --- |
+| Add or change a feature | Build | Working change, tests, handoff | The reference for the layer you touch |
+| Broken, flaky, or slow | Diagnose | Evidence-backed cause, fix, regression guard | [debugging.md](references/debugging.md), then the layer |
+| Review a diff, PR, or file | Review | Ranked findings with `path:line` and a fix; no edits unless asked | [delivery.md](references/delivery.md) review checklist |
+| Upgrade, refactor, migrate | Change without behavior change | Proof of equivalence, staged steps, rollback | [delivery.md](references/delivery.md), [testing.md](references/testing.md), [database.md](references/database.md) |
+| Choose a design or technology | Decide | Options, tradeoffs, recommendation, what would change it | [delivery.md](references/delivery.md) decision record |
+| Deploy, CI, environment, incident | Operate | Release and rollback plan, evidence of the target's state | [operations.md](references/operations.md) |
 
-## Verification by risk
+## The loop
 
-These are decision criteria, not a requirement to create a test suite for every edit. Explain meaningful gaps; do not replace a failed required project check with a weaker check and call it passed.
+1. **Frame.** Restate the outcome and constraints in two lines. List unknowns that would change the design. Ask only about product behavior, public contracts, cost, or irreversible effects; otherwise state a reversible assumption and continue.
+2. **Trace.** Follow the affected path end to end: UI, request, validation, access policy, persistence, cache, response. Widen to other callers only when a shared contract changes.
+3. **Plan the proof.** Choose the checks from the table below before editing, so the change is shaped to be checkable.
+4. **Change.** Fix the cause. Handle the loading, error, empty, permission, and retry states the path really has.
+5. **Prove.** Run the checks, then read your own diff as a reviewer would: unintended files, secrets, swallowed errors, widened access, unbounded queries, N+1, race windows, compatibility breaks.
+6. **Hand off.** Result first, then evidence and limits (template in [delivery.md](references/delivery.md)).
 
-| Change | Evidence to seek |
+## Evidence by change type
+
+Pick checks that can detect the regression you are worried about. Explain gaps; never substitute a weaker check for a failed required one.
+
+| Change | Minimum evidence |
 | --- | --- |
-| Copy, spacing, static asset | Inspect the diff and affected rendering at relevant sizes; no new automated test solely to mirror the edit |
-| Local component or logic | Focused test or runtime exercise of the behavior; type/lint checks when they can catch a relevant defect |
-| Shared API, data layer, rendering contract | Affected callers, positive and negative cases, targeted tests and relevant build/type checks; repository-required checks |
-| Authentication, money, concurrent writes, migration, production operations | Access boundaries, replay/concurrency or data-integrity checks as applicable, compatibility and recovery plan; staged or dry-run evidence when feasible |
-| Diagnosis without a runnable environment | Code/log/config evidence, explicit hypotheses, and a reproducible verification procedure; label runtime behavior unverified |
-
-For bugs, reproduce first when feasible. For intermittent failures or incidents, use captured evidence and safe containment while narrowing the cause. Add a regression test where it protects meaningful behavior; do not make impossible deterministic reproduction a prerequisite to useful work.
+| Copy, spacing, static asset | Diff, plus rendering at 375, 768, and 1280 px when layout can shift |
+| Component or pure logic | Focused test or runtime run including one edge or failure case; type-check |
+| Shared API, data layer, rendering contract | Affected callers, positive and negative cases, targeted tests, build and type checks, repository-required checks |
+| Auth, money, concurrent writes, migration, production operations | Allowed and forbidden actor; duplicate, replay, and concurrent case; integrity check and recovery plan; dry run or staging when feasible |
+| No runnable environment | Code, log, and config evidence; explicit hypotheses; a reproducible procedure; runtime behavior marked *Not run* |
 
 ## Reference map
 
-Read only references relevant to the affected boundary.
+Read only what the task touches.
 
 | When the task involves | Read |
 | --- | --- |
-| Scoping, compatibility, verification selection, handoff | [delivery.md](references/delivery.md) |
-| React, Next.js, forms, accessibility, performance, SEO | [frontend.md](references/frontend.md) |
-| APIs, validation, SQL, migrations, caching, jobs and webhooks | [backend.md](references/backend.md) |
-| WordPress, WooCommerce, Elementor, plugins and themes | [wordpress.md](references/wordpress.md) |
-| Regressions, intermittent failures, production incidents | [debugging.md](references/debugging.md) |
-| Configuration, CI, deployment, monitoring, recovery | [operations.md](references/operations.md) |
+| Orienting, scoping, review checklist, decision records, handoff, dependencies, git hygiene | [delivery.md](references/delivery.md) |
+| React, forms, state and effects, TypeScript, CSS and Tailwind, accessibility basics | [frontend.md](references/frontend.md) |
+| Next.js App Router: async request APIs, `proxy.ts`, Server Actions, Cache Components, deploy gotchas | [nextjs.md](references/nextjs.md) |
+| Core Web Vitals, bundles, images, fonts, hydration, SEO | [web-performance.md](references/web-performance.md) |
+| API design, validation, authorization scoping, errors, jobs, caching, rate limits, uploads | [backend.md](references/backend.md) |
+| Payments, webhooks, OAuth sign-in, email, storage, any third-party API | [integrations.md](references/integrations.md) |
+| Schema design, queries, indexes, transactions, pagination, migrations | [database.md](references/database.md) |
+| Choosing and writing tests, Playwright, concurrency and time, flaky tests | [testing.md](references/testing.md) |
+| Regressions, intermittent failures, environment mismatch, incidents | [debugging.md](references/debugging.md) |
+| Environments, CI/CD, releases, rollback, monitoring, headers | [operations.md](references/operations.md) |
+| WordPress, WooCommerce, Elementor, plugins, themes, REST, WP-CLI | [wordpress.md](references/wordpress.md) |
 
 ## Failure modes
 
 | Failure | Correct move |
 | --- | --- |
-| Rebuilding a subsystem to fix one bug | Trace the cause and change its required callers only |
-| Copying an API from another framework version | Check the installed source/types and versioned official docs |
-| Treating a mock response as a completed integration | Wire the real contract or label the remaining boundary explicitly |
-| Retrying a timed-out payment with a new key | Retrieve the original operation or replay the same supported key |
-| Catching an error and returning success | Preserve error semantics and a user-recoverable path |
-| Broadening a cache to improve hit rate | Preserve tenant, actor, locale, and authorization scope as relevant |
-| Running every available check after a text edit | Select checks that can detect the actual regression |
-| Declaring completion from code inspection alone | Separate implementation status from runtime evidence |
+| Rebuilding a subsystem to fix one bug | Trace the cause; change it and its required callers only |
+| Writing an API from memory of an older major | Check installed docs and types first (Next.js 16: `await cookies()`, `proxy.ts`) |
+| "Fixing" a failing test by loosening or deleting it | Fix the code, or prove the test wrong and say so |
+| Silencing the compiler or linter (`any`, `@ts-ignore`, `eslint-disable`) | Fix the type; if an escape hatch is unavoidable, narrow it and explain |
+| Catching an error and returning success or an empty list | Propagate, or return an explicit error state with a recovery path |
+| A mock or stub counted as an integration | Wire the real contract, or label the boundary *Not integrated* |
+| Retrying a timed-out payment with a new idempotency key | Reuse the original key or look up the operation |
+| Trusting a client-supplied price, role, user id, or tenant id | Derive or recompute it on the server |
+| Protecting a route only in the UI (hidden button, layout redirect) | Authorize inside the handler or action itself |
+| Unbounded list or query | Paginate with a maximum; index from the query plan |
+| Cache key missing tenant, user, or locale | Include every input that changes the output, or do not cache |
+| Hand-editing generated files, lockfiles, or snapshots | Regenerate with the project's command and review the diff |
+| Running every check or none | Run what can detect this regression, then the required project checks once at the end |
+| Declaring done from reading the code | Run it; label whatever you could not |
 
 ## Definition of done
 
-Apply each item to the requested mode; explicitly mark a material item as unverified when the environment prevents it.
-
-- [ ] The requested behavior, finding, or design decision is delivered within scope.
-- [ ] Relevant callers, access rules, contracts, and failure paths are accounted for.
-- [ ] Appropriate available checks ran; their outcomes and any required blocked checks are recorded.
-- [ ] The final diff preserves user work and contains no accidental sensitive data or unrelated edits.
-- [ ] Authorized delivery steps are completed, or the exact remaining blocker is stated.
-- [ ] The handoff distinguishes observed results, assumptions, and residual risk.
+- [ ] The requested behavior, finding, or decision is delivered within scope; the user's uncommitted work is intact.
+- [ ] Failure, permission, and retry paths on the affected route are handled or explicitly out of scope.
+- [ ] Checks that can detect the likely regression ran; results, including failures and skips, are recorded.
+- [ ] The diff contains no secrets, debug leftovers, unrelated edits, widened access, or unbounded work.
+- [ ] Docs, contracts, and migrations are updated where the change touches them.
+- [ ] Authorized delivery steps are complete, or the single missing decision is named.
+- [ ] The handoff separates Verified, Inferred, and Not run, and states residual risk.
 
 ---
 

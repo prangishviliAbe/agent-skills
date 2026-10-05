@@ -1,4 +1,4 @@
 interface:
   display_name: "Web Development"
-  short_description: "Build and debug web systems with scoped verification"
-  default_prompt: "Use $web-development to complete this web change in the existing stack, preserve its contracts, verify the affected behavior, and report actual results and remaining limits."
+  short_description: "Ship, fix, and review web code, verified by running it"
+  default_prompt: "Use $web-development to implement, fix, or review this change in the existing stack, verify it by running it, and report what was verified, what was not, and the remaining risk."

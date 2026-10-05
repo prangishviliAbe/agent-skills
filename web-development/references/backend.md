@@ -1,68 +1,195 @@
-# Backend: contracts, data, migrations, and integrations
+# Backend: endpoints, validation, concurrency, jobs, caching
 
-Read for endpoints, persistence, jobs, webhooks, and third-party calls. Adapt the contract to the service rather than requiring every possible mechanism for every endpoint.
+Read when writing or changing endpoints, handlers, middleware, jobs, queues, caches, rate limits, or uploads. Schema, queries, and migrations are in [database.md](database.md); third-party calls and webhooks in [integrations.md](integrations.md); tests in [testing.md](testing.md).
 
-## Endpoint boundary
+## Every externally reachable handler follows one order
 
-Establish the caller, resource policy, accepted fields, output shape, side effects, resource limits and error contract. Authenticate before expensive parsing where the transport permits; parse enough to identify and authorize the target without trusting an unvalidated identifier.
+Authenticate (who), authorize (may this actor do this action on this resource), validate (shape and bounds), act atomically, respond with a minimal projection, log redacted context.
 
-- Work with validated values. Reject or strip unknown write fields consistently with the API contract; explicitly select writable properties so raw input never becomes a database update object.
-- Derive identity from verified credentials. A requested tenant or object ID is a selector that must be authorized, not proof of access.
-- Scope protected reads and writes to permitted resources before returning data. Include counts, search, exports and nested resources. A deliberately public endpoint needs explicit public policy, not invented login requirements.
-- Recheck sensitive state-dependent conditions atomically with the write where races matter.
-- Return stable machine-readable errors and useful safe messages. Follow existing HTTP semantics, including consistent handling when resource existence must be hidden.
-- Log redacted diagnostic context with a correlation identifier. Do not echo raw query text, credentials, request bodies or infrastructure details to clients.
-
-## Data integrity and query shape
-
-Use schema constraints for invariants the database can enforce: uniqueness, references, nullability and valid ranges. Application checks alone are insufficient under concurrency. Use transactions, conditional updates, version checks or locks according to the actual contention pattern.
-
-Inspect query plans against the database engine and representative volume before prescribing indexes. Composite index order depends on predicates, sorting, selectivity and engine behavior, not the textual order of a WHERE clause. Avoid accidental N+1 work; bounded loops or streaming batches may legitimately issue repeated queries.
-
-Bound user-facing lists with pagination and maximum sizes. For large exports/backfills, use streaming or batching with a stable cursor; compare keyset pagination to offset when deep pages matter.
-
-Represent money with suitable exact arithmetic and an explicit currency; minor units vary by currency. Store instants with unambiguous time-zone semantics. Preserve local dates and time zones for calendar events and recurring schedules instead of converting every domain value blindly to UTC.
-
-## Migrations
-
-Choose rollout complexity based on data volume, availability and coexistence requirements.
-
-1. Inspect the exact engine/version, table size, lock behavior and transactional DDL support.
-2. When old/new application versions coexist, use an expand/backfill/contract sequence with explicit read/write transition and reconciliation. Dual writes add consistency work; do not add them reflexively.
-3. Bound and checkpoint substantial backfills. Make interruption, rerun and partial completion safe; verify counts and representative invariants.
-4. Define rollback, forward repair or restoration before consequential execution. Code rollback cannot reconstruct deleted data. Confirm backup freshness and actual restoration capability when relying on backups.
-5. Run a dry run or representative rehearsal when feasible. Inspect for concurrent writes and version skew, not just small-fixture execution time.
-6. Apply authorized changes to the verified target. Ask only for missing authorization or an unresolved consequential choice; do not invent a second sign-off.
-
-## Retry and idempotency
-
-An operation being retryable in transport does not make its effects idempotent.
-
-| Result | Action |
+| Concern | Rule |
 | --- | --- |
-| Read failed transiently | Retry within attempt and elapsed-time limits when appropriate |
-| Validation/authentication/permission failure | Correct the cause; do not blind-retry |
-| Rate limit | Respect provider guidance such as Retry-After within the caller's deadline |
-| Write timed out after dispatch | Look up operation status or reconcile; do not assume failure |
-| Provider supports an idempotency key | Persist and reuse the same key for the same logical operation, within its documented lifetime |
-| Duplicate delivery or concurrent request | Deduplicate atomically with durable state; in-memory flags are insufficient |
+| Identity | Derive it from the verified session or token. Never trust `userId`, `tenantId`, `role`, `price`, or `isAdmin` from the body, query, or a client-set header |
+| Resource access | Load by id **and** owner or tenant. Return 404 when existence must be hidden, 403 when revealing it is fine. A parent check does not cover an unrelated child id |
+| Writable fields | Allowlist through the schema; never spread a request body into an ORM update (mass assignment) |
+| Output | Return a projection, never a raw row: no hashes, tokens, internal ids, or other tenants' data. Counts, search, and exports are reads too |
+| Limits | Body size, page size, request rate, timeout, concurrency |
+| Public endpoints | Public by design still needs input limits and abuse controls. Do not invent a login requirement for a signup or webhook |
 
-Set per-call timeouts, total deadlines, response-size limits and cancellation behavior. Use bounded backoff with jitter only for retry-safe transient failures. Avoid retry multiplication across several layers. When a provider gives an unknown outcome, surface a pending/reconciliation state rather than claiming failure or success.
+Fold the ownership and state guard into the write itself, so no gap exists between "check" and "update":
 
-## Webhooks and jobs
+```sql
+UPDATE invoices
+SET status = $3, updated_at = now()
+WHERE id = $1 AND tenant_id = $2 AND status IN ('draft', 'sent')
+RETURNING id, status;
+```
 
-Follow the provider's signature protocol exactly: some require unmodified raw bytes, timestamp tolerance, or a particular canonical form. Verify identity before side effects, check account/resource scope, and avoid logging signing secrets.
+Zero rows returned means not found, not yours, or the wrong state; answer 404 or 409 accordingly.
 
-Durably accept the event before acknowledging successful receipt. Deduplicate by the provider's event identity and business operation when necessary; duplicate event IDs are not the only way one logical action can repeat. Expect out-of-order delivery and retrieve authoritative state or validate transitions. A queue consumer must make side effects replay-safe and record completion atomically where possible.
+## Error contract
 
-Do not mark an event processed before its effect succeeds. Avoid holding database transactions across slow external calls; use a durable outbox or state machine when committing data and publishing a message must stay consistent. Specify maximum attempts, retryable failures, a dead-letter/reconciliation path and useful alerts. Acknowledgement or enqueue success alone is not proof that the business action completed.
+Match the project's existing error shape. If there is none, use RFC 9457 problem details (`application/problem+json`) with a stable machine-readable `code`:
+
+```ts
+export function problem(status: number, code: string, extra: Record<string, unknown> = {}) {
+  return new Response(JSON.stringify({ type: `/problems/${code}`, title: code, status, code, ...extra }), {
+    status,
+    headers: { 'content-type': 'application/problem+json' },
+  });
+}
+```
+
+| Status | Use |
+| --- | --- |
+| 400 | Malformed request (bad JSON, bad syntax) |
+| 401 / 403 | Not authenticated / authenticated but not allowed |
+| 404 | Not found, or hidden because the caller may not know it exists |
+| 409 | State or version conflict, or an idempotent request still in progress |
+| 412 | `If-Match` precondition failed (optimistic concurrency over HTTP) |
+| 413 / 415 | Body too large / unsupported media type |
+| 422 | Well-formed but invalid fields (return per-field codes) |
+| 429 | Rate limited; send `Retry-After` |
+| 500 / 502 / 503 / 504 | Our fault / bad upstream / unavailable / upstream timeout. No stack traces or SQL in the body |
+
+Never turn a failure into a success response or an empty list. Log the cause with a correlation id; give the client a safe message and a code.
+
+## Validate and normalize
+
+- Parse with a schema at the boundary instead of casting. Bound strings, arrays, numbers, and nesting. Reject unknown keys on writes or strip them consistently with the contract. Be careful with coercion: `Number('')` is `0`.
+- Normalize before comparing or storing: trim, lowercase emails, Unicode NFC for names and usernames.
+- **Money:** integers in minor units plus an ISO currency code, never floats. Minor units differ by currency (JPY has none, KWD has three). Display with `Intl.NumberFormat`.
+- **Time:** store instants as UTC (`timestamptz`); store a local date plus an IANA time zone for calendar events and recurring schedules, since converting those to UTC breaks across DST. Use ISO 8601 on the wire.
+- Unguessable ids (UUID, ULID) reduce discovery; they are not access control.
+
+## Pagination, filtering, sorting
+
+Paginate every list with a server-side maximum. Allowlist sortable and filterable fields. Use keyset (cursor) pagination for large or changing sets, with a unique tiebreaker so order is total; use offset only for small, static lists.
+
+```sql
+SELECT id, created_at, title
+FROM posts
+WHERE tenant_id = $1
+  AND (created_at, id) < ($2, $3)
+ORDER BY created_at DESC, id DESC
+LIMIT $4;
+```
+
+Return an opaque `nextCursor` (base64url of the last row's sort keys) and treat a decoded cursor as untrusted input. Counts over big tables are expensive; make them optional or approximate.
+
+## Idempotency and retries
+
+Being retryable at the transport level does not make an operation idempotent.
+
+| Situation | Action |
+| --- | --- |
+| Read failed transiently | Retry within attempt and elapsed-time limits |
+| Validation, authentication, or permission failure | Fix the cause; never blind-retry |
+| 429 | Honor `Retry-After` within the caller's deadline |
+| Write timed out after dispatch | Look up the operation's status; do not assume failure |
+| Provider supports idempotency keys | Persist the key with the logical operation and reuse it for every retry within its lifetime |
+| Duplicate delivery or concurrent request | Deduplicate atomically in durable storage; an in-memory flag is not enough |
+
+Every outbound call gets a timeout (`AbortSignal.timeout(5000)`) inside a total deadline. Retry at one layer only, with bounded exponential backoff and jitter, so retries do not multiply across layers.
+
+To make your own unsafe `POST` idempotent, store the key with a hash of the request, insert before acting, and replay the stored result:
+
+```ts
+import { createHash } from 'node:crypto';
+import type { Pool } from 'pg';
+
+type Result = { code: number; body: unknown };
+
+export async function withIdempotency(
+  db: Pool, userId: string, key: string, payload: unknown, run: () => Promise<Result>,
+): Promise<Result> {
+  const hash = createHash('sha256').update(JSON.stringify(payload)).digest('hex'); // canonicalize key order first
+  const claim = await db.query(
+    `INSERT INTO idempotency_keys (user_id, key, request_hash, status)
+     VALUES ($1, $2, $3, 'in_progress') ON CONFLICT (user_id, key) DO NOTHING RETURNING key`,
+    [userId, key, hash],
+  );
+  if (claim.rowCount === 0) {
+    const { rows } = await db.query(
+      `SELECT request_hash, status, response_code, response_body
+       FROM idempotency_keys WHERE user_id = $1 AND key = $2`, [userId, key]);
+    const saved = rows[0];
+    if (saved.request_hash !== hash) return { code: 422, body: { code: 'idempotency_key_reused' } };
+    if (saved.status === 'completed') return { code: saved.response_code, body: saved.response_body };
+    return { code: 409, body: { code: 'request_in_progress' } };
+  }
+  const result = await run();
+  await db.query(
+    `UPDATE idempotency_keys SET status = 'completed', response_code = $3, response_body = $4
+     WHERE user_id = $1 AND key = $2`,
+    [userId, key, result.code, JSON.stringify(result.body)],
+  );
+  return result;
+}
+```
+
+Gaps to close in production use: record completion in the same transaction as the business write when you can; add a lock timeout so a crashed `in_progress` row can be retaken; expire rows after a day or so. `Idempotency-Key` is a widely used convention (the IETF draft has not become an RFC), so document your own semantics.
+
+## Concurrency and transactions
+
+| Problem | Tool |
+| --- | --- |
+| Lost update | Version column: `UPDATE ... SET ..., version = version + 1 WHERE id = $1 AND version = $2`; zero rows means conflict |
+| Oversell or negative balance | Conditional update: `UPDATE stock SET qty = qty - $2 WHERE id = $1 AND qty >= $2` |
+| "Check then insert" duplicate | Unique constraint; handle the violation (Postgres `23505`) |
+| Double submit, webhook replay | Idempotency key or event-id dedupe table |
+| Cross-row invariant | `SELECT ... FOR UPDATE` inside a transaction, or an advisory lock |
+| Deadlock or serialization failure | Lock in a consistent order; retry on `40001` and `40P01` |
+
+Do not hold a database transaction open across a slow network call. To commit data and publish a message consistently, write the message to an outbox table in the same transaction and let a worker publish it.
+
+## Background jobs and queues
+
+- Delivery is at least once, so handlers must be replay-safe. Record completion atomically with the effect.
+- Set max attempts, backoff with jitter, a dead-letter path, and an alert on it. Make the visibility timeout longer than the longest run.
+- Put ids in the payload, not blobs. Re-read current state when the job runs; the world may have changed.
+- Guard scheduled jobs against overlap (a lock or unique job key). Shut down gracefully on `SIGTERM`.
+- Cap concurrency per resource so a burst does not exhaust the database or a provider's rate limit.
 
 ## Caching
 
-Define key inputs, authorization scope, freshness tolerance and invalidation. Include tenant, actor or permission scope when they affect the representation; a client UI filter cannot repair an overly broad server cache. Distinguish a private browser cache from a shared cache.
+The key must contain every input that changes the output: tenant, permission scope, locale, parameters, schema version. A client-side filter cannot repair a cache that is too broad.
 
-TTL can be a valid freshness strategy for data that tolerates staleness. For stricter invariants use invalidation, versioned keys or an uncached read. Consider stampedes, negative caching and failed writes. Measure benefit against consistency cost before adding another cache layer.
+| Choice | Guidance |
+| --- | --- |
+| TTL only | Fine when staleness is acceptable |
+| Strict freshness | Invalidate on write, version the key, or skip the cache |
+| Personalized response | `Cache-Control: private`; never in a shared or CDN cache without the user in the key |
+| Stampede on expiry | Single-flight, stale-while-revalidate, jittered TTLs |
+| Misses worth remembering | Short-lived negative caching |
 
-## Primary reference
+```ts
+const inflight = new Map<string, Promise<unknown>>();
 
-[Stripe webhook documentation](https://docs.stripe.com/webhooks) illustrates provider-specific raw-body verification, repeated events and delivery ordering. Apply each integration's own protocol instead of assuming Stripe's rules are universal.
+export function singleFlight<T>(key: string, load: () => Promise<T>): Promise<T> {
+  const running = inflight.get(key);
+  if (running) return running as Promise<T>;
+  const promise = load().finally(() => inflight.delete(key));
+  inflight.set(key, promise);
+  return promise;
+}
+```
+
+This collapses concurrent loads inside one process; use a distributed lock across instances. Measure the hit rate and the staleness cost before adding another cache layer.
+
+## Rate limiting and abuse
+
+Limit expensive and abusable operations: login, OTP send and verify, password reset, signup, search, exports, email-sending, and anything that costs money. Choose the key deliberately (user id, API key, IP behind a trusted proxy's `X-Forwarded-For` hop). Use a token bucket or sliding window in shared storage (Redis `INCR` with `EXPIRE`, atomically set or via Lua). Return 429 with `Retry-After`. Decide fail-open or fail-closed per route: a limiter outage should not take down checkout, but should not disable login throttling silently. Hard account lockout lets attackers lock victims out; prefer progressive delays, step-up verification, or per-IP plus per-account limits.
+
+## File uploads (implementation)
+
+Prefer direct-to-storage uploads with a presigned URL or POST policy that fixes the object key, content type, and maximum size, with a short expiry. The server generates the storage key (never use a client filename as a path), records metadata after the upload completes, and verifies it (size, detected type) before use. Keep objects private by default, serve user content from a separate origin with `Content-Disposition` and `X-Content-Type-Options: nosniff`, and bound size, count, and image pixel dimensions.
+
+## Observability inside handlers
+
+Log structured events with a request id, route, status, duration, and error code; propagate the id to outbound calls. Never log bodies, tokens, or personal data. Track rate, errors, and duration per route, and expose separate liveness and readiness checks (readiness verifies critical dependencies).
+
+## Stack reminders
+
+- **Node:** `new Error('message', { cause })` preserves causes; handle unhandled rejections; use `crypto.timingSafeEqual` for secret comparison; move CPU-heavy work off the event loop.
+- **Python (FastAPI, Django):** validate with Pydantic or serializers; do not block an async event loop with sync I/O; use `transaction.atomic` and `F()` for atomic updates; `select_related` and `prefetch_related` against N+1.
+- **PHP (Laravel):** Form Requests and policies for validation and authorization; guard mass assignment with `$fillable`; `DB::transaction` and `lockForUpdate`; `ShouldBeUnique` for jobs.

@@ -1,4 +1,4 @@
 interface:
   display_name: "Token Efficiency"
-  short_description: "Concise answers with complete work and evidence"
-  default_prompt: "Use $token-efficiency to complete this task and communicate the result concisely, preserving requested depth, necessary progress updates, verification, and material uncertainty."
+  short_description: "Short answers and lean agent work with full evidence"
+  default_prompt: "Use $token-efficiency to complete this task and report it concisely in my language: result first, no filler, keep failed checks, evidence, and caveats that change decisions, and keep tool output small."

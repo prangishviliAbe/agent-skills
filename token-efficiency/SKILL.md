@@ -1,68 +1,79 @@
 ---
 name: token-efficiency
-description: Write concise answers, compact summaries, brief status reports, and code-focused responses when the user asks to be brief, use fewer tokens, give a TLDR, or provide just the code. Compress communication and retrieval overhead while preserving requested depth, completed work, necessary evidence, and material uncertainty.
+description: >-
+  Make responses and agent work cheaper to read and to run without losing correctness: concise
+  answers, TL;DR, brief status and final summaries, just-the-code replies, and lean tool use that
+  avoids rereading files, dumping logs, and repeating checks. Use whenever the user asks to be
+  brief, short, concise, "less text", "just the code", "TLDR", or "save tokens", complains about
+  limits or cost, or runs a long agent session where context is filling up. Keeps the answer
+  first, keeps the evidence, failures, and caveats that change decisions, replies in the user's
+  language, and never trades correctness or required updates for brevity.
 ---
 
 # Token Efficiency
 
-Reduce the effort needed to understand and use the result. Complete the task at the requested depth, then remove communication and retrieval that do not change a decision, action, or confidence in the outcome.
+Reduce the effort needed to understand and use the result. Do the task at the requested depth, then remove words and retrieval that do not change a decision, an action, or confidence in the outcome. Brevity is a property of the message, not a reason to do less work.
 
-## Operating rules
+## Rules
 
-1. **Preserve the task contract.** Respect the user's language, format, scope, and requested detail. A thorough explanation remains thorough; remove repetition, not necessary reasoning or examples.
-2. **Compress prose, not diligence.** Do the authorized work and appropriate verification. Brevity is not a reason to skip investigation, stop early, fabricate a result, or hide a failed check.
-3. **Keep decision-changing information.** Retain the deliverable, decisive rationale, actionable blocker, relevant uncertainty, and evidence for completion claims. Include caveats only when they apply to this task.
-4. **Keep required communication.** Provide required progress updates, clarifications, permissions, and citations. Report new findings, changed plans, or blockers; omit repetitive tool-by-tool narration.
-5. **Match certainty to evidence.** Distinguish observations, inferences, and unverified work when that affects use of the result. A shorter answer must not sound more certain.
-6. **Keep executable output complete.** Preserve exact commands, paths, prerequisites, configuration, and error handling needed to use the result. Do not replace requested working code with ellipses or illustrative placeholders.
-
-## Procedure
-
-1. Identify the result and evidence the user needs. For a follow-up, answer the new question without repeating the full earlier answer.
-2. Retrieve targeted context: search before reading entire files, inspect relevant ranges, load references on demand, and summarize large outputs. Expand when missing context could change the conclusion; never treat truncated output as complete.
-3. Perform the work. Batch independent retrieval where available, reuse established facts, and stop repeating successful checks unless a change or unresolved concern justifies them. Preserve required current-source verification.
-4. Lead with the answer, result, or blocker. Add the rationale, instructions, evidence, and limitations needed to understand or use it.
-5. Remove restated prompts, decorative headings, filler praise, empty offers, and sentences that merely announce the next sentence. Keep enough connective prose to remain readable.
+1. **Result first.** The answer, decision, or blocker goes in the first line. Explanation follows only as far as it is needed to trust or use it.
+2. **Keep what changes a decision:** the deliverable, the decisive reason, the blocker, a caveat that affects use, and the evidence behind every "done", "fixed", or "passing" claim.
+3. **Cut what changes nothing:** restating the question, announcing the plan, narrating each tool call, praise, generic caveats, recaps of what the user just read, and closing offers.
+4. **Compress prose, not diligence.** Investigate and verify as the task requires. A failed, skipped, or unavailable check is always reported, even in one line; brevity never justifies hiding it or stopping early.
+5. **Never compress what must run.** Code, commands, paths, configuration, and exact error text stay complete. "Just the code" means complete, runnable code and nothing else unless something blocks it.
+6. **Match the user's language, format, and requested depth.** Reply in the language they write in (Georgian stays Georgian; code, identifiers, and commands stay as written). Georgian and other non-Latin scripts usually cost more tokens than English for the same meaning, so cut words rather than switching language. A request for thorough reasoning gets thorough reasoning without the repetition.
+7. **Spend context like money.** Search before reading, read ranges instead of whole files, summarize big outputs, run independent calls together, reuse established facts, and stop repeating unchanged checks ([context-economy.md](references/context-economy.md)). Never treat truncated output as complete.
+8. **Keep required communication.** If progress updates, permission requests, or citations are required, give them, briefly, when something changed: a finding, a blocker, or a new plan.
 
 ## Response shapes
 
-Adapt the shape to the information; these are defaults, not sentence limits.
+Defaults, not sentence limits. Adapt to the information.
 
-| Request | Useful shape |
+| Request | Shape |
 | --- | --- |
-| Direct question | Answer, then the qualification or example that changes understanding |
-| Recommendation | Choice, decisive reason, material tradeoff |
-| Small implementation | Deliverable or changed-file link, effect, relevant verification |
-| Debugging | Supported cause or current hypothesis, fix, check that distinguishes success from recurrence |
-| Status | Current result, meaningful blocker or next step |
-| Comparison | Table when repeated attributes aid comparison; prose otherwise |
-| Architecture or explanation | Recommendation or concept first, then sufficient constraints and reasoning |
-| Summary | Conclusion, consequential facts, unresolved decision; preserve disagreement and uncertainty |
-| Just code | Complete code or patch; explain only blocking ambiguity or a material limitation that cannot safely remain implicit |
+| Direct question | The answer, then the qualification or example that changes understanding |
+| Yes or no | "Yes" or "No", the one reason, and the condition that would flip it |
+| Recommendation | The choice, the decisive reason, the main tradeoff |
+| Small implementation | What changed (file links), what it does, what was verified |
+| Debugging | The supported cause or leading hypothesis, the fix, and the check that distinguishes fixed from recurring |
+| Status | Current result, any blocker, next step |
+| Comparison | A table when attributes repeat; prose otherwise |
+| Explanation or architecture | The concept or recommendation first, then the constraints and reasoning |
+| Summary | Conclusion, consequential facts, open decisions; keep disagreement and uncertainty |
+| Final report after work | Result, evidence (with failures), remaining limits; see [output-craft.md](references/output-craft.md) |
+| Just code | Complete code or patch; explain only a blocking ambiguity or a limit that cannot stay implicit |
 
-Use headings for long answers when they aid navigation. Keep lists and tables when they make parallel facts easier to scan, regardless of item count. Link artifacts to avoid duplication; still state the outcome and material limitations in the answer.
+Use headings only when a long answer needs navigation. Keep lists and tables where they make parallel facts easier to scan. Link artifacts instead of pasting them, and still state the outcome and material limits in the message.
+
+## Reference map
+
+| When the task involves | Read |
+| --- | --- |
+| Rewriting a reply: before and after examples, templates for status, final summary, review comments, language handling | [output-craft.md](references/output-craft.md) |
+| Agent sessions: targeted retrieval commands, log handling, batching, delegation, long-session notes, stopping rules | [context-economy.md](references/context-economy.md) |
 
 ## Failure modes
 
 | Failure | Correct move |
 | --- | --- |
-| “Done” without a usable result or evidence | Name the deliverable and relevant check; disclose failed or unavailable checks |
-| A one-line answer to a request for detailed reasoning | Preserve requested reasoning and remove redundancy |
-| Cryptic fragments, unexplained acronyms, or compressed code | Use plain sentences and maintainable code |
-| Repeating every tool call | Report what changed the conclusion or next action |
-| Omitting updates during sustained work | Send concise updates at the required cadence |
-| Caveats unrelated to the request | Retain only limitations that change this user's decision or use |
-| Rereading full files or rerunning unchanged checks | Use focused context and existing evidence; refresh what may have changed |
-| A word limit would remove material truth | Compress further, then retain the limiting fact; never invent certainty to fit |
+| "Done" with no deliverable or evidence | Name the deliverable and the check; disclose failed or unavailable checks |
+| A one-line answer to a request for detailed reasoning | Keep the requested reasoning; remove only the redundancy |
+| Cryptic fragments, unexplained acronyms, compressed code | Plain sentences and maintainable code |
+| Repeating every tool call | Report what changed the conclusion or the next action |
+| Silence during long work | Short updates at the required cadence |
+| Caveats unrelated to this request | Keep only limits that change this user's decision |
+| Rereading whole files and rerunning unchanged checks | Focused context and existing evidence; refresh only what may have changed |
+| A word limit that would remove a material fact | Compress further, but keep the limiting fact; never invent certainty to fit |
+| Skipping verification "to save tokens" | Run the narrowest check that can fail, then say what it showed |
 
 ## Definition of done
 
-- [ ] The requested deliverable and material questions are addressed, or the exact blocker is stated.
-- [ ] The answer follows the user's language, format, and requested depth.
-- [ ] Completion claims match evidence; relevant failures and unverified work are visible.
-- [ ] Code, commands, and next steps retain the details needed to use them.
-- [ ] Required updates, attribution, and decision-changing qualifications are preserved.
-- [ ] Repetition, filler, and unnecessary background are removed without making the answer cryptic.
+- [ ] The deliverable and the material questions are answered, or the exact blocker is stated.
+- [ ] The reply follows the user's language, format, and requested depth.
+- [ ] Completion claims match evidence; failures and unverified work are visible.
+- [ ] Code, commands, and next steps keep the detail needed to use them.
+- [ ] Required updates, attribution, and decision-changing caveats are preserved.
+- [ ] Repetition, filler, and background that does not matter are gone, and the text is still easy to read.
 
 ---
 

@@ -1,79 +1,88 @@
 ---
 name: anti-ai-slop-design
-description: Create, refine, implement, or critique distinctive visual design for websites, landing pages, product interfaces, and brand-led UI. Use when establishing art direction, polishing typography and composition, or correcting generic template-like output while preserving the requested aesthetic, accessibility, and real content. Focus on visual craft rather than unrelated product or backend changes.
+description: >-
+  Create, refine, implement, or critique distinctive visual design for websites, landing pages,
+  product interfaces, dashboards, and brand-led UI so the result looks specific to its subject
+  instead of like a template: art direction, typography, color, layout composition, imagery, copy,
+  and polish. Use whenever the user wants a design to look better, less generic or "AI-looking",
+  more premium or on-brand, a page or component designed from scratch, or an existing UI judged
+  on how it looks, including Georgian and multilingual layouts. Works from the real brief,
+  content, and brand, keeps approved brand choices and accessibility, and delivers rendered,
+  inspected results instead of descriptions.
 ---
 
 # Anti AI Slop Design
 
-Produce intentional, context-specific, buildable visual work. Quality comes from the relationship between content, composition, typography, imagery, and interaction. A quiet interface and an expressive one can both succeed; conventional elements are not evidence of AI authorship.
+Produce intentional, specific, buildable visual work. "Slop" is what you get when every decision is the most probable one: the same fonts, gradients, card grids, and hero. Convention is not the flaw; unconsidered convention is. A quiet interface and an expressive one can both be excellent.
 
-## Operating rules
+## Why generic output happens, and what works against it
 
-1. **Serve the requested direction.** Preserve supplied brand rules, references, required content, and working components. Improve execution within those constraints; do not turn every brief into minimalist editorial design.
-2. **Tie major choices to a purpose.** Clarity, recognition, atmosphere, delight, and cultural expression are valid purposes. A utility control need not be unique; concentrate distinction where it adds value.
-3. **Diagnose before replacing.** A gradient, centered hero, card grid, pill button, or stock image is not inherently a defect. Change it when it weakens hierarchy, honesty, usability, brand fit, or implementation quality.
-4. **Keep evidence honest.** Do not invent endorsements, metrics, testimonials, customer relationships, or product capabilities. Clearly distinguish sample content, conceptual imagery, and real evidence.
-5. **Match the effort to the work.** A spacing correction needs a local decision; a new visual identity needs exploration. Do not generate three directions or a complete token system for every small task.
-6. **Design for actual content and use.** Test representative long strings, the relevant empty/failure states, compact layouts, and real asset availability. Do not sacrifice reading or operation for a screenshot.
-7. **Make accessibility measurable.** Distinguish a visual recommendation from a WCAG failure, and a mockup annotation from a runtime test. Keep contrast, focus, text scaling, and input reachability in the design.
-8. **Respect delivery scope.** Use the existing stack and asset workflow where practical. Explain material asset, performance, or dependency costs before making the design rely on them.
+Defaults come from habit, not from the brief. Banning a list of patterns fails, because the escape routes become defaults too (warm cream with terracotta, an italic serif accent word in every headline, tiny uppercase eyebrow labels, hairline-ruled "editorial" columns). What works is **specificity before aesthetics**: derive each major choice from the subject, audience, content, and brand, and make the choice survive a test.
+
+## How to work
+
+1. **Start from the subject.** Gather the audience, the real content, the brand rules, the constraints, and the languages. Preserve supplied brand identity, approved references, and working components; they outrank any taste of yours.
+2. **Write a thesis and signature decisions.** One or two sentences linking audience and content to visible qualities, then 3 to 5 decisions that carry it (type, color logic, layout structure, image treatment, one memorable detail). For a local edit reuse the existing direction ([visual-thesis.md](references/visual-thesis.md)).
+3. **Run a default audit.** List what you would produce on autopilot: font, palette, hero, section pattern, icons, motion, copy tone. Keep each item only with a reason tied to this project; replace the rest ([slop-catalog.md](references/slop-catalog.md)).
+4. **Apply the swap test.** If the name and logo were replaced by a competitor's and the page still worked, identity is not doing any work. Fix it through composition, type, imagery, and copy, not by decorating.
+5. **Let content set the hierarchy.** Decide what matters most, then compose around it. Equal cards suit comparable items, not unequal priorities ([composition.md](references/composition.md)).
+6. **Write the words as design.** Specific claims, real evidence, no invented proof ([copy.md](references/copy.md)).
+7. **Build the system, then the details:** type roles, color roles, spacing, surfaces, states ([craft.md](references/craft.md), [css-craft.md](references/css-craft.md), [imagery-and-assets.md](references/imagery-and-assets.md)).
+8. **Render and look.** Build it, view it at phone, tablet, and desktop widths with real long content, critique what you see, fix, and look again once. A description of a design is not a design; screenshots plus measured contrast and keyboard checks are evidence.
+9. **Keep evidence honest.** No fabricated testimonials, logos, metrics, customers, or product screenshots. Label sample data and conceptual imagery.
 
 ## Procedure
 
-1. **Inspect context.** Read the brief, existing implementation/design, brand assets, content, target audience, supported languages, and requested deliverable. Identify what is fixed and what may change. Do not infer language or culture from a filesystem path.
-2. **Find the actual weakness.** Separate unclear content or task hierarchy from weak visual execution. Preserve what already works; solve the smallest meaningful set of problems.
-3. **Choose direction at the appropriate scale.** For substantial new work, state a concise visual thesis derived from the brand, audience, or material. For local edits, reuse the established direction. Use [visual-thesis.md](references/visual-thesis.md) when a direction is needed.
-4. **Compose with meaningful hierarchy.** Decide grouping, alignment, emphasis, density, rhythm, and image purpose. Let the content determine whether equal cards, an asymmetric layout, or another structure fits.
-5. **Create or extend a coherent vocabulary.** Define only the necessary type, color, spacing, surface, icon, and motion roles. Keep deliberate exceptions when they solve a real problem. Use [craft.md](references/craft.md).
-6. **Check for generic decisions.** Read the relevant parts of [slop-catalog.md](references/slop-catalog.md). Keep, refine, or replace a pattern based on its effect on this work, not its popularity.
-7. **Inspect the artifact at realistic sizes.** Verify hierarchy, content extremes, font/asset rendering, contrast, and relevant states. For non-Latin or multilingual work, use [multilingual.md](references/multilingual.md). If a running interface is available, inspect interaction and responsive behavior rather than relying only on screenshots.
-8. **Deliver and explain briefly.** Provide the requested artifact, the major visual decisions, relevant validation, and any unresolved assets or limitations. Use [review.md](references/review.md) for critique. Do not bury a small result under an art-direction essay.
+1. Inspect the brief, existing implementation or design, assets, content, audience, and languages. Name what is fixed and what may change. Do not infer language or culture from a file path.
+2. Find the real weakness: unclear content or hierarchy, or weak execution. Preserve what works.
+3. Choose direction at the right scale (thesis for new work, reuse for edits).
+4. Compose by hierarchy, define the vocabulary, run the default audit and swap test.
+5. Implement in the project's stack and asset workflow. Explain material cost before a design depends on heavy assets or dependencies.
+6. Render, inspect, and test content extremes, themes, and languages ([multilingual.md](references/multilingual.md) for Georgian and non-Latin).
+7. Review with [review.md](references/review.md), fix, and report briefly: the decisions, the checks that ran, and the limits.
 
 ## Reference map
 
 | When the task involves | Read |
 | --- | --- |
-| Establishing or comparing visual directions | [visual-thesis.md](references/visual-thesis.md) |
+| Establishing or comparing directions | [visual-thesis.md](references/visual-thesis.md) |
 | Diagnosing generic patterns and choosing replacements | [slop-catalog.md](references/slop-catalog.md) |
-| Typography, color, space, surfaces, icons, imagery, visual checks | [craft.md](references/craft.md) |
-| Georgian typography, non-Latin scripts, RTL, localization | [multilingual.md](references/multilingual.md) |
+| Typography, color, space, surfaces, icons, accessibility of visual choices | [craft.md](references/craft.md) |
+| Layout recipes, hierarchy, rhythm, hero alternatives | [composition.md](references/composition.md) |
+| Headlines, CTAs, claims, proof, bilingual copy | [copy.md](references/copy.md) |
+| Imagery, illustration, icons, generated assets, data as imagery | [imagery-and-assets.md](references/imagery-and-assets.md) |
+| CSS for tokens, fluid type, color, contrast measurement | [css-craft.md](references/css-craft.md) |
+| Georgian, non-Latin scripts, RTL, localization | [multilingual.md](references/multilingual.md) |
 | Visual critique, evidence limits, prioritization | [review.md](references/review.md) |
 
 ## Decision test
 
-Use these questions where a choice is in doubt, not as a compulsory test for every element:
-
-- What does this choice help someone understand, do, recognize, or feel?
-- Does it fit the supplied brand and content, and does it remain usable?
-- Would removing or changing it improve the composition enough to justify the change?
-
-Shared conventions support usability. Evaluate distinctiveness at the level of the whole composition and key brand expressions; a recognizable search field is an advantage.
+For any choice in doubt ask: what does it help someone understand, do, recognize, or feel? Does it fit the supplied brand and content and stay usable? Would changing it improve the composition enough to justify the change? Shared conventions support usability; judge distinctiveness across the whole composition, not per control.
 
 ## Failure modes
 
 | Failure | Correct move |
 | --- | --- |
-| Removing an approved purple gradient because it looks generated | Preserve the brand choice; repair hierarchy, contrast, or execution if needed |
-| Adding effects to compensate for weak content | Clarify the message and evidence, then choose effects that serve them |
-| Replacing every card with asymmetry | Use equal units for comparable items; use hierarchy when priorities differ |
-| Shrinking or fading text to make a layout feel refined | Repair measure, spacing, and emphasis while retaining readable contrast |
-| Redesigning familiar controls for uniqueness | Put distinction in composition, typography, assets, and appropriate brand details |
-| Fabricated product mockups presented as real | Use the real product or label a conceptual demonstration clearly |
-| Removing all atmosphere in the name of utility | Retain expressive choices that support the brief and survive usability checks |
-| Declaring quality from the number of fonts, cards, or radii | Check role consistency and visible outcomes rather than arbitrary counts |
+| Removing an approved purple gradient because it looks generated | Keep the brand choice; fix hierarchy, contrast, or execution |
+| Replacing every default with the current "anti-default" look (cream, serif italic, mono labels) | Derive from the subject; the swap test applies to your replacements too |
+| Adding effects to compensate for weak content | Sharpen the message and evidence first |
+| Replacing every card grid with asymmetry | Equal units for comparable items, hierarchy where priorities differ |
+| Shrinking or fading text to feel refined | Fix measure, spacing, and emphasis at readable contrast |
+| Redesigning familiar controls to be unique | Put distinction in composition, type, imagery, and copy |
+| Invented testimonials, logos, metrics, product shots | Use real material or label a concept clearly |
+| Judging quality by counts of fonts or radii | Check consistent roles and visible outcomes |
+| Describing a design without rendering it | Build, screenshot at three widths, critique, fix |
 
 ## Definition of done
 
-For the requested scope, mark each item complete or explain the remaining limit.
-
-- [ ] The result follows the user's direction and preserves required content and brand constraints.
-- [ ] Major visual choices have a clear role; convention and expression are both used deliberately.
-- [ ] Hierarchy, text measure, grouping, and action prominence work with representative content.
-- [ ] Tokens and recurring treatments are coherent; exceptions have a practical purpose.
-- [ ] Relevant compact layouts, content extremes, font/asset fallbacks, and states were inspected or specified.
-- [ ] Applicable contrast, focus, scaling, and target checks are documented without unsupported conformance claims.
+- [ ] The result follows the user's direction and keeps required content and brand constraints.
+- [ ] Major choices have a stated role; convention and expression are used on purpose, and the swap test passes.
+- [ ] Hierarchy, measure, grouping, and action prominence work with realistic content.
+- [ ] Tokens and recurring treatments are coherent; exceptions have a reason.
+- [ ] Compact layouts, content extremes, fonts and asset fallbacks, and relevant states were rendered and inspected or specified.
+- [ ] Contrast, focus, scaling, and target size are measured or specified without unsupported conformance claims.
 - [ ] Evidence, sample data, and conceptual imagery are distinguishable.
-- [ ] The requested artifact is delivered with concise rationale and explicit verification limits.
+- [ ] The artifact is delivered with a concise rationale and explicit verification limits.
 
 ---
 

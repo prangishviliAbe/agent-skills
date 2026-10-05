@@ -64,6 +64,19 @@ Never invent trust signals to make a layout feel complete. Attractive sample cha
 | Staged intro | Users cannot reach the requested content promptly | Make it skippable/nonblocking or remove it |
 | Animated statistics | Animation implies progress or credibility the data does not support | Show an honest value with context; animate only when useful |
 
+## Escape routes that became defaults
+
+Replacing one default with the current counter-default is still autopilot. Treat these as suspects too, and keep them only when the subject and brand call for them:
+
+| Pattern to inspect | Why it counts as a default | Test |
+| --- | --- | --- |
+| Warm cream background with terracotta or sage accents | The standard "not a SaaS template" palette | Does the palette come from the brand and subject? |
+| An italic serif accent word inside every headline | A recurring typographic gesture | Does emphasis serve this sentence? |
+| Tiny uppercase eyebrow labels above each heading | Added for texture, rarely read | Would the page lose meaning without them? |
+| Monospace labels as decoration, hairline rules, newspaper columns | Editorial costume on non-editorial content | Is the content actually editorial? |
+| Arrow glyphs on every link, fade-and-slide on every section, hover lift on every card | Uniform effects with no priority | Does motion mark the single focal change? |
+| Black canvas with one acid accent | A swap for purple-on-white | Is contrast and emphasis balanced for this content? |
+
 ## Content and finish
 
 Replace vague claims with a specific action, audience, mechanism, or benefit supported by the brief. Label actions by outcome when generic labels would be ambiguous; "Get started" can still work when the next step is clear.

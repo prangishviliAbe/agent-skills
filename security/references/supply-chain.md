@@ -1,60 +1,73 @@
-# Dependencies, CI/CD, secrets, and infrastructure
+# Dependencies, CI/CD, secret exposure, headers, and cloud
 
-Read when reviewing the software supply chain, deployment configuration or hosting controls. Focus on where code executes and what authority it receives.
+Read when reviewing dependencies, build and release pipelines, a leaked credential, HTTP security headers, or hosting configuration. Focus on where code executes and what authority it receives.
 
 ## Dependency risk
 
-Inspect the resolved version and advisory range, affected feature/configuration, execution environment, reachable path and available fix. A dev dependency may execute with CI secrets or write production artifacts; it is not low risk solely because it is absent from runtime dependencies.
+Judge an advisory by the resolved version in the lockfile, the affected feature, whether the project calls it with attacker influence, the execution environment, and the available fix. A dev dependency can run with CI secrets or write production artifacts, so "dev only" is not low risk. Scanner output is an input; the verdict (reachable, not reachable, unknown) is yours.
 
-Use committed lockfiles and deterministic install modes for applications where the ecosystem supports them. Lockfiles and container digests improve reproducibility, but do not prove trust or apply future patches. Pair pinning with reviewed updates and artifact provenance where available.
+- Install from the lockfile in frozen mode (`npm ci`, `pnpm install --frozen-lockfile`). Lockfiles give reproducibility, not trust, and do not apply future patches.
+- Lifecycle scripts (`preinstall`, `postinstall`, `prepare`) run arbitrary code at install time; npm worm campaigns have spread through them. Install with `--ignore-scripts` in CI and run the few scripts you need explicitly. Inspect an unfamiliar package before adding it: name and publisher (typosquats), `npm view <package> scripts`, maintainer changes, provenance (`npm audit signatures`).
+- Delay adoption of brand-new releases so the ecosystem can catch malicious versions: Dependabot `cooldown`, Renovate `minimumReleaseAge`, pnpm `minimumReleaseAge` (check the key for your tool version).
+- Never run `npm audit fix --force` blindly; it can change major versions and still leave the feature reachable.
+- Review lockfile diffs for unexpected registry hosts, removed integrity hashes, and git or tarball URL dependencies.
 
-Verify unfamiliar package names and publishers, lifecycle scripts and transitive execution. Installing a repository or running its tests may execute code; inspect relevant scripts before exposing credentials or network access. Do not blindly run a package manager's force-fix option: it can alter major versions or leave the affected feature reachable.
-
-Separate confirmed vulnerable use from unproven exposure, unsupported components and defense-in-depth recommendations. Scanner output is an input to this analysis, not the final finding.
+```yaml
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+    cooldown:
+      default-days: 7
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+```
 
 ## Build and release trust
 
-Trace contribution → workflow trigger → checkout revision → command → token/secrets → artifact → deployment. Check whether untrusted pull request content, issue text, branch names or artifacts can become shell syntax or privileged code.
+Trace contribution, workflow trigger, checked-out revision, command, token and secrets, artifact, deployment. Ask whether untrusted pull-request content, branch names, issue text, or artifacts can become shell syntax or privileged code.
 
-- Give jobs the smallest needed token scopes; isolate untrusted builds from deployment identities.
-- Review triggers that run with base-repository authority, especially if they check out or execute a contributor's code.
-- Pin third-party executable workflow dependencies to immutable identities and use a reviewed update process.
-- Do not interpolate untrusted expression values into shell source; pass them as data using the shell's supported safe mechanism.
-- Validate artifacts and their producer/revision before promotion. Cache or artifact reuse can cross a trust boundary even when the deploy job itself contains no untrusted checkout.
-- Inspect self-hosted runner persistence and access to other workloads. An ephemeral process is not necessarily an isolated machine.
-
-Suggest branch protection or environment gates when they address the actual release policy; a skill must not silently change repository governance or block already-authorized work on invented rules.
+- Grant the smallest `permissions:` at workflow or job level; keep untrusted builds away from deployment identities.
+- Pin third-party actions to a full commit SHA with the version in a comment, and update through a reviewed process. Tags and branches can be repointed.
+- `pull_request_target` and `workflow_run` run with base-repository authority. Never check out or execute the contributor's code under them with secrets available.
+- `${{ ... }}` expressions are expanded into the shell script, so pass untrusted values as environment variables, not inline.
+- Validate that the artifact you deploy is the one that was built and tested; caches and artifacts can cross trust boundaries even when the deploy job checks out nothing untrusted.
+- Self-hosted runners persist state and may reach other workloads; an ephemeral job is not necessarily an isolated machine.
+- Prefer OIDC to cloud providers over long-lived stored keys, and npm trusted publishing with provenance over stored publish tokens.
+- Suggest branch protection and environment approvals when they address the real release policy, but do not change repository governance unasked. Lint workflows with `zizmor` or `actionlint`.
 
 ## Credential exposure
 
-Inspect current files, generated bundles and history when they are in scope using redacted scanner output or controlled local review. Do not dump git history or environment values into the conversation to search for secrets.
-
-Determine whether a discovered value is a live secret, public identifier, placeholder or uncertain candidate. Report location and privilege/exposure context without reproducing the value. Never test a credential against an unrelated service just to classify it.
-
-For a credible exposure, identify affected identity, revoke/rotate within authority, update dependents, and check relevant use logs. Removing a file or rewriting history does not revoke credentials. History rewriting is a separate disruptive action and needs its own scoped decision.
+1. **Find, without printing.** Use scanner modes that redact values, or location-only search (see [audit-playbook.md](audit-playbook.md)). Never paste a secret into the conversation or a report, and never test it against any service to classify it.
+2. **Classify:** live secret, test credential, public identifier (for example a publishable key), placeholder, or uncertain. Note the privilege and where it was exposed (public repository, private repository, client bundle, log).
+3. **Contain, within authority:** revoke or rotate at the provider, scoped to that credential, in an order that avoids an outage, and update the dependents. Rotating while malicious code still runs can leak the new secret too.
+4. **Check use:** review the provider's access logs for the exposure window.
+5. **Clean up:** deleting the file or rewriting history does not revoke anything. A history rewrite is a separate, disruptive action that needs its own decision.
 
 ## Headers and cross-origin policy
 
-Verify actual responses and the flows affected by configuration. Missing a header alone usually supports a hardening recommendation; establish a concrete consequence before asserting a vulnerability.
+Verify actual responses and the flows a header could break. A missing header alone supports a hardening note; establish a concrete consequence before calling it a vulnerability.
 
 | Control | Evaluate |
 | --- | --- |
-| CSP | Real script/style needs, nonce/hash handling and rollout; reports may contain sensitive URLs |
-| HSTS | HTTPS readiness of affected hosts, subdomains and consequences of preload |
-| frame-ancestors / X-Frame-Options | Sensitive framed actions and legitimate embedding |
-| nosniff | Correct media types and user-controlled content |
-| Referrer-Policy | Token-bearing URLs and necessary integrations |
-| COOP / COEP / CORP | Isolation goals and compatibility with sign-in popups, embeds and cross-origin resources |
-| CORS | Exact permitted origins and credentials; reflection is unsafe when unrestricted |
+| CSP | Real script and style needs, nonce or hash handling, report-only rollout; reports can contain sensitive URLs |
+| HSTS | HTTPS readiness of every host and subdomain before `includeSubDomains` or `preload` |
+| `frame-ancestors` / `X-Frame-Options` | Sensitive framed actions versus legitimate embeds |
+| `X-Content-Type-Options: nosniff` | Correct media types, especially for user content |
+| `Referrer-Policy` | Token-bearing URLs and needed integrations |
+| COOP, COEP, CORP | A real isolation goal, and compatibility with sign-in popups and cross-origin resources |
+| CORS | Exact allowed origins; a reflected origin with credentials is unsafe; a public read-only wildcard is not inherently a flaw |
 
-CORS affects browser access to responses, not whether a server-side attacker may send a request. It does not replace authentication, authorization or CSRF controls. An intentional wildcard public read API is not inherently a vulnerability.
+CORS controls which pages may read a response; it does not stop a server-side client from sending a request and does not replace authentication, authorization, or CSRF defenses.
 
 ## Cloud and hosting
 
-Check effective policies, not names: public storage access, network reachability, workload identity, metadata access, cross-account grants, audit retention and restoration ability. A private subnet or private bucket label is insufficient evidence without effective routes and permissions.
-
-Use authorized, bounded tests; do not scan broad address ranges or probe providers merely because configuration suggests possible exposure. Keep infrastructure changes, secret rotation and deletion within the requested scope.
+Check effective permissions, not names: public storage access, network reachability, workload identity, metadata service mode, cross-account grants, audit-log retention, and restore ability. A "private" bucket or subnet label is not evidence without effective policy and routes. Keep tests authorized and bounded; do not scan broad address ranges because a configuration hints at exposure, and keep infrastructure changes, rotation, and deletions inside the requested scope.
 
 ## Primary reference
 
-[GitHub Actions secure use reference](https://docs.github.com/en/actions/reference/security/secure-use) covers workflow expression injection, permissions, untrusted code and dependency pinning. Adapt those mechanisms to the actual CI platform.
+[GitHub Actions secure use reference](https://docs.github.com/en/actions/reference/security/secure-use): expression injection, permissions, untrusted code, and pinning. Adapt it to the actual CI platform.

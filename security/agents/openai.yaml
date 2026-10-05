@@ -1,4 +1,4 @@
 interface:
   display_name: "Application Security"
-  short_description: "Trace concrete risks and verify security fixes"
-  default_prompt: "Use $security to assess this application's relevant trust boundaries, distinguish evidence from hypotheses, and deliver prioritized findings or requested fixes with clear coverage."
+  short_description: "Evidence-backed security audits, fixes, and threat models"
+  default_prompt: "Use $security to audit, threat-model, or fix this code: trace concrete risks to a violated invariant, separate demonstrated findings from hypotheses, stay in authorized scope, and report coverage honestly."

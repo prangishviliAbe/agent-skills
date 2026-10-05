@@ -63,7 +63,7 @@ Never turn a failure into a success response or an empty list. Log the cause wit
 
 ## Pagination, filtering, sorting
 
-Paginate every list with a server-side maximum. Allowlist sortable and filterable fields. Use keyset (cursor) pagination for large or changing sets, with a unique tiebreaker so order is total; use offset only for small, static lists.
+Paginate every list with a server-side maximum. Allowlist sortable and filterable fields, and look keys up with an own-property check (`Object.hasOwn`), because `map[key] ?? default` lets `constructor` and `toString` through. Use keyset (cursor) pagination for large or changing sets, with a unique tiebreaker so order is total; use offset only for small, static lists.
 
 ```sql
 SELECT id, created_at, title

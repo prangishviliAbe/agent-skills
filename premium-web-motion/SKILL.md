@@ -1,97 +1,107 @@
 ---
 name: premium-web-motion
-description: Design, implement, and audit purposeful web motion including UI animation, hover and press feedback, menus and dialogs, page transitions, scroll storytelling, drag interactions, loading feedback, and motion tokens. Use for motion refinement or animation performance and accessibility work in HTML/CSS/JavaScript, React, Next.js, and component libraries; preserve the product's identity and existing stack.
+description: >-
+  Design, implement, and audit purposeful web motion: UI transitions, hover and press feedback,
+  menus, dialogs, drawers and accordions, page and view transitions, scroll-driven effects,
+  staggered reveals, drag and gesture feedback, loading states, and motion tokens, in CSS, Web
+  Animations API, React, Next.js, Motion, GSAP, and component libraries. Use whenever the user
+  asks to add or refine animation, make an interface feel more polished or premium, fix janky,
+  slow, or inaccessible motion, handle reduced-motion, or review how a UI moves, even if they
+  only say "make it feel smoother". Keeps content usable without motion, makes animations
+  interruption-safe, matches the existing stack and brand, and reports measured results only.
 ---
 
 # Premium Web Motion
 
-Use motion to explain changes, preserve orientation, and respond to input. Deliver the smallest coherent motion layer that serves the requested experience, remains usable when motion is absent, and survives interruption.
+Use motion to explain change, keep people oriented, and answer input. Premium motion is mostly restraint and correctness: fast response, small purposeful movement, consistent timing, and no broken states when interrupted. Deliver the smallest coherent motion layer that serves the experience and still works when motion is absent.
 
-## Operating rules
+## How to work
 
-1. **State each animation's purpose.** Connect it to orientation, feedback, continuity, progress, or an explicitly requested narrative or expressive effect. Remove effects that distract from that purpose.
-2. **Keep state authoritative.** Inputs, navigation, errors, and data updates must not wait for decorative animation. Define focus and interaction behavior for entering, exiting, cancelled, and reopened states.
-3. **Retarget from the current state.** Fresh input supersedes stale motion. Reverse or continue from the current visual value; prevent an old completion callback from hiding or removing a reopened element.
-4. **Prefer inexpensive properties; measure exceptions.** `transform` and `opacity` often avoid layout, but large layers and effects can still be costly. Height and grid-track interpolation both incur layout; use them when surrounding content genuinely needs to reflow and profile the affected area.
-5. **Design the reduced-motion path.** Remove nonessential travel, zoom, parallax, looping, and stagger. Use immediate changes or a brief opacity change where helpful, without requiring opacity animation either. Keep equivalent content and actions.
-6. **Do not let enhancement hide content.** Preserve visible server/static content and existing application behavior if animation code fails, hydration is delayed, or an API is unsupported. A client-only app need not gain unrelated no-JavaScript functionality.
-7. **Preserve meaning and access.** Communicate states beyond movement alone. Respect the widget's keyboard and focus model, browser scroll behavior, and pointer alternatives to gestures.
-8. **Make evidence match the claim.** Verify installed library versions and target-browser support. Report measured performance only for the tested scenario and environment; distinguish review, simulation, and device testing.
+1. **Give every animation a job.** Orientation, feedback, continuity, progress, or an explicitly requested expressive moment. Remove movement that only decorates; one focal change at a time reads as confident.
+2. **Keep state authoritative.** Input, navigation, errors, and data updates never wait for an animation to finish. Define focus and interaction behavior for entering, exiting, canceled, and reopened states.
+3. **Retarget from where the element is.** New input supersedes old motion: reverse or continue from the current visual value, and make sure a stale completion callback cannot hide or remove a reopened element.
+4. **Prefer cheap properties and measure the rest.** `transform` and `opacity` usually avoid layout; height, grid tracks, large blurs, and shadows can still cost. Profile what you actually animate.
+5. **Design the reduced-motion path.** Remove travel, zoom, parallax, looping, and stagger; use an immediate change, or a brief fade, and keep the same content and actions.
+6. **Never let enhancement hide content.** Render visible content first; if the animation code fails, hydration is late, or an API is missing, the page must still work. Do not start elements hidden.
+7. **Preserve meaning and access.** Convey state beyond movement, respect the widget's keyboard and focus model and native scrolling, and give pointer alternatives to gestures.
+8. **Make evidence match the claim.** Check installed library versions and target-browser support. Report performance only for the scenario and environment you measured.
 
-## Procedure
+## Premium versus cheap
 
-1. **Scope the work.** For an audit, reproduce and prioritize observed problems before changing code. For implementation, inspect affected components, existing tokens, installed libraries, browser targets, and rendering lifecycle. A motion specification describes behavior without inventing implementation results.
-2. **Choose a coherent character.** Use the product's vocabulary of distance, easing, and tempo. Borrow interaction principles without copying a reference's identity. A hover fix does not require a site-wide motion system.
-3. **Record the motion contract.** Identify trigger, purpose, semantic state, properties, timing, interruption, reduced motion, fallback, and performance risk. A sentence suffices for one simple transition; use an inventory for a system.
-4. **Choose the simplest compatible implementation** from the table below. Reuse primitives. Introduce dependencies only when their capabilities justify measured bundle and maintenance cost.
-5. **Implement semantics and the resting state first.** Add motion around them. Specify property ownership so CSS, gestures, layout effects, and libraries do not overwrite one another.
-6. **Exercise transitions, not just endpoints.** Test rapid reversal, repeated input, cancellation, unmount/navigation, runtime preference changes, and dynamic content where relevant. Read [implementation.md](references/implementation.md) for lifecycle details.
-7. **Verify proportionately.** Check keyboard, pointer, reduced motion, responsive layout, and unsupported/delayed enhancement. Profile new layout, scroll, large-area, or concurrent animation; identify unavailable checks.
-8. **Deliver the change and evidence.** State the behavior change, relevant checks, measured limits, and unresolved risks. A proposal or static review is not an executed browser test.
-
-## Choose the smallest compatible tool
-
-| Need | Starting choice |
+| Cheap tell | Premium practice |
 | --- | --- |
-| Hover, press, focus, simple state change | CSS transitions with named properties |
-| Native popover or dialog entry/exit | Existing accessible primitive; progressively enhance with supported starting/discrete transition features |
+| Everything fades up on scroll | Animate one meaningful change; leave primary content static and instantly visible |
+| Long durations and bounce to "add personality" | Short, decisive timing; overshoot only where physical continuity suits the brand |
+| Linear easing on UI movement | Ease-out for arrivals, ease-in-out between stable positions, linear for progress and scroll mapping |
+| Same stagger on every list | Capped total delay; order by reading flow; none for long lists |
+| Hover lift on every card | Hover only where it signals an action, only on fine pointers |
+| Animation blocks the next action | Interaction is live from the first frame |
+| Layout properties animated | Transform and opacity, or a measured, bounded layout change |
+| Motion that ignores the user's setting | A designed reduced-motion version |
+
+## Pick the mode
+
+| Request | Do |
+| --- | --- |
+| Specify motion | Write the contract for each behavior: trigger, purpose, semantic state, properties, timing, interruption, reduced motion, fallback, risk ([motion-system.md](references/motion-system.md)) |
+| Implement | Inspect components, tokens, libraries, and browser targets; implement semantics and the resting state first, then motion; exercise rapid reversal and cancellation |
+| Audit | Reproduce and prioritize observed problems before changing code: state, focus, and hidden content first, then input delay and layout cost, then polish |
+
+## Choose the smallest tool that works
+
+| Need | Start with |
+| --- | --- |
+| Hover, press, focus, simple state | CSS transitions on named properties |
+| Dialog or popover enter and exit | The native element plus `@starting-style` and `transition-behavior: allow-discrete`, with an immediate fallback ([recipes.md](references/recipes.md)) |
 | Imperative control or short sequence | Web Animations API with cancellation and cleanup |
-| React presence or shared layout | Existing animation library; Motion when its capabilities are needed |
-| Continuity between views | View Transitions API with normal navigation/update as fallback |
-| One-time viewport entry | IntersectionObserver; visible content is the fallback |
-| Continuous scroll progress | CSS scroll-driven animations where supported; static fallback or measured progress implementation |
-| Complex interactive timeline | Existing timeline library, or a justified addition such as GSAP |
+| React presence or shared layout | The project's animation library; Motion when its capabilities are needed ([libraries.md](references/libraries.md)) |
+| Continuity between views | View Transitions API, with a normal update as the fallback |
+| One-time entry into view | IntersectionObserver on an element that is already visible |
+| Continuous scroll progress | CSS scroll-driven animations where supported, behind `@supports`; a static fallback |
+| Complex timeline | The existing timeline library, or GSAP when justified |
 
-IntersectionObserver detects visibility thresholds; it is not a substitute for continuous scroll progress. Check new API support against the actual browser target.
+IntersectionObserver detects thresholds; it does not give continuous scroll progress. Check any new API against the real browser target before relying on it.
 
-## Timing as a starting point
+## Timing starting points
 
-These ranges are tuning examples, not accessibility standards or universal acceptance thresholds. Use the product system and adjust for input frequency, travel, and content.
-
-| Context | Initial range | Decision |
-| --- | --- | --- |
-| Hover or press feedback | 100–180ms | Begin responding on input; avoid delayed feedback |
-| Menu, disclosure, small state change | 160–280ms | Keep frequently repeated actions quick |
-| Dialog, sheet, view continuity | 200–400ms | Preserve orientation without delaying focus or navigation |
-| Opt-in narrative sequence | Content-dependent | Keep reading and skipping under the user's control |
-
-Ease-out often suits arrivals; ease-in-out suits movement between stable positions. Linear timing suits accurate progress and direct scroll mapping. Springs can express continuity or physical settling beyond drag alone; tune overshoot and respect reduced motion. Do not add duration or bounce merely to signal importance.
+Examples to tune against the product's own system and the input frequency, not standards. Hover or press feedback 100 to 180 ms. Menus and small state changes 160 to 280 ms. Dialogs, sheets, and view continuity 200 to 400 ms. Narrative sequences depend on content and stay skippable. Frequent actions should feel fastest. Do not add duration or bounce just to signal importance.
 
 ## Reference map
 
 | When the task involves | Read |
 | --- | --- |
-| Character, tokens, choreography, inventory | [motion-system.md](references/motion-system.md) |
-| Interaction-specific focus, semantics, gestures, failure states | [patterns.md](references/patterns.md) |
-| CSS, WAAPI, React, FLIP, lifecycle, progressive enhancement | [implementation.md](references/implementation.md) |
+| Character, tokens, springs, choreography math, inventory, audit | [motion-system.md](references/motion-system.md) |
+| Focus, semantics, gestures, and failure states per interaction | [patterns.md](references/patterns.md) |
+| CSS, WAAPI, React, FLIP, view transitions, lifecycle, progressive enhancement | [implementation.md](references/implementation.md) |
+| Ready-to-adapt effects with reduced-motion paths | [recipes.md](references/recipes.md) |
+| Motion, GSAP, smooth scroll, Lottie, Rive, 3D | [libraries.md](references/libraries.md) |
 | Profiling, reduced motion, WCAG scope, verification scenarios | [performance.md](references/performance.md) |
-
-Load only relevant references. This folder is self-contained; no other skill is required.
 
 ## Failure modes
 
 | Failure | Correct move |
 | --- | --- |
-| All content waits for reveals or hydration | Render visible; animate selected noncritical content after enhancement is available |
-| Tooltip takes keyboard focus | Leave focus on its trigger; use an appropriate interactive popup for controls |
-| Grid rows described as layout-free height animation | Treat grid interpolation as layout work; constrain and profile it |
+| Content waits for reveals or hydration | Render visible; enhance selected noncritical content afterward |
+| Tooltip takes keyboard focus | Leave focus on the trigger; use an interactive popup for controls |
+| Grid-row animation described as layout-free | It is layout work; constrain and profile it |
 | Animation completion controls business state | Commit state independently; make visual cleanup cancellation-safe |
-| Reduced motion only shortens large movement | Remove movement and delay; preserve information and the final state |
-| Cancel-and-restart jumps to the beginning | Sample current state before cancellation or reverse the effect |
-| Exiting content remains invisibly focusable | Remove interaction at the correct semantic boundary; transfer focus deliberately |
-| Library or API claimed fast by default | Inspect properties, layer size, main-thread work, and device trace |
-| Scroll sequence captures wheel or touch to force a story | Retain native scroll and reachable content; provide bypass for extended sequences |
+| Reduced motion only shortens the movement | Remove movement and delay; keep content and the final state |
+| Cancel-and-restart jumps to the beginning | Sample the current state before canceling, or reverse |
+| Exiting content stays focusable while invisible | Remove interaction at the right semantic boundary; move focus deliberately |
+| A library or API called fast by default | Inspect properties, layer size, main-thread work, and a device trace |
+| Scroll story captures wheel or touch | Keep native scroll, reachable content, and a way to skip long sequences |
+| Looping or auto-moving content with no control | Provide pause, stop, or hide for motion longer than five seconds |
 
 ## Definition of done
 
-- [ ] Each changed animation has a purpose and documented normal, interrupted, and reduced-motion outcomes.
-- [ ] Input and semantic state remain correct during entry, exit, cancellation, and rapid reversal.
+- [ ] Each changed animation has a purpose and defined normal, interrupted, and reduced-motion behavior.
+- [ ] Input and semantic state stay correct during entry, exit, cancellation, and rapid reversal.
 - [ ] Focus, hidden content, and pointer alternatives follow the widget's interaction model.
-- [ ] Enhancement failure and delayed initialization preserve underlying content and behavior.
-- [ ] Tokens and property ownership are consistent; dependency and browser assumptions are justified.
-- [ ] Cleanup and runtime preference handling cover subscriptions and active animations.
-- [ ] Relevant checks have recorded results; performance claims identify the environment and evidence.
-- [ ] Untested behavior and remaining issues are identified in the handoff.
+- [ ] Enhancement failure or delay leaves the content and behavior intact.
+- [ ] Tokens and property ownership are consistent; dependency and browser-support assumptions are justified.
+- [ ] Cleanup and runtime preference changes cover subscriptions and active animations.
+- [ ] Checks and results are recorded; performance claims name the environment and evidence.
+- [ ] Untested behavior and remaining issues are stated.
 
 ---
 

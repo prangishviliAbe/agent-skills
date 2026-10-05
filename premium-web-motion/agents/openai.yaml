@@ -1,4 +1,4 @@
 interface:
   display_name: "Premium Web Motion"
-  short_description: "Purposeful, accessible, interruption-safe web motion"
-  default_prompt: "Use $premium-web-motion to refine this interaction with purposeful motion, correct focus and state, reduced-motion behavior, interruption handling, and verification appropriate to the implementation."
+  short_description: "Polished, accessible, interruption-safe web motion"
+  default_prompt: "Use $premium-web-motion to add or refine motion in this interface: give each animation a purpose, keep content usable without it, handle reduced motion, focus, and interruption, and report only what was measured."

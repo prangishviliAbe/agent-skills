@@ -31,6 +31,15 @@ This repository contains portable agent skills. A skill must be useful in any ru
 - State what evidence supports completion. Let agents mark irrelevant checks as not applicable and unavailable checks as unverified; do not require fabricated testing or boilerplate reports.
 - Keep a completed skill readable: direct prose, tables for genuinely repeated decisions, and no ritual headings or duplicate checklists.
 
+## Content standard
+
+- Write instructions as positive, imperative decisions with the reason in a short clause. Put corrections of common mistakes in "belief, reality" or "failure, correct move" tables instead of long hedged paragraphs.
+- Every reference opens with a "Read when" line and contains at least one concrete artifact: code, a command, a template, or a decision table. Prefer a worked example to a description.
+- Check code before committing it. Run the snippets that can run, and syntax-check the rest. Fence every block with a language; add `partial` after the language (for example `bash partial`) for an illustrative fragment with placeholders. The validator parses JSON and YAML blocks that are not `partial`.
+- Write `description` as a folded scalar (`description: >-`): a plain scalar breaks on `: `. Include the real requests that should trigger the skill, including near-miss phrasing, within 1024 characters and without angle brackets.
+- Time-sensitive facts (versions, browser support, defaults) say how to verify them against the installed version or current documentation.
+- Keep the evidence vocabulary consistent: Verified, Inferred, Assumed, Not run.
+
 ## References and metadata
 
 - Link every reference from the entrypoint or another reachable reference. Keep references task-specific and maintained.

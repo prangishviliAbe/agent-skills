@@ -88,3 +88,14 @@ test('links cannot use a symlink to escape the skill', t => {
 test('repository without skills is an error', t => {
   const f = fixture(t); rmSync(join(f.root, 'example'), { recursive: true }); assert.match(f.errors(), /no skill folders/);
 });
+const fence = (info, content) => ['```' + info, content, '```'].join('\n');
+test('fenced code blocks need a language', t => {
+  const f = fixture(t); f.body(fence('', 'plain')); assert.match(f.errors(), /without a language/);
+});
+test('JSON and YAML code blocks must parse unless marked partial', t => {
+  const f = fixture(t);
+  f.body(fence('json', '{ "a": }')); assert.match(f.errors(), /invalid json/);
+  f.body(fence('yaml', 'a: [unclosed')); assert.match(f.errors(), /invalid yaml/);
+  f.body(fence('json partial', '{ "a": ... }')); assert.equal(f.errors(), '');
+  f.body(fence('json', '{ "a": 1 }') + '\n\n' + fence('yaml', 'a: 1')); assert.equal(f.errors(), '');
+});

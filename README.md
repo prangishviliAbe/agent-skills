@@ -10,12 +10,14 @@
 
 | სქილი | როდის გამოიყენება | რა აუმჯობესებს |
 | --- | --- | --- |
-| `web-development` | ვებსაიტის, API-ის, ინტეგრაციის, WordPress-ის ან რელიზის შექმნა, შეცდომის გამოსწორება და რევიუ | არსებული კონტრაქტის დაცვა, თანაზომიერი ვერიფიკაცია, idempotency, ავტორიზაცია და რეალური handoff |
-| `ui-ux` | UX flow, ფორმა, dashboard, navigation, responsive ან accessibility სამუშაო | მიზნობრივი flow/state specification, recovery, ფოკუსი და რეალურად შემოწმებული მტკიცებულება |
-| `anti-ai-slop-design` | ვიზუალური მიმართულება, ინტერფეისის polish, ბრენდზე დაფუძნებული დიზაინი | გამორჩეული, მაგრამ ბრენდისა და კონტენტის შესაბამისი ვიზუალური გადაწყვეტილებები generic „ანტი-პატერნების“ ბრმად აკრძალვის გარეშე |
-| `premium-web-motion` | motion, hover, dialog, transition, scroll, gesture ან animation audit | interruption-safe state, motion შემცირების გზა, progressive enhancement და შესრულების სწორი შემოწმება |
-| `security` | threat model, code audit, exploitability analysis, incident ან hardening | კონკრეტული trust boundary, მტკიცებულებაზე დაფუძნებული finding, ზუსტი confidence და უსაფრთხო remediation |
-| `token-efficiency` | მოკლე პასუხი, TL;DR, concise status, „just code“ | ნაკლები ტექსტი ისე, რომ არ დაიკარგოს შედეგი, მტკიცებულება, საჭირო სიღრმე ან მნიშვნელოვანი გაურკვევლობა |
+| `web-development` | ფუნქციის დამატება, ბაგის/ნელი გვერდის დიაგნოზი, PR-ის რევიუ, განახლება, რელიზი (React/Next.js 16, API-ები, ბაზა, გადახდები, WordPress) | კონკრეტული წესები და რეფერენსები კოდით: Next.js 16-ის რეალური API-ები, უსაფრთხო webhook-ები, მიგრაციები, ტესტირება, ლეიბლიანი მტკიცებულება |
+| `ui-ux` | UX flow, ფორმა, dashboard, ნავიგაცია, ტექსტები, მდგომარეობები, responsive, accessibility, AI ფუნქციების UX | ფიჩერების არჩევის ცხრილები, microcopy შაბლონები, შეცდომისა და უცნობი შედეგის დიზაინი, AI-ინტერფეისების წესები |
+| `anti-ai-slop-design` | ვიზუალური მიმართულება, ინტერფეისის polish, ბრენდზე დაფუძნებული დიზაინი | thesis, „default audit", swap test, კომპოზიციის რეცეპტები, copy, გაზომილი კონტრასტი, render-and-look ციკლი |
+| `premium-web-motion` | motion, hover, dialog, transition, scroll, gesture ან animation audit | მზა რეცეპტები reduced-motion გზით (`@starting-style`, view transitions, spring `linear()`), ბიბლიოთეკების არჩევა, interruption-safe state |
+| `security` | threat model, code audit, exploitability analysis, incident ან hardening | audit playbook გატესტილი `rg` პატერნებით, გაშვებული უსაფრთხო მაგალითები (SSRF, Argon2id, AES-GCM, JWT), business-logic/race-ები, AI აგენტების უსაფრთხოება |
+| `token-efficiency` | მოკლე პასუხი, TL;DR, concise status, „just code", გრძელი აგენტის სესიები | შედეგი-პირველი წესები, before/after გადაწერები, კონტექსტის ეკონომიის ბრძანებები, ქართულ ენაზე მუშაობა |
+
+თითოეული სქილი არის მოკლე `SKILL.md` (წესები, რეჟიმები, failure modes, definition of done) და `references/` საქაღალდე, რომელიც მხოლოდ საჭიროებისას იკითხება: ცხრილები, შაბლონები, ბრძანებები და გამოსაცდელი კოდი.
 
 `SKILL.md`-ში არის როდის გამოიყენო რომელ reference-ი. სხვა სქილთან მიბმულობა არ არსებობს — ერთი საქაღალდის კოპირებაც სრულფასოვან ინსტრუქციას ტოვებს.
 
@@ -72,7 +74,7 @@ npm ci --ignore-scripts
 npm run check
 ```
 
-`npm run check` ამოწმებს სქილების frontmatter-ს, metadata-ს, attribution-ს, reachable local რესურსებს, ბმულების self-containment-სა და symlink-ების საფრთხეს. ასევე ტესტავს Bash და PowerShell ინსტალატორების staging, rollback, lock, dry-run, source/destination overlap და ძველი ვერსიის შენარჩუნების სცენარებს.
+`npm run check` ამოწმებს სქილების frontmatter-ს, metadata-ს, attribution-ს, reachable local რესურსებს, ბმულების self-containment-სა და symlink-ების საფრთხეს, ასევე იმას, რომ ყველა კოდის ბლოკს აქვს ენა და JSON/YAML ბლოკები იპარსება (ილუსტრაციული ფრაგმენტები აღინიშნება `partial`-ით). ასევე ტესტავს Bash და PowerShell ინსტალატორების staging, rollback, lock, dry-run, source/destination overlap და ძველი ვერსიის შენარჩუნების სცენარებს.
 
 `tests/evals/` შეიცავს ხელით გასაშვებ, რეალისტურ სცენარებს სქილის ქცევის შესაფასებლად. ისინი არ არის ავტომატურად შესრულებული ტესტები; დეტალური ინსტრუქციაა [tests/evals/README.md](tests/evals/README.md).
 

@@ -94,8 +94,22 @@ export function validateRepository(root = ROOT) {
       if (file !== skillFile && text.split('\n').length > 400) warning(where, 'long reference; consider a contents list or splitting by task');
       const links = [];
       const tokens = markdown.parse(file === skillFile ? body : text, {});
+      const checkFence = (token) => {
+        const [lang = '', ...flags] = token.info.trim().split(/\s+/);
+        const line = (token.map?.[0] ?? 0) + 1;
+        if (!lang) { error(where, `fenced code block without a language (line ${line})`); return; }
+        if (flags.includes('partial')) return;
+        try {
+          if (lang === 'json') JSON.parse(token.content);
+          else if (lang === 'yaml' || lang === 'yml') {
+            const parsed = parseDocument(token.content, { uniqueKeys: true });
+            if (parsed.errors.length) throw new Error(parsed.errors[0].message);
+          }
+        } catch (e) { error(where, `invalid ${lang} code block (line ${line}): ${e.message.split('\n')[0]}`); }
+      };
       function visit(items) {
         for (const token of items) {
+          if (token.type === 'fence') checkFence(token);
           if (token.type === 'link_open') links.push(token.attrGet('href'));
           if (token.type === 'image') links.push(token.attrGet('src'));
           if (token.children) visit(token.children);

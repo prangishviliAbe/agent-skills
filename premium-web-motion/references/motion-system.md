@@ -1,65 +1,83 @@
-# Motion system: character, tokens, choreography
+# Modern Motion System & Spring Physics
 
-Use for a new motion system or an inconsistency audit. A local fix should reuse the existing system without requiring this entire process.
+Read when: You are defining motion tokens, calculating spring physics parameters, configuring CSS `linear()` springs, or choreographing staggered element entrances.
 
-## Character and hierarchy
+---
 
-Choose a dominant character from the product's purpose: restrained for reading, precise for repeated work, tactile for manipulation, expressive for a requested story. Allow different tempos for different jobs; coherence does not require a button and a hero to share a duration.
+## 1. Physics-Based Springs: Principles & Parameters
 
-Express character through distance, tempo, easing, and sequencing. Preserve immediate response for frequently used controls regardless of the visual style. Identify the focal change and reduce competing motion around it.
+CSS `cubic-bezier()` functions are time-constrained curves that cannot model realistic momentum or overshoot. Real physical springs are defined by three parameters:
 
-## A small starting vocabulary
+$$\omega_0 = \sqrt{\frac{k}{m}}, \quad \zeta = \frac{c}{2\sqrt{km}}$$
 
-Reuse existing token names and values. If none exist, these are examples to tune, not mandatory scales:
+- **Stiffness ($k$):** The tension of the spring. Higher values snap back faster. (Standard: `180` to `400`).
+- **Damping ($c$ / $\zeta$):** The frictional resistance.
+  - $\zeta < 1$: Underdamped (bouncy overshoot).
+  - $\zeta = 1$: Critically damped (fastest arrival without overshoot).
+  - $\zeta > 1$: Overdamped (gentle, sluggish landing).
+- **Mass ($m$):** The simulated weight of the object. Higher mass creates sluggish startup and high momentum. (Standard: `1.0`).
+
+---
+
+## 2. Native CSS `linear()` Spring Generator
+
+Modern CSS supports `linear(...)` easing curves with multi-stop interpolation, allowing 100% native GPU-accelerated spring animations without JavaScript runtime overhead!
+
+### The Snappy UI Spring (`stiffness: 300, damping: 24, mass: 1`)
 
 ```css
 :root {
-  --motion-feedback: 140ms;
-  --motion-state: 220ms;
-  --motion-layer: 320ms;
-  --motion-ease-out: cubic-bezier(.2, .8, .2, 1);
-  --motion-ease-in-out: cubic-bezier(.4, 0, .2, 1);
-  --motion-travel-small: 8px;
-  --motion-travel-medium: 16px;
+  /* Ultra-snappy tactile spring for buttons, hover states, and popovers */
+  --ease-spring-snappy: linear(
+    0, 0.006, 0.025 2.8%, 0.101 6.1%, 0.539 18.9%, 0.721 25.3%, 0.849 31.5%,
+    0.932 37.7%, 0.983 44.2%, 1.008 50.8%, 1.018 57.8%, 1.017 65.5%,
+    1.008 74.3%, 1.002 84.4%, 1
+  );
+
+  /* Bouncy playful spring for badges, checkmarks, and celebratory toggles */
+  --ease-spring-bouncy: linear(
+    0, 0.009, 0.035 2.9%, 0.141 6.4%, 0.281 10%, 0.723 21.4%, 0.884 27.4%,
+    0.977 33.7%, 1.034 40.4%, 1.057 47.7%, 1.053 55.8%, 1.033 64.9%,
+    1.013 75.3%, 1.003 86.9%, 1
+  );
+
+  /* Smooth luxury ease for modal sheets and hero panels */
+  --ease-luxury: cubic-bezier(0.16, 1, 0.3, 1);
 }
 ```
 
-- Map repeated behavior to shared tokens. A justified one-off effect need not create a reusable token.
-- Give JavaScript animations the same source of truth where practical; preserve unit conversion between CSS milliseconds and library seconds.
-- Tune duration using input frequency, travel, and perceptual continuity. Distance alone does not determine it.
-- Tune springs by settling behavior, overshoot, and interruption continuity. Do not present duration and spring parameters as interchangeable controls across libraries.
-- For reduced motion, explicitly remove spatial effects at the component or owned utility level. Changing duration to 1ms can still produce an abrupt movement and does not remove delays.
+---
 
-## Choreography
+## 3. Motion Duration Tiers
 
-Calculate the last item's arrival: `initial delay + (item count − 1) × stagger + duration`. A 60ms stagger across 30 items adds 1.74 seconds before the final item starts. Bound total waiting time or reveal a group; do not blindly apply a fixed stagger to arbitrary data.
+Match durations strictly to the physical scale of the moving element:
 
-Sequence by meaning and reading order. Preserve logical document order, and match spatial direction to the actual interaction, writing mode, and navigation model. A decorative direction does not need to mirror in RTL; navigation direction may.
+| Tier | Duration | Use Cases |
+| --- | --- | --- |
+| **Micro** | `120ms – 180ms` | Checkbox toggles, button press scale, icon swaps. |
+| **Medium** | `220ms – 320ms` | Hover card lift, dropdown open, sliding tabs. |
+| **Large** | `380ms – 520ms` | Modal dialog reveals, drawer sheets, card-to-hero expansions. |
+| **Macro** | `600ms – 900ms` | Full-page view transitions, complex SVG morphs. |
 
-Animate one focal change when attention is scarce. Parallel motions can be appropriate when explaining a connected change. Do not delay an actionable element to complete a visual composition.
+---
 
-For long narratives, define entry, pause/skip, resize, reverse scroll, and static/reduced-motion behavior. A sequence's length follows the content and user control, not an arbitrary number of viewport heights.
+## 4. Choreography & Spatial Stagger
 
-## Motion inventory
+When multiple elements enter the viewport, never animate them simultaneously—it feels robotic. Stagger their entrances based on reading direction or radial distance from the trigger:
 
-For a system, record one row per reusable behavior, not every DOM instance:
+```css
+/* Cascading list entrance */
+.stagger-item {
+  opacity: 0;
+  transform: translateY(16px);
+  animation: enter-up 0.4s var(--ease-spring-snappy) forwards;
+  animation-delay: calc(var(--index, 0) * 45ms);
+}
 
-| Behavior / purpose | Trigger / semantic state | Properties / timing | Interruption | Reduced motion / fallback | Verification risk |
-| --- | --- | --- | --- | --- | --- |
-| Menu opens near trigger / orientation | Activate; expanded immediately | Small transform + opacity; state token | Reverse from current value; stale exit cannot hide reopened menu | Immediate open; existing menu still works without motion | Focus, Escape, hidden items |
-| Card press / feedback | Pointer or keyboard activation | Subtle transform; feedback token | Release or cancel settles immediately | Color or immediate state | Competing hover/drag transform ownership |
-| List reorder / continuity | Data order changes immediately | Position transforms; state token | New measurement includes current visual position | Immediate final order | Focus, stable keys, layout measurement |
-| Upload / progress | Actual request progress | Determinate fill; no invented progress | Superseded request cannot update new one | Numeric/text progress remains | Announcements, cancellation, unknown total |
-
-A design handoff should include the implementation choice, dependencies, ownership of animated properties, target support, and checks still needed. Keep the inventory current with the actual shipped behavior.
-
-## Audit and consolidation
-
-Search existing code for animation declarations, inline durations, transition classes, timers, observers, and library calls. Inspect usages before editing: a timer may manage data, not decoration.
-
-Group findings by impact:
-1. Incorrect state, focus, hidden content, stale callbacks, or missing motion alternative.
-2. Input delay, layout work, unnecessary concurrent effects, or lifecycle leaks.
-3. Inconsistent timing, easing, and choreography.
-
-Consolidate repeated behavior with a clear owner. A large count of duration values is a clue to inspect, not proof of a broken system. Preserve a documented exception when it serves the interaction.
+@keyframes enter-up {
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+```

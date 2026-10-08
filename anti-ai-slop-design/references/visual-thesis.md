@@ -1,63 +1,39 @@
-# Visual direction grounded in the brief
+# Visual Thesis & Aesthetic Archetypes
 
-Read for new art direction, a substantial redesign, or work drifting into interchangeable defaults. Reuse an established direction for a focused edit.
+Read when: You are establishing a distinct visual direction, selecting a design archetype, or ensuring the interface possesses unique artistic identity.
 
-## Establish fixed and flexible decisions
+---
 
-Identify supplied brand rules, user-approved references, existing components, required content, target audience, and practical constraints. Do not invent a new brand merely because the request uses "polish" or "modernize."
+## 1. What is a Visual Thesis?
 
-Treat unfamiliar or expressive aesthetics as legitimate. Find out what the intended expression needs to communicate, then make its execution coherent.
+A Visual Thesis is a two-sentence creative declaration that anchors every visual choice (fonts, surfaces, palette, layout tension) to the product's soul and audience, guaranteeing the result is not a generic statistical average.
 
-## Form a useful thesis
+$$\text{Visual Thesis} = \text{Product Essence} + \text{Distinctive Aesthetic Tension} + \text{Signature Detail}$$
 
-A thesis is a short rationale connecting context to visible decisions. One possible form:
+---
 
-> Because this product serves [specific audience/context], emphasize [quality], expressed through [composition/type/image/surface choices].
+## 2. Four Master Aesthetic Archetypes
 
-Example: "For archivists reading long manuscripts, prioritize sustained reading and document comparison with a quiet canvas, clear marginal metadata, and restrained controls."
+### Archetype A: Editorial Luxury
+- **Essence:** High prestige, literary restraint, artisanal craftsmanship.
+- **Typography:** Refined high-contrast serif display (e.g. *Playfair*, *Fraunces*, *Instrument Serif*) paired with crisp, unobtrusive geometric sans body (e.g. *Geist*, *Inter*).
+- **Surfaces & Color:** Deep obsidian black (`oklch(0.12 0.01 260)`), muted champagne gold accents (`oklch(0.85 0.08 85)`), generous white space, delicate 1px border rules.
+- **Signature Detail:** Asymmetrical two-column editorial hero with large serif quote and small-caps metadata timestamps.
 
-This example is a provisional direction, not evidence about archivists. It becomes grounded when the brief or research supports the premise.
+### Archetype B: High-Tech Brutalism & Terminal Craft
+- **Essence:** Raw engineering power, uncompromised performance, developer authenticity.
+- **Typography:** Precision monospace headings (e.g. *JetBrains Mono*, *Geist Mono*, *IBM Plex Mono*) with uppercase micro-labels and tabular numbers.
+- **Surfaces & Color:** Stark dark slate canvas, glowing phosphor green (`oklch(0.78 0.22 142)`) or electric cyan accents, exposed grid lines (`border-dashed`), status LEDs.
+- **Signature Detail:** Live latency badges (`42ms`), interactive terminal code blocks with line-number highlights, raw data tables.
 
-A thesis need not be poetic or unique to one company. It should help decide what belongs and resolve conflicts. "Modern, clean, premium" needs clarification through concrete choices; those words are not themselves forbidden.
+### Archetype C: Kinetic Neo-Modern
+- **Essence:** High energy, forward-looking consumer tech, vibrant optimism.
+- **Typography:** Bold geometric grotesk (e.g. *Plus Jakarta Sans*, *Cabinet Grotesk*, *Satoshi*) with tight letter-spacing (`-0.03em`).
+- **Surfaces & Color:** Deep twilight indigo surfaces, vibrant OKLCH violet/electric blue gradients, frosted glass floating pills.
+- **Signature Detail:** Bento grid with mouse-tracking border illumination and 3D card tilt physics.
 
-## Sources of direction
-
-| Source | Look for | Avoid |
-| --- | --- | --- |
-| Existing identity | Recognizable color, typography, imagery, tone, and shape rules | Rebranding without a request |
-| Product/material | Relevant objects, process, artifacts, texture, geometry | A literal metaphor that interferes with operation |
-| Audience/context | Reading load, urgency, familiarity, environment, cultural expectations | Stereotypes or invented preferences |
-| Content shape | Images, numbers, long text, comparisons, variable names | A template that forces everything into equal slots |
-| Category | Conventions that support recognition and credibility | Novelty that makes familiar actions difficult |
-| Business position | Demonstrable value and a real point of difference | Unsupported claims and fabricated proof |
-| Language | Script, tone, font coverage, and real copy | Latin-centric styling applied mechanically |
-
-## Convert direction into recurring choices
-
-Choose a few reinforcing decisions proportional to the project: alignment, density, type roles, image crop/treatment, surface logic, or a recognizable detail. There is no minimum or maximum count that proves a direction is coherent.
-
-For each major choice, state its role and where it applies. Example: "Use strong accent blocks for event identity; keep schedule rows calm and high contrast for scanning." This makes an expressive brand compatible with practical tasks.
-
-Do not demand that utility controls look proprietary. Shared conventions reduce effort, while the surrounding composition and content can carry identity.
-
-## Explore when it reduces uncertainty
-
-If the brief is open and the choice matters, compare a small set of materially different directions. Evaluate fit, clarity, feasibility, accessibility, content quality, and maintenance cost. Avoid three near-identical moodboards or a compulsory three-option ritual.
-
-When one direction follows clearly from the user's constraints, proceed with it and explain briefly. Do not require approval again for reversible styling choices already authorized.
-
-## Work with references
-
-Identify what the user wants to transfer: density, rhythm, hierarchy, palette relationships, image treatment, or exact authorized brand assets. Preserve supplied assets and constraints.
-
-Use references as evidence of the requested taste, not proof of usability. Avoid accidentally importing another product's copy, claims, logos, or implied endorsement. If the user asks for close fidelity to an owned design, follow that brief rather than imposing an unrelated originality exercise.
-
-## Stress the direction before polishing
-
-Inspect a representative content-heavy section or practical task as well as the hero. Test the direction with a long heading, a compact layout, relevant states, and actual fonts/assets.
-
-A useful direction survives ordinary content without needing every sentence shortened or every image replaced. Record missing assets or evidence as dependencies instead of faking them.
-
-## Decision record
-
-When helpful, deliver: **chosen direction → visible choices → reason → practical tradeoff**. For a local fix, a sentence is enough. The artifact must demonstrate the direction; a convincing rationale cannot compensate for weak execution.
+### Archetype D: Warm Organic Artisan
+- **Essence:** Human warmth, sustainability, thoughtful simplicity, calm focus.
+- **Typography:** Humanist serif or rounded sans (e.g. *Newsreader*, *General Sans*).
+- **Surfaces & Color:** Warm parchment or stone canvas (`oklch(0.97 0.01 70)`), terracotta or forest olive accents (`oklch(0.55 0.12 135)`), natural paper grain textures.
+- **Signature Detail:** Soft contoured cards, tactile debossed buttons, organic SVG divider waves.

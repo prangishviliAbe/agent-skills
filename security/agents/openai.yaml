@@ -1,4 +1,6 @@
 interface:
-  display_name: "Application Security"
-  short_description: "Evidence-backed security audits, fixes, and threat models"
-  default_prompt: "Use $security to audit, threat-model, or fix this code: trace concrete risks to a violated invariant, separate demonstrated findings from hypotheses, stay in authorized scope, and report coverage honestly."
+  display_name: "Security Audit & Hardening"
+  short_description: "Audit code, model threats, and secure AI agent systems"
+  default_prompt: "Perform a comprehensive security audit using $security"
+policy:
+  allow_implicit_invocation: true

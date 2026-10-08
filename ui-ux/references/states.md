@@ -1,109 +1,172 @@
-# States, transitions, and recovery
+# State Styling & Lifecycle Architecture
 
-Read for inputs, asynchronous work, transactions, permissions, and failure handling. Select relevant states; the table is a discovery aid, not a demand to draw every combination.
+Read when: You are styling or verifying the 7 essential interaction states: Default, Hover, Active/Press, Focus-Visible, Disabled, Loading/Optimistic, and Error/Empty.
 
-## State inventory
+---
 
-| Concern | Candidates to consider |
-| --- | --- |
-| Interaction | Default, hover where supported, focus-visible, pressed, selected/expanded, disabled, read-only |
-| Data lifecycle | Initial loading, loaded, refreshing, stale, optimistic update, timeout, canceled request |
-| Emptiness | First use, no matches, no remaining work, empty after deletion |
-| Failure | Field/form validation, offline, request failure, partial failure, denied access, not found, conflict, rate limit |
-| Outcome | Confirmed success, confirmed failure, pending external processing, unknown result |
-| Access | Signed out, expired session, changed permission, quota exceeded |
-| Content | Long/missing text, missing image, zero/one/many items, large/negative/unknown values |
-| Environment | Relevant widths, keyboard/touch, zoom, reduced motion, supported themes/locales, slow network |
+## 1. The 7-State Matrix
 
-Model mutually exclusive states and allowed transitions. Independent flags such as "saving" and "has unsaved changes" may coexist; avoid impossible combinations such as confirmed success and confirmed failure for the same attempt.
+Never ship an interface where only the `default` state is designed. Every interactive control must declare all 7 states:
 
-## A state needs a contract
+```text
+[Default] ──► [Hover] ──► [Active / Press] ──► [Pending / Loading] ──► [Success / Optimistic]
+   │             │               │
+   ▼             ▼               ▼
+[Focus-Visible]  [Disabled / Gated] [Error / Inline Recovery]
+```
 
-For each meaningful transition, specify:
+---
 
-| Field | Question |
-| --- | --- |
-| Trigger / condition | What event enters the state? Which response is authoritative? |
-| Visible result | What changes, and what remains available? |
-| Data | What is retained, committed, discarded, or potentially stale? |
-| Controls | Which actions remain possible? What prevents accidental repeats? |
-| Focus / announcement | Where does focus remain or move? What status is announced? |
-| Recovery / exit | What can the user do next, including leaving or returning? |
+## 2. Hover & Press States: Micro-Elevations
 
-For a component, a small table often suffices. For branching transactions, use a state diagram or written transition list with acceptance criteria.
+Amateur buttons only change background color. World-class buttons combine scale, border illumination, and dual shadows:
 
-## Loading and asynchronous behavior
+```css
+.action-button {
+  --btn-scale: 1;
+  --btn-y: 0px;
+  --btn-shadow: 0 1px 2px oklch(0 0 0 / 0.3), inset 0 1px 0 oklch(1 0 0 / 0.15);
+  --btn-border: oklch(1 0 0 / 0.1);
 
-- Give immediate acknowledgement of activation without flashing a distracting spinner for every fast response. Choose indicator timing from measured latency and context; timing heuristics are not accessibility standards.
-- Use skeletons when layout is predictable and they aid orientation; use concise status or progress when they better explain the work.
-- Preserve useful previous data during refresh where safe, with stale status when freshness matters. Do not make outdated transactional data appear current.
-- Show determinate progress only when the quantity is known. Do not fabricate a percent or completion estimate.
-- Distinguish canceling a request, dismissing the view, and undoing a completed operation. A closed dialog does not necessarily cancel server work.
-- For long jobs, state whether the user may leave and how they find the result. Offer cancellation only if supported and describe any partial effects.
-- Prevent duplicate submission at the interface, but treat server idempotency or authoritative result reconciliation as an implementation dependency for consequential writes.
-- Preserve focus on a busy action when possible. Disabling or replacing a focused control can disrupt navigation; test the actual implementation.
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px 20px;
+  border-radius: 10px;
+  font-weight: 500;
+  border: 1px solid var(--btn-border);
+  box-shadow: var(--btn-shadow);
+  transform: translateY(var(--btn-y)) scale(var(--btn-scale));
+  transition: 
+    transform 0.12s cubic-bezier(0.16, 1, 0.3, 1),
+    box-shadow 0.12s cubic-bezier(0.16, 1, 0.3, 1),
+    border-color 0.15s ease,
+    background-color 0.15s ease;
+}
 
-## Failure and uncertain outcome
+/* Hover: Subtle lift & specular glow */
+.action-button:hover {
+  --btn-y: -1px;
+  --btn-shadow: 0 4px 12px oklch(0 0 0 / 0.4), inset 0 1px 0 oklch(1 0 0 / 0.25);
+  --btn-border: oklch(1 0 0 / 0.22);
+}
 
-| Situation | Response |
-| --- | --- |
-| Known validation failure | Identify the correction, associate messages with fields, preserve valid input |
-| Known request rejection | State what did not change and the available retry or alternative |
-| Timeout after payment/save/send | Say the outcome is being checked or remains unknown; reconcile using an operation identifier/status before prompting a duplicate attempt |
-| Background refresh failure | Keep useful loaded data with appropriate stale/error feedback; retry refresh without blanking the page |
-| Partial bulk success | Identify succeeded and failed items, preserve actionable selection, retry only eligible failed work |
-| Concurrent edit conflict | Explain newer data and offer a supported comparison, merge, reload, or copy path; do not overwrite silently |
-| Expired session | Protect unsaved work where safe, authenticate, then return to the intended task |
-| Rate limit | Explain when or how to retry using actual server information; preserve work |
+/* Active / Press: Tactile depress & inset shadow */
+.action-button:active {
+  --btn-scale: 0.98;
+  --btn-y: 1px;
+  --btn-shadow: 0 0 0 oklch(0 0 0 / 0), inset 0 2px 4px oklch(0 0 0 / 0.4);
+}
+```
 
-Do not claim that data was preserved, an operation was canceled, or nothing was charged unless the system can establish it. Error copy should state the known condition and actionable next step without blaming the user or exposing sensitive internals.
+---
 
-## Sensitive drafts and consequential transactions
+## 3. Focus-Visible: The Two-Tone Accessible Ring
 
-For money movement, identity changes, legal submissions, or similarly consequential flows, specify these related boundaries together when drafts or retries exist:
+Standard browser outlines clash with dark themes. A two-tone offset ring guarantees 100% visibility on both black and white backgrounds:
 
-- The stable operation identifier and authoritative status lookup used to reconcile an unknown outcome.
-- The server-side idempotency or state-transition guarantee that makes a repeat safe; a disabled submit control is only interface protection.
-- Which data is a client draft versus an accepted operation, where the draft may be stored, who can access it, and when it expires or is cleared.
-- What happens after session expiry, reauthentication, return from verification, process restart, or a second device.
+```css
+:focus-visible {
+  outline: 2px solid oklch(0.7 0.2 265);
+  outline-offset: 2px;
+  box-shadow: 0 0 0 4px oklch(0.12 0.015 250); /* Dark halo matches canvas */
+}
+```
 
-Do not place sensitive drafts in a URL or promise persistence, cancellation, or retry safety without a corresponding system capability. Preserve a draft only where its privacy and lifecycle are designed, then require an explicit user action before a consequential operation resumes.
+---
 
-## Empty and unavailable states
+## 4. Rethinking Disabled States
 
-Give the reason and useful next action when one exists. "No alerts" may be a successful resting state and need no creation CTA. "No results" needs query/filter recovery. "No access" needs permission guidance, not onboarding copy. A tiny component may need a clear label rather than a full illustration and explanation.
+Hard-disabled buttons (`<button disabled>`) damage UX because:
+1. They hide **why** the action cannot be taken.
+2. They do not emit hover, click, or focus events, preventing assistive tooltips.
+3. They fail contrast guidelines.
 
-## Validation timing
+### Better Pattern: Interactive Invalid State
 
-| Moment | Decision |
-| --- | --- |
-| First input | Avoid premature errors while an answer is incomplete; immediate assistance such as a character limit may be useful |
-| Blur | Validate complete values when the rule is clear and the feedback helps; avoid unnecessarily validating untouched fields |
-| After an error | Clear or update feedback as the value becomes valid; avoid announcing every keystroke |
-| Submit | Validate the complete request, preserve data, and guide focus to an error summary or relevant field |
-| Async validation | Mark pending where necessary; ignore stale responses and avoid exposing account existence or other sensitive information |
+```html partial
+<!-- Accessible invalid button with prerequisite explanation -->
+<button 
+  type="submit" 
+  aria-disabled="true" 
+  class="action-button is-invalid"
+  title="Please fill in your billing address to proceed"
+>
+  Complete Purchase
+</button>
+```
 
-Use product rules actually supplied. An example password length is not authorization to change the password policy.
+```css
+.action-button.is-invalid {
+  opacity: 0.55;
+  cursor: not-allowed;
+  filter: grayscale(40%);
+}
 
-## Consequential actions
+.action-button.is-invalid:hover {
+  transform: none; /* No lift */
+  border-color: oklch(0.6 0.22 25 / 0.5); /* Subtle warning tint */
+}
+```
 
-Choose protection according to reversibility, scope, user expectation, and harm, not a fixed confirmation recipe.
+---
 
-- Low-risk reversible actions often suit immediate execution with accessible undo.
-- Irreversible or broad actions need clear scope and consequences before commitment; show the affected count and object identity.
-- High-impact reversible actions may still warrant review because restoration can be costly or incomplete.
-- Use typed confirmation only where it adds meaningful protection; never make it a ritual for every deletion.
-- Keep undo available long enough for the actual task and accessible without chasing a disappearing toast. A durable recovery path may be more suitable.
-- Do not use a disabled control as the sole explanation of a prerequisite.
+## 5. Loading & Shimmer Skeletons
 
-## Example acceptance criteria
+Avoid generic spinning wheels that displace page content. Use structural shimmer skeletons matching exact typographic heights:
 
-For an invoice update:
+```css
+.skeleton-shimmer {
+  background: linear-gradient(
+    90deg,
+    oklch(0.18 0.02 260) 0%,
+    oklch(0.25 0.03 260) 50%,
+    oklch(0.18 0.02 260) 100%
+  );
+  background-size: 200% 100%;
+  animation: shimmer-sweep 1.8s infinite ease-in-out;
+  border-radius: 6px;
+}
 
-- A confirmed validation failure retains edits and identifies the fields that need correction.
-- A network timeout shows "We could not confirm the save" and checks the operation status before inviting another write.
-- When the record changed elsewhere, the user can preserve their draft while reviewing the newer version.
-- A confirmed save communicates success and leaves focus in a useful location.
-- Refreshing or navigating back behaves according to the explicitly specified draft/persistence policy.
+@keyframes shimmer-sweep {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
 
-These are scenarios to adapt and test, not evidence that an implementation already supports them.
+/* Skeleton typography heights */
+.skeleton-title { height: 28px; width: 65%; margin-bottom: 12px; }
+.skeleton-paragraph { height: 16px; width: 90%; margin-bottom: 8px; }
+.skeleton-avatar { width: 44px; height: 44px; border-radius: 9999px; }
+```
+
+---
+
+## 6. Error & Inline Recovery
+
+When an input fails validation:
+1. Keep the entered data intact.
+2. Shake the field horizontally to register human attention.
+3. Place an accessible inline message with an icon directly below the field.
+
+```css
+@keyframes field-shake {
+  0%, 100% { transform: translateX(0); }
+  20%, 60% { transform: translateX(-4px); }
+  40%, 80% { transform: translateX(4px); }
+}
+
+.input-field.has-error {
+  border-color: oklch(0.6 0.22 25);
+  animation: field-shake 0.35s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
+}
+
+.error-message {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.8125rem;
+  color: oklch(0.72 0.2 25);
+  margin-top: 6px;
+}
+```

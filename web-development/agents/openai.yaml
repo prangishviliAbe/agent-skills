@@ -1,4 +1,6 @@
 interface:
-  display_name: "Web Development"
-  short_description: "Ship, fix, and review web code, verified by running it"
-  default_prompt: "Use $web-development to implement, fix, or review this change in the existing stack, verify it by running it, and report what was verified, what was not, and the remaining risk."
+  display_name: "Full-Stack Web Development"
+  short_description: "Next.js 16, React 19, Tailwind v4, and modern web apps"
+  default_prompt: "Build, optimize, or debug this web application using $web-development"
+policy:
+  allow_implicit_invocation: true

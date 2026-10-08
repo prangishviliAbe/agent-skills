@@ -1,4 +1,6 @@
 interface:
-  display_name: "Product UI/UX"
-  short_description: "Flows, states, copy, accessibility, and buildable specs"
-  default_prompt: "Use $ui-ux to design, review, or specify this experience within the existing product: cover the main flow, failure and recovery states, wording, accessibility, responsive behavior, and what was and was not verified."
+  display_name: "UI/UX & Visual Perfection"
+  short_description: "Master aesthetic craft, visual depth, states, and flows"
+  default_prompt: "Design and style this interface with visual perfection using $ui-ux"
+policy:
+  allow_implicit_invocation: true

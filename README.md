@@ -10,12 +10,12 @@
 
 | სქილი | როდის გამოიყენება | რა აუმჯობესებს |
 | --- | --- | --- |
-| `web-development` | ფუნქციის დამატება, ბაგის/ნელი გვერდის დიაგნოზი, PR-ის რევიუ, განახლება, რელიზი (React/Next.js 16, API-ები, ბაზა, გადახდები, WordPress) | კონკრეტული წესები და რეფერენსები კოდით: Next.js 16-ის რეალური API-ები, უსაფრთხო webhook-ები, მიგრაციები, ტესტირება, ლეიბლიანი მტკიცებულება |
-| `ui-ux` | UX flow, ფორმა, dashboard, ნავიგაცია, ტექსტები, მდგომარეობები, responsive, accessibility, AI ფუნქციების UX | ფიჩერების არჩევის ცხრილები, microcopy შაბლონები, შეცდომისა და უცნობი შედეგის დიზაინი, AI-ინტერფეისების წესები |
-| `anti-ai-slop-design` | ვიზუალური მიმართულება, ინტერფეისის polish, ბრენდზე დაფუძნებული დიზაინი | thesis, „default audit", swap test, კომპოზიციის რეცეპტები, copy, გაზომილი კონტრასტი, render-and-look ციკლი |
-| `premium-web-motion` | motion, hover, dialog, transition, scroll, gesture ან animation audit | მზა რეცეპტები reduced-motion გზით (`@starting-style`, view transitions, spring `linear()`), ბიბლიოთეკების არჩევა, interruption-safe state |
-| `security` | threat model, code audit, exploitability analysis, incident ან hardening | audit playbook გატესტილი `rg` პატერნებით, გაშვებული უსაფრთხო მაგალითები (SSRF, Argon2id, AES-GCM, JWT), business-logic/race-ები, AI აგენტების უსაფრთხოება |
-| `token-efficiency` | მოკლე პასუხი, TL;DR, concise status, „just code", გრძელი აგენტის სესიები | შედეგი-პირველი წესები, before/after გადაწერები, კონტექსტის ეკონომიის ბრძანებები, ქართულ ენაზე მუშაობა |
+| `web-development` | თანამედროვე ვებ-აპლიკაციების აგება, ოპტიმიზაცია და დიაგნოსტიკა (Next.js 16 App Router, React 19 RSC/Server Actions, Tailwind v4, Drizzle/Prisma) | სერვერული არქიტექტურა, ოპტიმისტური UI, Zod-ვალიდაცია, იდემპოტენტური webhook-ები, sub-1.2s LCP და sub-100ms INP Core Web Vitals |
+| `ui-ux` | ვიზუალური გასტილვა, ესთეტიკური პერფექციონიზმი, დიზაინ-სისტემები, კომპონენტების სიღრმე, მდგომარეობები, ხელმისაწვდომობა | ზედაპირების განათება, glassmorphism, OKLCH ფერები, bento grid, 7-მდგომარეობიანი მატრიცა, WCAG 2.2 AA და ქართული ტიპოგრაფია |
+| `anti-ai-slop-design` | ბესპოკური ვიზუალური იდენტობა, გენერიკული AI შაბლონების ამოძირკვა, არტ-დირექცია, პრემიუმ ესთეტიკა | ვიზუალური თეზისი, დეფოლტ-აუდიტი, სვოპ-ტესტი, ოსტატური ტიპოგრაფიული წყვილები, ასიმეტრიული კომპოზიცია და სპეკულარული ზედაპირები |
+| `premium-web-motion` | ინოვაციური, ეგზოტიკური და დახვეწილი ვებ-მოუშენი, ფიზიკის სპრინგები, 120fps კომპოზიტორი | CSS `linear()` სპრინგები, მაგნიტური ღილაკები, 3D card tilt & specular light, View Transitions API, native scroll-driven ანიმაციები |
+| `security` | კოდის აუდიტი, საფრთხეების მოდელირება, AI აგენტებისა და ვებ-აპლიკაციების გამკვრივება | Ripgrep აუდიტ-პლეიბუქი, AI Prompt Injection & SSRF სენდბოქს-დაცვა, BOLA/IDOR, Postgres RLS, Argon2id და AES-256-GCM |
+| `token-efficiency` | მაღალი სიმკვრივის საინჟინრო კომუნიკაცია, კონტექსტის ეკონომია, ქირურგიული ცვლილებები | ნულოვანი ზედმეტი პრეამბულა (zero fluff), შედეგი-პირველი პრინციპი, კომპაქტური diff-ები და ორენოვანი ტექნიკური სიზუსტე |
 
 თითოეული სქილი არის მოკლე `SKILL.md` (წესები, რეჟიმები, failure modes, definition of done) და `references/` საქაღალდე, რომელიც მხოლოდ საჭიროებისას იკითხება: ცხრილები, შაბლონები, ბრძანებები და გამოსაცდელი კოდი.
 

@@ -1,4 +1,6 @@
 interface:
-  display_name: "Premium Web Motion"
-  short_description: "Polished, accessible, interruption-safe web motion"
-  default_prompt: "Use $premium-web-motion to add or refine motion in this interface: give each animation a purpose, keep content usable without it, handle reduced motion, focus, and interruption, and report only what was measured."
+  display_name: "Premium Web Motion & Physics"
+  short_description: "Innovative motion, springs, 3D tilt, and view transitions"
+  default_prompt: "Implement innovative and refined motion physics with $premium-web-motion"
+policy:
+  allow_implicit_invocation: true

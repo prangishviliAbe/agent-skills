@@ -1,75 +1,217 @@
-# Choosing the right pattern
+# Modern UI Patterns
 
-Read when deciding which control, container, feedback style, or layout fits a task. Each row gives a default and the reason; override it when the product's existing pattern or the content says otherwise.
+Read when: You are constructing component architecture: Bento grids, Command Palettes (`Cmd+K`), Floating Nav Docks, Sliding Segmented Controls, Drawer Sheets, or Interactive Tables.
 
-## Controls for choices
+---
 
-| Need | Use | Why and boundary |
-| --- | --- | --- |
-| Pick one of 2 to 5 visible options | Radio group (or segmented control for a view or mode switch) | Options stay visible and comparable |
-| Pick one of many | Select; add search (combobox) beyond roughly a dozen items or when users know the name | Saves space; search beats scrolling |
-| Pick several | Checkboxes (a multi-select with chips when the list is long) | Independent yes or no choices |
-| One setting that takes effect immediately | Toggle switch | A switch implies instant effect; if it needs Save, use a checkbox |
-| Agree, or enable something on submit | Checkbox | Deferred, explicit |
-| Pick a number | Text input with `inputmode="numeric"` and clear limits; stepper or slider only when the range is small and approximate is fine | Typing is faster than dragging, and sliders are hard to operate precisely |
-| Pick a date | Native `date` input or a keyboard-operable picker with typing allowed; use a range picker only for ranges | Typing a known date beats navigating a calendar |
-| Search or filter | A search field plus visible active filters with remove buttons and a result count | Shows state and an exit |
-| Upload | A button first, drag and drop as an enhancement, plus progress, cancel, and per-file errors | Drag-only excludes keyboard and many touch users |
-| Rich text | Only when formatting is essential; otherwise plain text with Markdown or no formatting | Rich editors add accessibility and security cost |
+## 1. The Dynamic Bento Grid
 
-## Containers and layers
+Bento grids organize asymmetric information with high visual interest, replacing repetitive 3-column cards.
 
-| Need | Use | Avoid |
-| --- | --- | --- |
-| A short, focused decision or confirmation that must interrupt | Modal dialog | Long forms, multi-step flows, or anything users may need to refer back to the page for |
-| A secondary task that keeps context (edit a row, filter panel) | Side drawer or sheet | Stacking drawers on drawers |
-| Lightweight, anchored, dismissible extra (menu, date picker, definition) | Popover | Putting essential or interactive-heavy content in a tooltip |
-| A one-line hint | Inline help text under the field | Tooltip-only instructions |
-| A task with its own URL, length, or complexity | A page | Forcing it into a modal to avoid navigation |
-| Optional detail in context | Disclosure (accordion, "show more") | Hiding content users need to compare |
+### Structural Blueprint
 
-## Feedback
+```css
+.bento-grid {
+  display: grid;
+  grid-template-columns: repeat(1, 1fr);
+  gap: 16px;
+}
 
-| Situation | Use |
-| --- | --- |
-| Field validation | Inline, next to the field, in text (see [states.md](states.md)) |
-| Confirmation of a low-stakes action that completed | Toast or inline status that does not move focus; provide undo where reversible |
-| An error the user must act on, or something important | Persistent inline message or banner, never a self-dismissing toast |
-| System-wide condition (offline, maintenance, degraded) | Banner at the top of the affected area |
-| Irreversible or high-impact decision | Confirmation dialog stating the object and consequence |
-| Long-running work | Progress with real values, or a status the user can leave and return to |
+@media (min-width: 768px) {
+  .bento-grid {
+    grid-template-columns: repeat(3, 1fr);
+    grid-auto-rows: minmax(220px, auto);
+  }
+  
+  .bento-hero {
+    grid-column: span 2;
+    grid-row: span 2;
+  }
+  
+  .bento-tall {
+    grid-column: span 1;
+    grid-row: span 2;
+  }
 
-Toasts disappear on a timer, so a keyboard or screen-reader user may never reach them: keep results users need in a place they can find again.
+  .bento-wide {
+    grid-column: span 2;
+    grid-row: span 1;
+  }
+}
+```
 
-## Navigation and structure
+### Dynamic Mouse Spotlight Effect (CSS + JS)
 
-| Need | Use |
-| --- | --- |
-| Peer sections of one object (profile: details, billing, security) | Tabs; each panel is a view of the same thing |
-| Top-level destinations, a handful (up to about 5 to 7) | Top bar or bottom bar on phones; add a menu for the rest |
-| Many destinations or a deep hierarchy | Sidebar with groups; search for very large products |
-| Location in a deep hierarchy | Breadcrumbs |
-| A fixed multi-step process with dependencies | A stepper with progress, review, and the ability to go back |
-| Collapsing long secondary content | Accordion (one question per panel for FAQs) |
+Cards track cursor position to illuminate their borders dynamically:
 
-Tabs switch content on one page; links change pages. Do not use tabs as primary site navigation or for steps that must be done in order.
+```css
+.bento-card {
+  --mouse-x: 50%;
+  --mouse-y: 50%;
+  position: relative;
+  border-radius: 20px;
+  background: oklch(0.18 0.02 260 / 0.6);
+  border: 1px solid oklch(1 0 0 / 0.08);
+  overflow: hidden;
+}
 
-## Showing data
+.bento-card::before {
+  content: "";
+  position: absolute;
+  inset: -1px;
+  border-radius: inherit;
+  background: radial-gradient(
+    400px circle at var(--mouse-x) var(--mouse-y),
+    oklch(0.7 0.2 265 / 0.25),
+    transparent 80%
+  );
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  z-index: 1;
+}
 
-| Need | Use |
-| --- | --- |
-| Compare values across attributes | A table (semantic `table`; align numbers right; sticky header for long tables) |
-| Browse items with images or mixed content | Cards or a list; keep one scan direction |
-| A trend or distribution | A chart with labeled axes, units, and a text or table alternative |
-| Many rows | Pagination for goal-directed lookup, "load more" for browsing, virtualization for performance with keyboard access kept |
-| Few rows with rich detail | A list with row actions in a consistent place |
+.bento-card:hover::before {
+  opacity: 1;
+}
+```
 
-Bulk actions say whether they apply to the visible rows, this page, or all matching results. Empty and filtered-to-zero states differ from an error ([states.md](states.md)).
+```javascript partial
+// Efficient pointer tracking across cards
+document.querySelectorAll('.bento-card').forEach(card => {
+  card.addEventListener('pointermove', e => {
+    const rect = card.getBoundingClientRect();
+    card.style.setProperty('--mouse-x', `${e.clientX - rect.left}px`);
+    card.style.setProperty('--mouse-y', `${e.clientY - rect.top}px`);
+  });
+});
+```
 
-## Buttons and actions
+---
 
-- Label with a verb and an object ("Save draft", "Delete invoice"), not "OK", "Submit", or "Yes".
-- Order: the safe or common action is easy to reach; destructive actions are visually distinct and not adjacent to the primary one without separation.
-- One primary action per decision region, not per page. Secondary and tertiary actions step down in emphasis.
-- A button runs an action, a link navigates. Do not style one as the other without matching its semantics.
-- Prefer a clear reason or an enabled button that explains on use over a disabled button with no explanation.
+## 2. Floating Dock Navigation
+
+Replaces heavy top bars with an elegant, responsive floating pill:
+
+```css
+.floating-dock {
+  position: fixed;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  background: oklch(0.18 0.025 260 / 0.75);
+  backdrop-filter: blur(20px) saturate(190%);
+  -webkit-backdrop-filter: blur(20px) saturate(190%);
+  border: 1px solid oklch(1 0 0 / 0.12);
+  border-radius: 9999px;
+  box-shadow: 
+    0 12px 36px -6px oklch(0 0 0 / 0.45),
+    inset 0 1px 0 oklch(1 0 0 / 0.2);
+  z-index: 1000;
+}
+
+.dock-item {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 42px;
+  height: 42px;
+  border-radius: 9999px;
+  color: oklch(0.8 0.01 260);
+  transition: color 0.15s ease, background 0.15s ease, transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.dock-item:hover {
+  color: oklch(1 0 0);
+  background: oklch(1 0 0 / 0.1);
+  transform: translateY(-2px);
+}
+```
+
+---
+
+## 3. Sliding Segmented Control (Active Pill)
+
+Instead of individual button toggles, use a shared sliding pill indicator:
+
+```html partial
+<div class="segmented-control" role="tablist">
+  <div class="segmented-indicator" style="transform: translateX(0%); width: 33.33%;"></div>
+  <button role="tab" aria-selected="true" class="segmented-tab active">Overview</button>
+  <button role="tab" aria-selected="false" class="segmented-tab">Analytics</button>
+  <button role="tab" aria-selected="false" class="segmented-tab">Settings</button>
+</div>
+```
+
+```css
+.segmented-control {
+  position: relative;
+  display: inline-flex;
+  padding: 4px;
+  background: oklch(0.14 0.015 260);
+  border-radius: 12px;
+  border: 1px solid oklch(1 0 0 / 0.06);
+}
+
+.segmented-indicator {
+  position: absolute;
+  top: 4px;
+  bottom: 4px;
+  border-radius: 8px;
+  background: oklch(0.24 0.03 260);
+  border: 1px solid oklch(1 0 0 / 0.12);
+  box-shadow: 0 1px 3px oklch(0 0 0 / 0.3);
+  transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), width 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.segmented-tab {
+  position: relative;
+  z-index: 1;
+  padding: 6px 14px;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: oklch(0.7 0.01 260);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  transition: color 0.15s ease;
+}
+
+.segmented-tab.active {
+  color: oklch(0.98 0 0);
+}
+```
+
+---
+
+## 4. Modern Command Palette (`Cmd+K`)
+
+The command palette requires immediate keyboard control, high search density, and categorized groups:
+
+```html partial
+<dialog class="command-dialog" id="palette">
+  <div class="command-container">
+    <div class="command-header">
+      <svg class="search-icon" viewBox="0 0 24 24"><path d="..." /></svg>
+      <input type="text" placeholder="Type a command or search..." autofocus />
+      <kbd>ESC</kbd>
+    </div>
+    <div class="command-list" role="listbox">
+      <div class="command-group-heading">Navigation</div>
+      <div class="command-item" role="option" aria-selected="true">
+        <span>Go to Dashboard</span>
+        <kbd>G D</kbd>
+      </div>
+      <div class="command-item" role="option">
+        <span>Project Settings</span>
+        <kbd>G S</kbd>
+      </div>
+    </div>
+  </div>
+</dialog>
+```

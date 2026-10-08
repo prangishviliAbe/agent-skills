@@ -1,88 +1,74 @@
 ---
 name: anti-ai-slop-design
 description: >-
-  Create, refine, implement, or critique distinctive visual design for websites, landing pages,
-  product interfaces, dashboards, and brand-led UI so the result looks specific to its subject
-  instead of like a template: art direction, typography, color, layout composition, imagery, copy,
-  and polish. Use whenever the user wants a design to look better, less generic or "AI-looking",
-  more premium or on-brand, a page or component designed from scratch, or an existing UI judged
-  on how it looks, including Georgian and multilingual layouts. Works from the real brief,
-  content, and brand, keeps approved brand choices and accessibility, and delivers rendered,
-  inspected results instead of descriptions.
+  Eliminate generic, template-driven AI aesthetic tropes and create bespoke, high-craft visual
+  design for websites, landing pages, dashboards, and apps. Covers visual thesis formulation,
+  the Default Audit, the Swap Test, high-taste typography pairing, asymmetric composition, bespoke
+  color theory (OKLCH), luxury lighting, micro-textures, and Georgian multilingual typography.
+  Use whenever a design looks too generic, feels like an "AI-generated template", lacks brand identity,
+  or needs distinctive art direction, luxury refinement, and memorable aesthetic character.
 ---
 
-# Anti AI Slop Design
+# Anti AI Slop Design & Art Direction
 
-Produce intentional, specific, buildable visual work. "Slop" is what you get when every decision is the most probable one: the same fonts, gradients, card grids, and hero. Convention is not the flaw; unconsidered convention is. A quiet interface and an expressive one can both be excellent.
+Transform generic, predictable interfaces into distinctive, high-craft digital products. "AI Slop" happens when every design decision is the statistical average: the same purple gradient pills, centered heroes with generic copy, identical 3-column feature cards with floating circular icons, and flat corporate gray surfaces. Break through with bold art direction, bespoke typography, and intentional asymmetry.
 
-## Why generic output happens, and what works against it
+## Core Directives
 
-Defaults come from habit, not from the brief. Banning a list of patterns fails, because the escape routes become defaults too (warm cream with terracotta, an italic serif accent word in every headline, tiny uppercase eyebrow labels, hairline-ruled "editorial" columns). What works is **specificity before aesthetics**: derive each major choice from the subject, audience, content, and brand, and make the choice survive a test.
+1. **Specificity Over Statistical Average:** Every font, color, border, and layout choice must be anchored to the subject, brand identity, and content. If a design could belong to any arbitrary SaaS company, it is generic slop.
+2. **Execute the Default Audit:** Identify and reject default AI habits:
+   - *Slop:* Centered hero with purple/blue radial blur background.
+   - *High-Craft:* Bold asymmetric editorial composition with custom lighting and distinctive typography.
+   - *Slop:* Three identical cards with rounded pastel icon containers.
+   - *High-Craft:* Asymmetric bento grid with varying information density and spotlight borders.
+   - *Slop:* "Transform your workflow with our cutting-edge AI platform".
+   - *High-Craft:* Specific, verifiable value proposition with concrete numbers and active tone.
+3. **The Swap Test:** If you replace the logo and product name with a competitor's and the design still works identically, the design lacks identity. Redesign until the visual personality uniquely reflects the subject.
+4. **Master Typography Pairings:** Move beyond system default Inter/Roboto everywhere. Pair expressive display typography (high-character serif, condensed grotesque, or artisanal slab) with crisp, readable geometric or humanist sans-serif for body copy.
+5. **Layered Depth & Optical Texture:** Replace flat borders and basic drop-shadows with multi-stop specular highlights, fine grain textures, and chromatic dark canvas tones.
+6. **Embrace Asymmetric Tension:** Not all features are equal. Break rigid symmetrical grids with hero feature cards, sticky editorial sidebars, and full-bleed media breaks.
+7. **Multilingual & Georgian Script Respect:** When designing for Georgian (Mkhedruli) or non-Latin scripts, match stroke weight, optical height, and increase vertical line-height by 5–8% to honor cultural typography.
 
-## How to work
+## Workflow
 
-1. **Start from the subject.** Gather the audience, the real content, the brand rules, the constraints, and the languages. Preserve supplied brand identity, approved references, and working components; they outrank any taste of yours.
-2. **Write a thesis and signature decisions.** One or two sentences linking audience and content to visible qualities, then 3 to 5 decisions that carry it (type, color logic, layout structure, image treatment, one memorable detail). For a local edit reuse the existing direction ([visual-thesis.md](references/visual-thesis.md)).
-3. **Run a default audit.** List what you would produce on autopilot: font, palette, hero, section pattern, icons, motion, copy tone. Keep each item only with a reason tied to this project; replace the rest ([slop-catalog.md](references/slop-catalog.md)).
-4. **Apply the swap test.** If the name and logo were replaced by a competitor's and the page still worked, identity is not doing any work. Fix it through composition, type, imagery, and copy, not by decorating.
-5. **Let content set the hierarchy.** Decide what matters most, then compose around it. Equal cards suit comparable items, not unequal priorities ([composition.md](references/composition.md)).
-6. **Write the words as design.** Specific claims, real evidence, no invented proof ([copy.md](references/copy.md)).
-7. **Build the system, then the details:** type roles, color roles, spacing, surfaces, states ([craft.md](references/craft.md), [css-craft.md](references/css-craft.md), [imagery-and-assets.md](references/imagery-and-assets.md)).
-8. **Render and look.** Build it, view it at phone, tablet, and desktop widths with real long content, critique what you see, fix, and look again once. A description of a design is not a design; screenshots plus measured contrast and keyboard checks are evidence.
-9. **Keep evidence honest.** No fabricated testimonials, logos, metrics, customers, or product screenshots. Label sample data and conceptual imagery.
+```text
+1. Subject & Essence   ──► Understand the brand core, audience, and real content.
+2. Formulate Thesis    ──► Select a strong visual archetype (e.g. Editorial Luxury, Tech Brutalism).
+3. Default Audit       ──► Strip away predictable AI tropes (gradients, generic copy, 3-card rows).
+4. Asymmetric Layout   ──► Compose bento grids, sticky columns, and hierarchy based on real content.
+5. Craft Polish        ──► Apply specular highlights, grain textures, fluid type, and optical spacing.
+6. The Swap Test       ──► Verify unique brand identity and authentic product presence.
+```
 
-## Procedure
+## Quick Reference Map
 
-1. Inspect the brief, existing implementation or design, assets, content, audience, and languages. Name what is fixed and what may change. Do not infer language or culture from a file path.
-2. Find the real weakness: unclear content or hierarchy, or weak execution. Preserve what works.
-3. Choose direction at the right scale (thesis for new work, reuse for edits).
-4. Compose by hierarchy, define the vocabulary, run the default audit and swap test.
-5. Implement in the project's stack and asset workflow. Explain material cost before a design depends on heavy assets or dependencies.
-6. Render, inspect, and test content extremes, themes, and languages ([multilingual.md](references/multilingual.md) for Georgian and non-Latin).
-7. Review with [review.md](references/review.md), fix, and report briefly: the decisions, the checks that ran, and the limits.
+| Topic | What it covers | Reference file |
+| --- | --- | --- |
+| **Visual Thesis** | Defining distinct visual archetypes (Editorial Luxury, High-Tech Brutalism, etc.) | [visual-thesis.md](references/visual-thesis.md) |
+| **Slop Catalog** | Exhaustive directory of AI tropes vs high-craft replacements | [slop-catalog.md](references/slop-catalog.md) |
+| **Composition** | Asymmetric tension, bento grids, sticky editorial sidebars, layout rhythm | [composition.md](references/composition.md) |
+| **Visual Craft** | Typography pairings, optical kerning, surface elevation, tactile surfaces | [craft.md](references/craft.md) |
+| **CSS Craft** | Specular borders, noise textures, fluid typography, dark mode tokens | [css-craft.md](references/css-craft.md) |
+| **Multilingual** | Georgian Mkhedruli typography, baseline matching, font pairings | [multilingual.md](references/multilingual.md) |
 
-## Reference map
+## Failure Modes & Countermeasures
 
-| When the task involves | Read |
+| Failure | Correct Move |
 | --- | --- |
-| Establishing or comparing directions | [visual-thesis.md](references/visual-thesis.md) |
-| Diagnosing generic patterns and choosing replacements | [slop-catalog.md](references/slop-catalog.md) |
-| Typography, color, space, surfaces, icons, accessibility of visual choices | [craft.md](references/craft.md) |
-| Layout recipes, hierarchy, rhythm, hero alternatives | [composition.md](references/composition.md) |
-| Headlines, CTAs, claims, proof, bilingual copy | [copy.md](references/copy.md) |
-| Imagery, illustration, icons, generated assets, data as imagery | [imagery-and-assets.md](references/imagery-and-assets.md) |
-| CSS for tokens, fluid type, color, contrast measurement | [css-craft.md](references/css-craft.md) |
-| Georgian, non-Latin scripts, RTL, localization | [multilingual.md](references/multilingual.md) |
-| Visual critique, evidence limits, prioritization | [review.md](references/review.md) |
+| Replacing generic purple gradients with generic cream/terracotta "indie" tropes | Anchor the palette in the specific industry, brand heritage, and product character. |
+| Making every component asymmetric for the sake of novelty | Use asymmetry to emphasize priority; keep repetitive data tables and list items orderly. |
+| Sacrificing readability for "artistic" tiny or low-contrast text | Keep body text at minimum 15px with >= 4.5:1 contrast; reserve artistic restraint for decorative display elements. |
+| Copy loaded with AI buzzwords ("Seamlessly supercharge your synergy") | Rewrite with crisp, concrete engineering truths: "Deploy in 42ms with automatic SSL". |
+| Squashing Georgian letters with negative letter-spacing | Preserve natural Mkhedruli character spacing with `letter-spacing: 0.01em` and `line-height: 1.6`. |
 
-## Decision test
+## Definition of Done
 
-For any choice in doubt ask: what does it help someone understand, do, recognize, or feel? Does it fit the supplied brand and content and stay usable? Would changing it improve the composition enough to justify the change? Shared conventions support usability; judge distinctiveness across the whole composition, not per control.
-
-## Failure modes
-
-| Failure | Correct move |
-| --- | --- |
-| Removing an approved purple gradient because it looks generated | Keep the brand choice; fix hierarchy, contrast, or execution |
-| Replacing every default with the current "anti-default" look (cream, serif italic, mono labels) | Derive from the subject; the swap test applies to your replacements too |
-| Adding effects to compensate for weak content | Sharpen the message and evidence first |
-| Replacing every card grid with asymmetry | Equal units for comparable items, hierarchy where priorities differ |
-| Shrinking or fading text to feel refined | Fix measure, spacing, and emphasis at readable contrast |
-| Redesigning familiar controls to be unique | Put distinction in composition, type, imagery, and copy |
-| Invented testimonials, logos, metrics, product shots | Use real material or label a concept clearly |
-| Judging quality by counts of fonts or radii | Check consistent roles and visible outcomes |
-| Describing a design without rendering it | Build, screenshot at three widths, critique, fix |
-
-## Definition of done
-
-- [ ] The result follows the user's direction and keeps required content and brand constraints.
-- [ ] Major choices have a stated role; convention and expression are used on purpose, and the swap test passes.
-- [ ] Hierarchy, measure, grouping, and action prominence work with realistic content.
-- [ ] Tokens and recurring treatments are coherent; exceptions have a reason.
-- [ ] Compact layouts, content extremes, fonts and asset fallbacks, and relevant states were rendered and inspected or specified.
-- [ ] Contrast, focus, scaling, and target size are measured or specified without unsupported conformance claims.
-- [ ] Evidence, sample data, and conceptual imagery are distinguishable.
-- [ ] The artifact is delivered with a concise rationale and explicit verification limits.
+- [ ] Interface passes the Swap Test—visual identity is unmistakably tailored to the specific product.
+- [ ] Predictable AI slop (purple gradient orbs, 3-card identical grids, corporate buzzwords) replaced with bespoke design.
+- [ ] Distinctive typography pairing established with proper optical kerning and leading.
+- [ ] Surface lighting, specular borders, and subtle grain textures applied for physical depth.
+- [ ] Layout exhibits intentional hierarchy and asymmetric rhythm.
+- [ ] Multilingual and non-Latin typography correctly compensated.
 
 ---
 

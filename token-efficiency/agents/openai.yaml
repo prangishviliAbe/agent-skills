@@ -1,4 +1,6 @@
 interface:
-  display_name: "Token Efficiency"
-  short_description: "Short answers and lean agent work with full evidence"
-  default_prompt: "Use $token-efficiency to complete this task and report it concisely in my language: result first, no filler, keep failed checks, evidence, and caveats that change decisions, and keep tool output small."
+  display_name: "Token & Reasoning Efficiency"
+  short_description: "High-density communication and zero-fluff agent reasoning"
+  default_prompt: "Provide a concise, high-signal response using $token-efficiency"
+policy:
+  allow_implicit_invocation: true

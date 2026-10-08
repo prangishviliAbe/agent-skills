@@ -1,4 +1,6 @@
 interface:
-  display_name: "Anti AI Slop Design"
-  short_description: "Specific, on-brand visual design that avoids template look"
-  default_prompt: "Use $anti-ai-slop-design to design or refine this interface from its real brief: write a thesis, audit generic defaults, preserve approved brand choices, render and inspect it at three widths, and check contrast and real content."
+  display_name: "Anti AI Slop & Art Direction"
+  short_description: "Eradicate generic AI tropes with bespoke visual craft"
+  default_prompt: "Refine this design with bespoke art direction using $anti-ai-slop-design"
+policy:
+  allow_implicit_invocation: true

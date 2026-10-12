@@ -1,39 +1,35 @@
-# Visual Thesis & Aesthetic Archetypes
+# Product-specific visual direction
 
-Read when: You are establishing a distinct visual direction, selecting a design archetype, or ensuring the interface possesses unique artistic identity.
+Read when: Establishing art direction for a new design or a broad visual refinement.
 
----
+A useful thesis is a short decision aid, not a moodboard label. Derive it from the audience's task, actual content, approved assets, and product character.
 
-## 1. What is a Visual Thesis?
+## Thesis template
 
-A Visual Thesis is a two-sentence creative declaration that anchors every visual choice (fonts, surfaces, palette, layout tension) to the product's soul and audience, guaranteeing the result is not a generic statistical average.
+```text
+Audience/task:
+Approved identity and constraints:
+Content that deserves the most attention:
+Composition and density:
+Type and image relationship:
+One product-specific detail:
+Excluded decoration:
+Evidence to inspect:
+```
 
-$$\text{Visual Thesis} = \text{Product Essence} + \text{Distinctive Aesthetic Tension} + \text{Signature Detail}$$
+Example: A cargo-tracking product puts shipment lookup before marketing claims. Use compact, aligned route information and clearly labeled exceptions, with the approved purple reserved for the primary action and real states. Its identity comes from route terminology and authentic tracking content, not dots, stripes, or an invented command-center aesthetic.
 
----
+## Choices by evidence
 
-## 2. Four Master Aesthetic Archetypes
+| Context | Direction worth exploring | Guardrail |
+| --- | --- | --- |
+| Dense operations | Stable columns, tabular values, clear exception hierarchy | No ornamental asymmetry or softened critical alerts |
+| Editorial or cultural product | Strong reading rhythm, restrained type contrast, intentional imagery | Do not default to beige and serif |
+| Consumer service | Clear benefit, approachable type, authentic task imagery | Do not invent social proof |
+| Technical tool | Actual workflow, accurate code/product detail, useful density | No fake terminals, latency numbers, or status LEDs |
 
-### Archetype A: Editorial Luxury
-- **Essence:** High prestige, literary restraint, artisanal craftsmanship.
-- **Typography:** Refined high-contrast serif display (e.g. *Playfair*, *Fraunces*, *Instrument Serif*) paired with crisp, unobtrusive geometric sans body (e.g. *Geist*, *Inter*).
-- **Surfaces & Color:** Deep obsidian black (`oklch(0.12 0.01 260)`), muted champagne gold accents (`oklch(0.85 0.08 85)`), generous white space, delicate 1px border rules.
-- **Signature Detail:** Asymmetrical two-column editorial hero with large serif quote and small-caps metadata timestamps.
+Choose one coherent direction; do not mix multiple trend archetypes. A single approved typeface can provide sufficient character. Color-space choice is an implementation decision, not an identity.
 
-### Archetype B: High-Tech Brutalism & Terminal Craft
-- **Essence:** Raw engineering power, uncompromised performance, developer authenticity.
-- **Typography:** Precision monospace headings (e.g. *JetBrains Mono*, *Geist Mono*, *IBM Plex Mono*) with uppercase micro-labels and tabular numbers.
-- **Surfaces & Color:** Stark dark slate canvas, glowing phosphor green (`oklch(0.78 0.22 142)`) or electric cyan accents, exposed grid lines (`border-dashed`), status LEDs.
-- **Signature Detail:** Live latency badges (`42ms`), interactive terminal code blocks with line-number highlights, raw data tables.
+Borrow hierarchy, pacing, or content relationships from references. Do not copy a competitor's assets, distinctive identity, or exact composition. Label reference-derived ideas as Inferred until tested in this product.
 
-### Archetype C: Kinetic Neo-Modern
-- **Essence:** High energy, forward-looking consumer tech, vibrant optimism.
-- **Typography:** Bold geometric grotesk (e.g. *Plus Jakarta Sans*, *Cabinet Grotesk*, *Satoshi*) with tight letter-spacing (`-0.03em`).
-- **Surfaces & Color:** Deep twilight indigo surfaces, vibrant OKLCH violet/electric blue gradients, frosted glass floating pills.
-- **Signature Detail:** Bento grid with mouse-tracking border illumination and 3D card tilt physics.
-
-### Archetype D: Warm Organic Artisan
-- **Essence:** Human warmth, sustainability, thoughtful simplicity, calm focus.
-- **Typography:** Humanist serif or rounded sans (e.g. *Newsreader*, *General Sans*).
-- **Surfaces & Color:** Warm parchment or stone canvas (`oklch(0.97 0.01 70)`), terracotta or forest olive accents (`oklch(0.55 0.12 135)`), natural paper grain textures.
-- **Signature Detail:** Soft contoured cards, tactile debossed buttons, organic SVG divider waves.
+Use the swap test on the product story and overall composition, not on standard buttons and menus. Familiar interaction patterns should remain easy to use.

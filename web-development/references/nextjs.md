@@ -1,64 +1,52 @@
-# Next.js App Router Architecture
+# Next.js request and cache boundaries
 
-Read when: You are configuring Next.js 15/16 App Router routing, caching models, Server Actions, route handlers, or middleware.
+Read when: Modifying App Router actions, request APIs, route handlers, caching, or invalidation.
 
----
+Inspect the installed Next.js version, configuration, types, and bundled documentation. Current docs can differ from the project. Do not mechanically migrate routing, caching, or middleware/proxy naming during an unrelated fix.
 
-## 1. Type-Safe Server Actions with Zod
+| Boundary | Decision |
+| --- | --- |
+| Server Action | Authenticate and authorize inside the action; arguments are untrusted |
+| Request API | Use the installed signatures; modern request APIs such as cookies/headers may require await |
+| Private data | Scope identity and avoid leaking through shared caches |
+| Mutation result | Return minimal safe state; preserve framework redirect/not-found control flow |
+| Invalidation | Match required freshness and installed API; distinguish stale-while-revalidate from read-your-writes |
+| Cache tags | Define their resource/tenant scope; do not let a client choose arbitrary invalidation tags |
 
-Server Actions must validate incoming arguments before performing database mutations:
+## Authorized mutation fragment
 
 ```typescript partial
 'use server';
 
+import { and, eq } from 'drizzle-orm';
 import { z } from 'zod';
-import { revalidateTag } from 'next/cache';
-import { db } from '@/lib/db';
-import { projects } from '@/lib/schema';
-import { eq } from 'drizzle-orm';
+import { updateTag } from 'next/cache';
+import { getSession, db, projects } from './project-services';
 
-const UpdateProjectSchema = z.object({
-  projectId: z.string().uuid(),
-  name: z.string().min(2).max(64),
-});
+const inputSchema = z.object({ projectId: z.string().uuid() });
 
-export async function updateProjectNameAction(prevState, formData) {
-  const result = UpdateProjectSchema.safeParse({
-    projectId: formData.get('projectId'),
-    name: formData.get('name'),
-  });
+export async function deleteOwnProject(input: unknown) {
+  const session = await getSession();
+  if (!session) return { error: 'Sign in to continue.' };
 
-  if (!result.success) {
-    return { success: false, error: result.error.issues[0].message };
-  }
+  const parsed = inputSchema.safeParse(input);
+  if (!parsed.success) return { error: 'Choose a valid project.' };
 
-  try {
-    await db.update(projects)
-      .set({ name: result.data.name, updatedAt: new Date() })
-      .where(eq(projects.id, result.data.projectId));
+  const deleted = await db.delete(projects)
+    .where(and(
+      eq(projects.id, parsed.data.projectId),
+      eq(projects.ownerId, session.user.id)
+    ))
+    .returning({ id: projects.id });
 
-    revalidateTag(`project-${result.data.projectId}`);
-    return { success: true, error: null };
-  } catch (err) {
-    return { success: false, error: 'Failed to update project name. Please try again.' };
-  }
+  if (deleted.length === 0) return { error: 'Project unavailable.' };
+  updateTag(`projects:${session.user.id}`);
+  return { error: null };
 }
 ```
 
----
+The fragment assumes the installed version supports updateTag, that tagged reads use the same trusted scope, and that deletion has the required dependency/transaction semantics. It is not a complete application. A signed-in page redirect does not protect this callable action.
 
-## 2. Dynamic IO & Tag-Based Caching
+For current Next.js, [updateTag](https://nextjs.org/docs/app/api-reference/functions/updateTag) is intended for read-your-writes in Server Actions. [revalidateTag](https://nextjs.org/docs/app/api-reference/functions/revalidateTag) with a profile such as "max" provides stale-while-revalidate behavior; the one-argument form is deprecated in current docs. Verify these facts against the installed version.
 
-Next.js 15/16 replaces blanket caching with granular, explicit cache tags:
-
-```typescript partial
-// Fetching with targeted revalidation tags
-export async function getProject(id: string) {
-  'use cache';
-  cacheTag(`project-${id}`);
-
-  return await db.query.projects.findFirst({
-    where: eq(projects.id, id),
-  });
-}
-```
+Test wrong-owner requests, signed-out calls, stale UI after success, and failure recovery when relevant. Do not catch framework control-flow exceptions and convert them blindly into generic errors.

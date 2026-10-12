@@ -1,129 +1,44 @@
-# Accessibility & Inclusive Architecture
+# Accessibility with evidence
 
-Read when: You are verifying WCAG 2.2 AA compliance, building keyboard navigation, trapping modal focus, designing screen-reader announcements, or engineering mobile touch targets.
+Read when: Checking semantics, keyboard behavior, focus, contrast, targets, or dynamic announcements.
 
----
+## Standards and practical decisions
 
-## 1. Non-Negotiable Standards (WCAG 2.2 AA)
+| Concern | Baseline | Verification |
+| --- | --- | --- |
+| Text contrast | 4.5:1 normal text; 3:1 large text under WCAG definitions | Actual foreground/background and states, including transparent layers |
+| Non-text contrast | Applicable controls, state indicators, and meaningful graphics generally need 3:1 | Boundary or indicator against adjacent colors; review exceptions |
+| Pointer targets | WCAG 2.2 AA SC 2.5.8 uses 24 by 24 CSS px or its spacing/other exceptions | Actual target geometry and adjacent targets |
+| Comfortable touch | Aim for 44 by 44 CSS px for frequent touch controls where practical | A design target; 44px is not the AA minimum |
+| Keyboard | All functions operable with appropriate standard behavior | Tab order and widget-specific keys; no keyboard trap |
+| Focus | Visible and not entirely obscured | Open overlays, sticky headers, scroll, and clipped wrappers |
+| Reflow | Preserve the task at narrow/zoomed layouts | Inspect 320 CSS px equivalent where applicable; account for legitimate two-dimensional content |
+| Color | Meaning also expressed by text/shape/pattern | Errors, selection, status, charts |
+| Motion | Reduced-motion path and control of distracting moving content | CSS and JS paths, including preference changes |
+| Names/roles | Native controls and programmatic labels | Accessibility tree plus actual assistive-technology checks when available |
 
-1. **Color Contrast:**
-   - Normal text (< 18pt or < 14pt bold): minimum **4.5:1** contrast ratio against the background.
-   - Large text (>= 18pt or >= 14pt bold): minimum **3:1** contrast ratio.
-   - UI components and graphical objects: minimum **3:1** against adjacent background.
-2. **Keyboard Operation:**
-   - Every interactive control must be reachable via `Tab` / `Shift+Tab`.
-   - Modals and drawers must trap focus while open and restore focus to trigger upon closing with `Esc`.
-3. **No Focus Indicators Removed:**
-   - Never use `outline: none` without providing a high-visibility `:focus-visible` replacement.
+Sources: [W3C target size minimum](https://www.w3.org/WAI/WCAG22/Understanding/target-size-minimum.html), [W3C contrast minimum](https://www.w3.org/WAI/WCAG22/Understanding/contrast-minimum.html), and [W3C reflow](https://www.w3.org/WAI/WCAG22/Understanding/reflow.html). Check applicable criteria and current standards when making a compliance claim.
 
----
-
-## 2. Touch Target Expansion (44x44px Rule)
-
-Visual elements can be small and elegant, but physical touch targets must be at least 44x44 CSS pixels (WCAG 2.2 Target Size). Expand the hit zone invisibly with pseudo-elements:
-
-```css
-/* Compact visual icon button with 44px hit-box */
-.compact-icon-button {
-  position: relative;
-  width: 28px;
-  height: 28px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 6px;
-}
-
-/* Invisible hit-area expansion */
-.compact-icon-button::after {
-  content: "";
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  min-width: 44px;
-  min-height: 44px;
-  width: 100%;
-  height: 100%;
-}
-```
-
----
-
-## 3. Accessible Focus Trap Pattern
-
-When a modal opens, focus must not escape into the background:
-
-```javascript partial
-export function trapFocus(element) {
-  const focusables = element.querySelectorAll(
-    'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
-  );
-  const first = focusables[0];
-  const last = focusables[focusables.length - 1];
-
-  first?.focus();
-
-  function handleKeyDown(e) {
-    if (e.key !== 'Tab') return;
-
-    if (e.shiftKey) {
-      if (document.activeElement === first) {
-        last?.focus();
-        e.preventDefault();
-      }
-    } else {
-      if (document.activeElement === last) {
-        first?.focus();
-        e.preventDefault();
-      }
-    }
-  }
-
-  element.addEventListener('keydown', handleKeyDown);
-  return () => element.removeEventListener('keydown', handleKeyDown);
-}
-```
-
----
-
-## 4. ARIA Live Regions for Dynamic Updates
-
-Dynamic alerts, search results count, and streaming tokens must be announced without stealing focus:
-
-```html partial
-<!-- Polite announcer for background state changes -->
-<div 
-  id="status-announcer" 
-  role="status" 
-  aria-live="polite" 
-  class="sr-only"
->
-  3 new results found
-</div>
-
-<!-- Assertive announcer for critical errors only -->
-<div 
-  id="error-announcer" 
-  role="alert" 
-  aria-live="assertive" 
-  class="sr-only"
->
-  Card payment declined. Please check expiration date.
-</div>
-```
+Prefer real button padding/minimum dimensions over overlapping pseudo-element hit areas.
 
 ```css
-/* Screen-reader utility */
-.sr-only {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  padding: 0;
-  margin: -1px;
-  overflow: hidden;
-  clip: rect(0, 0, 0, 0);
-  white-space: nowrap;
-  border-width: 0;
+.icon-button {
+  display: inline-grid;
+  place-items: center;
+  min-inline-size: 2.75rem;
+  min-block-size: 2.75rem;
+  padding: 0.625rem;
+}
+.icon-button:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 3px;
 }
 ```
+
+## Focus and announcements
+
+Prefer native dialog or the project's tested primitive over a hand-written static focusable-node loop. Modal behavior needs initial focus, dynamic focus containment, inert background, Escape handling, and focus restoration. A nonmodal drawer has a different contract.
+
+Label fields explicitly. Associate hints/errors and avoid duplicate announcements. Use a restrained status region for discrete async results; do not announce every streamed token. Critical alerts deserve clear copy and appropriate urgency, not decorative red dots.
+
+Automated scans, pixel measurements, and source inspection each cover only part of accessibility. State **Not run** for keyboard/screen-reader checks not actually performed.

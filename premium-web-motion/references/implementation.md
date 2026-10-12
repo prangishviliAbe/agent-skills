@@ -1,106 +1,47 @@
-# Motion Implementation Guide
+# State ownership and native behavior
 
-Read when: You are coding motion in Motion (formerly Framer Motion v11+), GSAP 3.12+, or modern native CSS (`@starting-style`).
+Read when: Implementing dialogs, presence transitions, gesture cleanup, or framework motion.
 
----
+## Native dialog contract
 
-## 1. Modern CSS `@starting-style` & Discrete Transitions
+| Event | State owner | Required behavior |
+| --- | --- | --- |
+| Open | Application + native showModal | Meaningful initial focus, labeled dialog, inert background |
+| Escape | Native cancel event + application state | Close according to the task; preserve native keyboard behavior |
+| Animated exit | One cancellable controller, if needed | No stale timer closing a newly reopened dialog |
+| Reopen during exit | Same controller | Cancel/retarget prior work and keep state coherent |
+| Close | Native close + application reconciliation | Restore focus appropriately; remove hidden hit targets |
+| Unmount | Component disposal | Cancel animations and listeners; restore owned resources |
 
-CSS now animates elements to and from `display: none` natively:
+Prefer native semantics and the project's tested primitive. CSS @starting-style with discrete display/overlay transitions can enhance a native dialog when supported. Verify the exact selector/state and fallback against current [MDN dialog guidance](https://developer.mozilla.org/en-US/docs/Web/HTML/Element/dialog). Unsupported animation must still open and close correctly.
 
-```css
-/* Animate popover entrance from display: none */
-.dialog-overlay {
-  display: block;
-  opacity: 1;
-  transform: scale(1);
-  transition: opacity 0.3s cubic-bezier(0.16, 1, 0.3, 1),
-              transform 0.3s cubic-bezier(0.16, 1, 0.3, 1),
-              display 0.3s allow-discrete;
-}
+## Framework integration
 
-@starting-style {
-  .dialog-overlay {
-    opacity: 0;
-    transform: scale(0.95);
-  }
-}
+| Engine | Implementation decision |
+| --- | --- |
+| Existing React motion library | Keep authoritative state outside animation completion; check installed presence and layout APIs |
+| Existing GSAP timeline | Scope timeline/context to component; cancel and revert on cleanup |
+| Web Animations API | Own the animation instance, handle cancellation, avoid unhandled finished-promise rejection |
+| CSS transition | Listen only when state depends on completion; filter target/property and handle cancellation |
+| Smooth-scroll library | Preserve anchors, keyboard, restoration, focus scrolling, reduced motion; dispose all integrations |
 
-.dialog-overlay.is-closing {
-  opacity: 0;
-  transform: scale(0.95);
-  display: none;
-}
+Avoid global ticker changes or permanent will-change flags from a local component. Do not make an opacity-zero exiting region remain interactive.
+
+## Lifecycle artifact
+
+```text
+Controller owns:
+- current animation and target state
+- interruption and cancellation path
+- pending completion callbacks
+- resources created by this component
+
+Unmount must:
+- cancel current work
+- invalidate stale callbacks
+- remove listeners/tickers/observers
+- release pointer capture where applicable
+- restore owned inline styles
 ```
 
----
-
-## 2. Motion (Framer Motion v11+) Architecture
-
-The modern React motion standard:
-
-```tsx partial
-import { motion, AnimatePresence } from 'motion/react';
-
-const springTransition = {
-  type: 'spring',
-  stiffness: 350,
-  damping: 28,
-  mass: 1,
-};
-
-export function NotificationToast({ isVisible, message, onClose }) {
-  return (
-    <AnimatePresence>
-      {isVisible && (
-        <motion.div
-          initial={{ opacity: 0, y: 24, scale: 0.94 }}
-          animate={{ opacity: 1, y: 0, scale: 1 }}
-          exit={{ opacity: 0, scale: 0.92, transition: { duration: 0.18 } }}
-          transition={springTransition}
-          drag="x"
-          dragConstraints={{ left: 0, right: 0 }}
-          dragElastic={0.4}
-          onDragEnd={(_, info) => {
-            if (Math.abs(info.velocity.x) > 400 || Math.abs(info.offset.x) > 120) {
-              onClose();
-            }
-          }}
-          className="fixed bottom-6 right-6 p-4 rounded-xl bg-slate-900 border border-white/10 shadow-2xl"
-        >
-          {message}
-        </motion.div>
-      )}
-    </AnimatePresence>
-  );
-}
-```
-
----
-
-## 3. GSAP 3.12+ (Flip & ScrollTrigger)
-
-When synchronizing complex multi-element layout changes:
-
-```javascript partial
-import gsap from 'gsap';
-import { Flip } from 'gsap/Flip';
-
-gsap.registerPlugin(Flip);
-
-export function morphLayout(container, changeDomCallback) {
-  // 1. Capture initial state
-  const state = Flip.getState(container.querySelectorAll('.flip-target'));
-
-  // 2. Perform DOM mutations
-  changeDomCallback();
-
-  // 3. Animate layout delta with silky spring physics
-  Flip.from(state, {
-    duration: 0.55,
-    ease: 'power4.out',
-    stagger: 0.04,
-    absolute: true,
-  });
-}
-```
+Check API imports, licenses, and browser support from installed types or official docs. A partial recipe is not production-ready until integrated with the actual state and focus model.

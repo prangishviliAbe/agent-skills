@@ -1,74 +1,71 @@
 ---
 name: ui-ux
 description: >-
-  Design, specify, and style world-class user interfaces with obsessive visual craft, modern design
-  systems, and human-centered UX. Covers aesthetic perfectionism, surface elevation, glassmorphism,
-  bento grids, design tokens (OKLCH), typography scale, micro-interactions, full state styling (hover,
-  active, focus, loading, error, empty), WCAG 2.2 AA accessibility, responsive container queries, and
-  AI interfaces. Use whenever designing screens, components, design tokens, dashboards, or flows,
-  polishing rough prototypes into luxury products, or reviewing UI for beauty and usability.
+  Design and meticulously style screens, components, dashboards, forms, and product flows.
+  Use for UI/UX, "make it look better", visual refinement, perfectionist polish, typography,
+  spacing, responsive layouts, design tokens, interaction states, accessibility, or developer
+  handoff. Emphasize composition, optical alignment, content fit, and render-inspect-refine
+  verification; avoid decorative colored dots, card accent lines, and generic AI styling.
 ---
 
-# UI/UX & Visual Craft
+# UI/UX and Visual Perfectionism
 
-Create interfaces that unite visual beauty, aesthetic perfectionism, and rigorous human-centered usability. Reject wireframe-style skeleton placeholders in favor of fully realized, high-density, beautifully styled experiences with intentional depth, tactile surfaces, and exquisite typography.
+Treat styling as substantive work. Deliver deliberate composition, precise typography, coherent surfaces, complete applicable interactions, and careful responsive behavior. A screen that compiles but still looks unfinished is unfinished.
 
-## Core Directives
+## Scope and visual direction
 
-1. **Aesthetic Craft Over Wireframe Skeletons:** Never deliver generic, unstyled wireframe boxes. Every component must have deliberate surface styling, lighting, borders, depth, typography, and optical alignment.
-2. **Surface Depth & Optical Hierarchy:** Use multi-layered elevation. Ground dark interfaces in rich chromatic grays (`oklch`) with subtle 1px border highlights (`border-white/10`) and soft atmospheric ambient glow, not flat flat-black `#000` or raw gray `#111`.
-3. **Corner Radius Math & Optical Alignment:** Always calculate nested radii correctly: `outer_radius = inner_radius + padding`. Align icons with text baselines optically, not purely by mathematical bounding boxes.
-4. **State Completeness Is Non-Negotiable:** Every interactive element must define 7 discrete states: default, hover, active (tactile press), focus-visible, disabled (or interactive invalid), loading/optimistic, and error.
-5. **Fluid Typography & Perceptual Color:** Build token systems with OKLCH for uniform perceptual lightness across hues. Implement fluid type scales with `clamp()` for flawless cross-device proportion without jarring breakpoint jumps.
-6. **Accessible by Default:** Meet WCAG 2.2 AA without sacrificing visual beauty. Ensure 4.5:1 text contrast (3:1 for large text), 44x44px touch targets via invisible pseudo-element expansion, and two-tone offset focus rings.
-7. **Bespoke Modern Patterns:** Build bento grids, command palettes (`Cmd+K`), floating blur docks, sliding segmented pills, and drawer sheets instead of cookie-cutter templates.
-8. **Word Craft as Visual Structure:** Microcopy is visual design. Labels, placeholder hints, empty-state descriptions, and inline error guidance must be concise, active, and localization-ready (including Georgian Mkhedruli script).
+Inspect the artifact, primary task, real content, brand constraints, component library, fonts, and assets. Preserve approved choices and the existing stack. For a new screen, choose a direction from the product and audience; for a small fix, improve the local relationship. Honor an explicitly requested wireframe or specification without pretending it is a finished UI.
 
-## Workflow
+**Do not add decorative colored dots, faux status LEDs, card accent rails, top or side stripes, ornamental divider lines, border beams, gradient outlines, icon bubbles, glow blobs, or unrelated background patterns.** Remove them in the area being refined unless that exact motif is explicitly required. Preserve functional borders, separators, selected states, focus rings, labeled statuses, and data graphics. Generic "premium" styling is not permission to add ornament.
 
-```text
-1. Architecture & Flow   ──► Map journey, inputs, decisions, error branches, and edge cases.
-2. Token Foundation      ──► Define OKLCH palette, elevation surfaces, typography, radii, and grid.
-3. Component Craft       ──► Style surfaces, specular borders, bento hierarchy, and optical balance.
-4. 7-State Matrix        ──► Specify default, hover, press, focus-visible, loading, error, empty.
-5. Responsive Dynamics   ──► Adapt via container queries (@container) and fluid clamp layouts.
-6. Accessibility Audit   ──► Verify keyboard flow, screen-reader semantics, contrast, and hit zones.
-```
+Do not prescribe glassmorphism, bento grids, serif pairings, dark mode, asymmetry, or OKLCH as universal requirements. Use the existing design language when it is coherent; improve its execution.
 
-## Quick Reference Map
+## Craft priorities
 
-| Area | What it covers | Reference file |
-| --- | --- | --- |
-| **Aesthetic Craft** | Depth, glassmorphism, lighting, ambient glow, corner math, luxury surfaces | [aesthetic-craft.md](references/aesthetic-craft.md) |
-| **Design System** | OKLCH color palettes, fluid type scales (`clamp`), token taxonomy, elevation | [design-system.md](references/design-system.md) |
-| **Component Patterns** | Bento grids, command palettes (`Cmd+K`), floating docks, drawers, segmented pills | [patterns.md](references/patterns.md) |
-| **State Styling** | Hover micro-elevations, tactile press `scale(0.98)`, focus rings, empty & error states | [states.md](references/states.md) |
-| **Accessibility** | WCAG 2.2 AA/AAA, two-tone focus rings, ARIA live announcements, 44px touch targets | [accessibility.md](references/accessibility.md) |
-| **Responsive & Layout** | Container queries (`@container`), subgrid, fluid clamp typography, dynamic viewports | [responsive.md](references/responsive.md) |
-| **Content & Microcopy** | Active verbs, error recovery guidance, empty-state narratives, Georgian typography | [content-design.md](references/content-design.md) |
-| **AI Interfaces** | Token streaming, reasoning disclosure trays, tool-execution badges, inline rollbacks | [ai-interfaces.md](references/ai-interfaces.md) |
-
-## Failure Modes & Countermeasures
-
-| Failure | Correct Move |
+| Area | What to perfect |
 | --- | --- |
-| Empty skeleton wireframe with unstyled grey rectangles | Apply real surface tokens, specular border highlights (`rgba(255,255,255,0.08)`), subtle gradient backdrop, and realistic content. |
-| Hard-disabled button (`disabled` attribute) with no tooltip | Keep action clickable and validate with inline assistance, or show prerequisite popover on interaction. |
-| Nested containers having the same corner radius | Compute `border-radius: max(0px, parent_radius - padding)` to prevent awkward corner gaps. |
-| Pure black `#000000` dark mode with harsh white text | Use rich deep indigo/slate darks (`oklch(0.14 0.02 260)`) and off-white text (`oklch(0.95 0.01 260)`) with layered elevation. |
-| Generic "Something went wrong" alert toast | Position inline contextual recovery right at the fault source with preserved user inputs. |
-| Generic card grid where all cards have equal weight | Structure as an asymmetrical bento grid with hero cards highlighting key metrics or primary actions. |
-| Touch targets too small on mobile | Add `::after` with `min-width: 44px; min-height: 44px; position: absolute; inset: -8px` to preserve tight visual footprint. |
+| Composition | Primary task is obvious; section widths and density follow the content; each region has a clear role. |
+| Typography | Actual font coverage and weights; headline measure and wrapping; readable body size; clear label/value hierarchy; stable numeral alignment. |
+| Spacing | Related items read as a group; larger separations mark meaningful transitions; consistent insets and deliberate optical corrections. |
+| Alignment | Text baselines, icon ink bounds, button labels, field edges, table columns, and adjacent media align perceptually. |
+| Surfaces | Controlled contrast and restrained containment; consistent radii and borders; shadows explain elevation rather than decorate every box. |
+| Color | Semantic roles and primary action are clear; neutral surfaces remain calm; color does not carry meaning alone. |
+| Assets | Authentic product content; intentional crop, aspect ratio, focal point, and sharpness; no fake proof or filler imagery. |
+| Interaction | Applicable hover, press, focus, selected, disabled, pending, success, error, empty, and unknown states preserve layout and meaning. |
+| Responsive fit | Content-driven breakpoints; readable narrow layouts; long labels and localization; zoom and on-screen keyboard do not hide the task. |
 
-## Definition of Done
+Polish the largest hierarchy or proportion defect before tuning small shadows. Do not apply equal visual weight to primary, supporting, and incidental information.
 
-- [ ] Interface features deliberate aesthetic craft: high-end surfaces, specular borders, and optical alignment.
-- [ ] Complete 7-state matrix specified for all interactive components.
-- [ ] Tokens utilize perceptually uniform OKLCH color spaces and fluid `clamp()` typography scales.
-- [ ] Responsive behavior verified using Container Queries (`@container`) and mobile thumb-friendly layouts.
-- [ ] WCAG 2.2 AA accessibility met: 4.5:1 text contrast, two-tone focus rings, keyboard navigable, screen-reader labeled.
-- [ ] Microcopy is clear, active, concise, and tested with real long text (including Georgian Mkhedruli script).
+## Working method
 
----
+1. **Define the task contract.** Identify the action, inputs, decisions, outcome, and relevant failure or return paths. Do not invent user research.
+2. **Style with real content.** Reuse tokens and patterns; tune type, width, rhythm, controls, imagery, and information priority together. Avoid a collection of individually decorated components.
+3. **Specify applicable states.** Read [states.md](references/states.md). A button does not need an "empty" state; a destructive transaction may need an unknown-outcome state. Do not invent seven states for every element.
+4. **Implement or hand off concretely.** For implementation, edit the actual source and reuse the established system. For a specification, provide dimensions or tokens, behaviors, content, and acceptance checks a developer can use.
+5. **Render and inspect.** For implementation, use the available preview/browser tooling to inspect the whole screen and detail crops at representative narrow, intermediate, and wide widths. Exercise affected controls and states. Use [visual-qa.md](references/visual-qa.md).
+6. **Refine and recheck.** Correct hierarchy, wrapping, alignment, inconsistent spacing, awkward crops, clipping, and state jumps. Inspect again after material corrections. Stop when the changed scope has no unresolved blockers or major craft defects; avoid unrelated scope expansion.
+7. **Check accessibility proportionally.** Inspect semantics and test relevant keyboard/focus behavior where possible. Report untested behavior honestly. Contrast values alone do not establish WCAG conformance.
+
+A screenshot supports visible design findings. It cannot prove focus order, announcements, hidden states, or responsive behavior. If rendering tools are unavailable, make the source/specification as complete as possible and mark visual QA **Not run**.
+
+## Routed references
+
+| Need | Read |
+| --- | --- |
+| Detailed styling and optical corrections | [aesthetic-craft.md](references/aesthetic-craft.md) |
+| Tokens, type, radii, and themes | [design-system.md](references/design-system.md) |
+| Choosing components by task | [patterns.md](references/patterns.md) |
+| State and recovery contracts | [states.md](references/states.md) |
+| Keyboard, semantics, contrast, and targets | [accessibility.md](references/accessibility.md) |
+| Reflow, container fit, and viewport behavior | [responsive.md](references/responsive.md) |
+| Microcopy and multilingual content | [content-design.md](references/content-design.md) |
+| Streaming, sources, draft actions, and uncertainty | [ai-interfaces.md](references/ai-interfaces.md) |
+| Visual review and completion gates | [visual-qa.md](references/visual-qa.md) |
+
+## Completion evidence
+
+Deliver the requested artifact with consistent styling, truthful content, usable applicable states, and corrections supported by inspection. Record representative viewport/state checks and material limits, without a ceremonial report for a tiny edit.
+
+Use **Verified**, **Inferred**, **Assumed**, and **Not run** precisely. Never claim "pixel-perfect", accessibility compliance, user validation, or responsive verification beyond the evidence collected.
 
 Skill by **Abe Prangishvili** — [github.com/prangishviliAbe/agent-skills](https://github.com/prangishviliAbe/agent-skills)

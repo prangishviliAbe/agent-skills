@@ -1,75 +1,71 @@
 ---
 name: anti-ai-slop-design
 description: >-
-  Eliminate generic, template-driven AI aesthetic tropes and create bespoke, high-craft visual
-  design for websites, landing pages, dashboards, and apps. Covers visual thesis formulation,
-  the Default Audit, the Swap Test, high-taste typography pairing, asymmetric composition, bespoke
-  color theory (OKLCH), luxury lighting, micro-textures, and Georgian multilingual typography.
-  Use whenever a design looks too generic, feels like an "AI-generated template", lacks brand identity,
-  or needs distinctive art direction, luxury refinement, and memorable aesthetic character.
+  Remove AI slop and refine distinctive visual design in websites, landing pages, dashboards,
+  and apps. Use for "less AI", "too generic", "premium polish", art direction, or decorative
+  clutter: colored dots, card accent lines, border beams, icon bubbles, gradient blobs, and
+  repetitive feature grids. Establish product-specific composition, typography, imagery,
+  and rigorous visual QA while preserving the user's brand and scope.
 ---
 
-# Anti AI Slop Design & Art Direction
+# Anti AI Slop Design
 
-Transform generic, predictable interfaces into distinctive, high-craft digital products. "AI Slop" happens when every design decision is the statistical average: the same purple gradient pills, centered heroes with generic copy, identical 3-column feature cards with floating circular icons, and flat corporate gray surfaces. Break through with bold art direction, bespoke typography, and intentional asymmetry.
+Build an identity from the product, audience, real content, and approved brand. Visual quality comes from composition and exact execution. More effects do not make a design more sophisticated.
 
-## Core Directives
+## Decoration prohibition
 
-1. **Specificity Over Statistical Average:** Every font, color, border, and layout choice must be anchored to the subject, brand identity, and content. If a design could belong to any arbitrary SaaS company, it is generic slop.
-2. **Execute the Default Audit:** Identify and reject default AI habits:
-   - *Slop:* Centered hero with purple/blue radial blur background.
-   - *High-Craft:* Bold asymmetric editorial composition with custom lighting and distinctive typography.
-   - *Slop:* Three identical cards with rounded pastel icon containers.
-   - *High-Craft:* Asymmetric bento grid with varying information density and spotlight borders.
-   - *Slop:* "Transform your workflow with our cutting-edge AI platform".
-   - *High-Craft:* Specific, verifiable value proposition with concrete numbers and active tone.
-3. **The Swap Test:** If you replace the logo and product name with a competitor's and the design still works identically, the design lacks identity. Redesign until the visual personality uniquely reflects the subject.
-4. **Master Typography Pairings:** Move beyond system default Inter/Roboto everywhere. Pair expressive display typography (high-character serif, condensed grotesque, or artisanal slab) with crisp, readable geometric or humanist sans-serif for body copy.
-5. **Layered Depth & Optical Texture:** Replace flat borders and basic drop-shadows with multi-stop specular highlights, fine grain textures, and chromatic dark canvas tones.
-6. **Embrace Asymmetric Tension:** Not all features are equal. Break rigid symmetrical grids with hero feature cards, sticky editorial sidebars, and full-bleed media breaks.
-7. **Multilingual & Georgian Script Respect:** When designing for Georgian (Mkhedruli) or non-Latin scripts, match stroke weight, optical height, and increase vertical line-height by 5–8% to honor cultural typography.
+**Do not introduce AI slop elements. Remove these from the requested design unless the user explicitly requires that exact motif:**
 
-## Workflow
+- Decorative colored dots, faux status LEDs, traffic-light circles, random dot clusters, and pulsing dots beside headings.
+- Card accent rails, colored top or side stripes, ornamental internal lines, specular edge streaks, gradient outlines, border beams, and corner brackets added for decoration.
+- Repeated pastel icon bubbles, floating badges, pill-shaped eyebrows, sparkles, and emoji used as filler.
+- Gradient blobs, ambient glow clouds, background grids, orbit rings, particles, and noise overlays unrelated to the product.
+- Hover spotlights, gratuitous card tilt, magnetic controls, and entrance choreography applied to ordinary information.
+- Repetitive "icon / title / two lines" feature cards, fake dashboard previews, invented metrics, customer logos, testimonials, or activity.
+- Template copy such as "unlock", "supercharge", "seamlessly", or "next-generation" without a concrete, truthful meaning.
 
-```text
-1. Subject & Essence   ──► Understand the brand core, audience, and real content.
-2. Formulate Thesis    ──► Select a strong visual archetype (e.g. Editorial Luxury, Tech Brutalism).
-3. Default Audit       ──► Strip away predictable AI tropes (gradients, generic copy, 3-card rows).
-4. Asymmetric Layout   ──► Compose bento grids, sticky columns, and hierarchy based on real content.
-5. Craft Polish        ──► Apply specular highlights, grain textures, fluid type, and optical spacing.
-6. The Swap Test       ──► Verify unique brand identity and authentic product presence.
-```
+A labeled status marker, map point, chart series, focus ring, selected-state indicator, actual progress bar, necessary table separator, and quiet containment border have functional roles. Keep them when they convey real information; ensure color is not the only cue. A decorative dot does not become functional by calling it "brand texture".
 
-## Quick Reference Map
+Preserve explicitly approved brand motifs, colors, logos, and fixed structures. Diagnose their execution without silently rebranding. An exception for one approved motif does not authorize other ornaments. New brand decoration needs a specific request, not a generic request for "premium".
 
-| Topic | What it covers | Reference file |
-| --- | --- | --- |
-| **Visual Thesis** | Defining distinct visual archetypes (Editorial Luxury, High-Tech Brutalism, etc.) | [visual-thesis.md](references/visual-thesis.md) |
-| **Slop Catalog** | Exhaustive directory of AI tropes vs high-craft replacements | [slop-catalog.md](references/slop-catalog.md) |
-| **Composition** | Asymmetric tension, bento grids, sticky editorial sidebars, layout rhythm | [composition.md](references/composition.md) |
-| **Visual Craft** | Typography pairings, optical kerning, surface elevation, tactile surfaces | [craft.md](references/craft.md) |
-| **CSS Craft** | Specular borders, noise textures, fluid typography, dark mode tokens | [css-craft.md](references/css-craft.md) |
-| **Multilingual** | Georgian Mkhedruli typography, baseline matching, font pairings | [multilingual.md](references/multilingual.md) |
+## Design decisions
 
-## Failure Modes & Countermeasures
+1. **Read the artifact.** Inspect the existing screen, code, content, assets, typography, and constraints. A local correction does not require a new visual identity.
+2. **Anchor the direction.** For a new design or broad refinement, state a short visual thesis linking audience, primary task, composition, type, and a product-specific detail. Avoid selecting an aesthetic from a trend menu.
+3. **Audit defaults.** Use [slop-catalog.md](references/slop-catalog.md). Inventory visible ornaments and repeated structures; record the actual weakness and the smallest convincing replacement.
+4. **Compose from content.** Choose a table, list, editorial block, comparison, image, or card according to the information. Equal items may have equal layout. Give unequal priorities unequal emphasis. Do not replace every grid with a bento grid.
+5. **Perfect the fundamentals.** Refine reading order, headline measure, type weight, spacing relationships, image crop, button proportions, and optical alignment before considering decoration.
+6. **Keep proof truthful.** Use supplied assets and substantiated claims. Remove unsupported proof. Label conceptual imagery or synthetic demo data clearly; never present it as live activity.
+7. **Run the swap test.** Mentally replace the brand name. If the entire page remains interchangeable, improve the product story and composition. Familiar controls may remain familiar; avoid novelty in navigation or data entry.
+8. **Inspect the result.** Render implemented changes and inspect representative narrow, intermediate, and wide layouts, relevant states, and actual language content. Fix visible defects and inspect again. Code review alone does not verify visual polish.
 
-| Failure | Correct Move |
+## Routed references
+
+Read only what the task requires.
+
+| Decision | Reference |
 | --- | --- |
-| Replacing generic purple gradients with generic cream/terracotta "indie" tropes | Anchor the palette in the specific industry, brand heritage, and product character. |
-| Making every component asymmetric for the sake of novelty | Use asymmetry to emphasize priority; keep repetitive data tables and list items orderly. |
-| Sacrificing readability for "artistic" tiny or low-contrast text | Keep body text at minimum 15px with >= 4.5:1 contrast; reserve artistic restraint for decorative display elements. |
-| Copy loaded with AI buzzwords ("Seamlessly supercharge your synergy") | Rewrite with crisp, concrete engineering truths: "Deploy in 42ms with automatic SSL". |
-| Squashing Georgian letters with negative letter-spacing | Preserve natural Mkhedruli character spacing with `letter-spacing: 0.01em` and `line-height: 1.6`. |
+| Establish or refine an art direction | [visual-thesis.md](references/visual-thesis.md) |
+| Remove prohibited motifs without losing semantics | [slop-catalog.md](references/slop-catalog.md) |
+| Compose sections and control density | [composition.md](references/composition.md) |
+| Tune typography, imagery, and optical detail | [craft.md](references/craft.md) |
+| Implement restrained, maintainable styling | [css-craft.md](references/css-craft.md) |
+| Fit Georgian, English, and mixed-script content | [multilingual.md](references/multilingual.md) |
 
-## Definition of Done
+## Common failures
 
-- [ ] Interface passes the Swap Test—visual identity is unmistakably tailored to the specific product.
-- [ ] Predictable AI slop (purple gradient orbs, 3-card identical grids, corporate buzzwords) replaced with bespoke design.
-- [ ] Distinctive typography pairing established with proper optical kerning and leading.
-- [ ] Surface lighting, specular borders, and subtle grain textures applied for physical depth.
-- [ ] Layout exhibits intentional hierarchy and asymmetric rhythm.
-- [ ] Multilingual and non-Latin typography correctly compensated.
+| Failure | Correct move |
+| --- | --- |
+| Beige canvas and oversized serif replace a purple template | Derive type and palette from this product; changing clichés is not identity. |
+| Deleting every border, chart dot, or alert | Remove ornament; preserve grouping, data, focus, and state semantics. |
+| Replacing forbidden stripes with animated outlines | Remove the motif, not just its first implementation. |
+| Minimalism makes secondary information unreadable | Preserve text contrast and useful density; simplify hierarchy instead. |
+| Claims of "pixel-perfect" from unrendered CSS | Say what was inspected and identify remaining visual checks as Not run. |
 
----
+## Completion evidence
+
+Finish with no unresolved prohibited decoration in the changed scope, a clear task hierarchy, truthful content, coherent typography and spacing, and no visible clipping or accidental overflow in inspected layouts. Resolve major craft defects; do not settle for "functional" when styling was requested. Preserve approved exceptions explicitly.
+
+Use **Verified** for observed results, **Inferred** for reasoned conclusions, **Assumed** for missing context, and **Not run** for unavailable checks. A static recommendation does not prove responsive, keyboard, or screen-reader behavior.
 
 Skill by **Abe Prangishvili** — [github.com/prangishviliAbe/agent-skills](https://github.com/prangishviliAbe/agent-skills)

@@ -1,70 +1,43 @@
-# 120fps Motion Performance & Compositor Architecture
+# Measured animation performance
 
-Read when: You are optimizing animations for 120fps displays, eliminating layout thrashing, managing GPU layer promotion, or debugging dropped frames.
+Read when: Diagnosing jank, layout reads, layer use, dropped frames, or reduced-motion behavior.
 
----
+Transform and opacity often avoid layout work, but compositing depends on the element, browser, effects, layer allocation, and surrounding content. Filters, clipping, gradients, and large surfaces can still be expensive.
 
-## 1. The Rendering Pipeline & Compositor Rules
+| Symptom | Inspect | Change |
+| --- | --- | --- |
+| Layout thrash | Interleaved geometry reads and style writes | Batch reads, then writes |
+| Pointer jank | Many events schedule overlapping work | Coalesce to one frame; keep work bounded |
+| Memory pressure | Large or numerous promoted layers | Reduce surface size; use will-change only when justified |
+| Idle CPU | Loops/tickers remain active after interaction | Stop at rest and dispose on unmount |
+| Stale frame | Old callback writes after state reversal | Invalidate/cancel prior work |
+| Reduced-motion failure | JS continues after CSS disables movement | Check preference in JS and handle changes |
+| Hidden content on failure | Entrance sets initial opacity zero | Make usable content the baseline |
 
-The browser rendering engine consists of three phases:
-$$\text{Layout (Reflow)} \longrightarrow \text{Paint (Raster)} \longrightarrow \text{Composite}$$
-
-- **Properties that trigger Layout:** `width`, `height`, `margin`, `padding`, `top`, `left`, `bottom`, `right`, `font-size`, `grid-template-columns`. **Never animate these.**
-- **Properties that trigger Paint:** `background-color`, `border-color`, `box-shadow`, `color`.
-- **Properties that run solely on the GPU Compositor:** `transform` and `opacity`. **Always animate these.**
-
----
-
-## 2. Dynamic `will-change` Lifecycle
-
-Setting `will-change: transform` permanently on hundreds of DOM nodes exhausts GPU video memory (VRAM). Promote elements only immediately before interaction and release them afterwards:
+## Read then write
 
 ```javascript partial
-// Efficient will-change management
-export function prepareElementForMotion(element) {
-  element.addEventListener('pointerenter', () => {
-    element.style.willChange = 'transform, opacity';
-  }, { passive: true });
-
-  element.addEventListener('transitionend', () => {
-    element.style.willChange = 'auto';
-  });
-}
-```
-
----
-
-## 3. Eliminating Layout Thrashing
-
-Never interleave DOM reads (`getBoundingClientRect`, `offsetWidth`) with DOM writes (`style.transform = ...`):
-
-```javascript partial
-// BAD: Causes synchronous layout thrashing (jank)
-cards.forEach(card => {
-  const top = card.getBoundingClientRect().top; // Read
-  card.style.transform = `translateY(${top * 0.1}px)`; // Write
-});
-
-// GOOD: Batch reads before writes
-const tops = cards.map(card => card.getBoundingClientRect().top); // Read phase
-cards.forEach((card, i) => {
-  card.style.transform = `translateY(${tops[i] * 0.1}px)`; // Write phase
+const positions = items.map(item => item.getBoundingClientRect().top);
+items.forEach((item, index) => {
+  item.style.transform = `translateY(${positions[index] * 0.1}px)`;
 });
 ```
 
----
+This illustrates batching, not a complete animation. A transform write can affect future measurements; choose a stable measurement reference.
 
-## 4. Reduced-Motion Graceful Degradation
+Use scoped reduced-motion overrides that show the final state and disable kinetic effects. A global 0.01ms animation reset can break event-driven logic and does not stop JavaScript loops. See [MDN reduced motion](https://developer.mozilla.org/en-US/docs/Web/CSS/@media/prefers-reduced-motion).
 
-Always respect user vestibular preferences:
+## Profiling record
 
-```css
-@media (prefers-reduced-motion: reduce) {
-  *, *::before, *::after {
-    animation-duration: 0.01ms !important;
-    animation-iteration-count: 1 !important;
-    transition-duration: 0.01ms !important;
-    scroll-behavior: auto !important;
-  }
-}
+```text
+Browser/device:
+Refresh rate and viewport:
+Scenario and affected elements:
+Trace conditions:
+Observed frame/layout/paint behavior:
+Change:
+Recheck:
+Remaining limits:
 ```
+
+At 60Hz a frame is about 16.7ms; at 120Hz about 8.3ms. Account for all browser work. Report actual traces and conditions rather than claiming "GPU-only" or "120fps" from a CSS recipe.

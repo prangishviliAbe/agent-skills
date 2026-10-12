@@ -1,71 +1,45 @@
-# Cryptography & Data Protection Standards
+# Data protection and cryptographic lifecycle
 
-Read when: You are hashing passwords, encrypting data at rest, comparing secret tokens, or generating secure random identifiers.
+Read when: Handling passwords, encryption, signatures, tokens, sessions, or sensitive logging.
 
----
+| Area | Decision |
+| --- | --- |
+| Passwords | Prefer maintained Argon2id support; calibrate memory/time against current guidance and deployment load |
+| Existing hashes | Verify using encoded parameters; rehash on successful login according to migration policy |
+| Encryption | Use maintained authenticated encryption and key management; define nonce uniqueness and rotation |
+| Keys | Keep outside source/control-plane logs; validate lengths; define access and revocation |
+| Signatures | Use provider verifier over raw data and required replay/timestamp checks |
+| Tokens | High-entropy generation, secure storage, bounded lifetime, revocation where needed |
+| Sessions | Secure/HttpOnly/SameSite policy as appropriate; CSRF/origin safeguards for cookie-authenticated mutations |
+| Logging | Redact sensitive values and bound attacker-controlled content |
 
-## 1. Password Hashing: Argon2id
+Check [OWASP password storage guidance](https://cheatsheetseries.owasp.org/cheatsheets/Password_Storage_Cheat_Sheet.html) rather than treating one hash cost as universally correct. Existing provider-managed authentication may be preferable to a custom implementation. Legacy bcrypt requires its input-length and work-factor constraints; do not silently truncate passwords.
 
-Argon2id is the winner of the Password Hashing Competition, resisting GPU cracking through memory hardness:
+For AES-GCM, nonce reuse under the same key is catastrophic. Use a supported lifecycle with unique nonces, authentication tags, versioned keys, and no plaintext release before authentication succeeds. One encrypt-only snippet is not a complete storage design.
 
-```typescript partial
-import * as argon2 from 'argon2';
+## Fixed-format signature comparison
 
-export async function hashPassword(plainText: string): Promise<string> {
-  return await argon2.hash(plainText, {
-    type: argon2.argon2id,
-    memoryCost: 2 ** 16, // 64 MB
-    timeCost: 3,         // 3 iterations
-    parallelism: 1,
-  });
-}
+```javascript
+import { timingSafeEqual } from 'node:crypto';
 
-export async function verifyPassword(hash: string, plainText: string): Promise<boolean> {
-  return await argon2.verify(hash, plainText);
-}
-```
-
----
-
-## 2. Symmetric Encryption: AES-256-GCM
-
-Always use authenticated encryption (AEAD) to detect tampering:
-
-```typescript partial
-import crypto from 'node:crypto';
-
-export function encryptPayload(text: string, secretKey: Buffer): { iv: string; ciphertext: string; tag: string } {
-  const iv = crypto.randomBytes(12); // 96-bit IV for GCM
-  const cipher = crypto.createCipheriv('aes-256-gcm', secretKey, iv);
-  
-  let encrypted = cipher.update(text, 'utf8', 'hex');
-  encrypted += cipher.final('hex');
-  const tag = cipher.getAuthTag().toString('hex');
-
-  return {
-    iv: iv.toString('hex'),
-    ciphertext: encrypted,
-    tag: tag,
-  };
+export function equalSha256Hex(provided, expected) {
+  const valid = value => typeof value === 'string' && /^[0-9a-f]{64}$/i.test(value);
+  if (!valid(provided) || !valid(expected)) return false;
+  const actualBytes = Buffer.from(provided, 'hex');
+  const expectedBytes = Buffer.from(expected, 'hex');
+  return timingSafeEqual(actualBytes, expectedBytes);
 }
 ```
 
----
+This compares two already computed SHA-256 hex signatures. It does not authenticate a webhook by itself. Use the provider's defined algorithm, payload, timestamp policy, encoding, and key source. Equal byte lengths are a precondition for timingSafeEqual; ordinary equality on secret bytes is insufficient.
 
-## 3. Timing-Safe Comparisons
+## Verification artifact
 
-Prevent side-channel timing attacks when validating webhook signatures or API tokens:
-
-```typescript partial
-import crypto from 'node:crypto';
-
-export function verifyApiToken(providedToken: string, expectedToken: string): boolean {
-  const a = Buffer.from(providedToken);
-  const b = Buffer.from(expectedToken);
-
-  if (a.length !== b.length) {
-    return false;
-  }
-  return crypto.timingSafeEqual(a, b);
-}
+```text
+Valid signature: accepted.
+Same-length wrong signature: rejected.
+Malformed encoding or wrong length: rejected without exception.
+Modified payload / expired provider timestamp: rejected by full verifier.
+Key rotation and session revocation: exercised if changed.
+Sensitive logs: inspected with synthetic values.
 ```

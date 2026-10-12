@@ -1,4 +1,4 @@
-#requires -Version 5.1
+#requires -Version 7.2
 <#
 Pull the latest skills from GitHub and reinstall them into every runtime on this machine.
 Each destination replaces only the six repository skills; unrelated skills (for example a
@@ -14,7 +14,7 @@ Usage:
 param(
     [switch]$DryRun,
     [switch]$SkipPull,
-    [ValidateSet('all', 'dsh', 'claude', 'codex', 'antigravity')]
+    [ValidateSet('all', 'agents', 'dsh', 'claude', 'codex', 'antigravity')]
     [string]$Only = 'all'
 )
 $ErrorActionPreference = 'Stop'
@@ -36,10 +36,12 @@ if (-not $SkipPull) {
     Write-Output ("HEAD: " + (git -C $repoRoot log --oneline -1))
 }
 
+$codexBase = if ([string]::IsNullOrWhiteSpace($env:CODEX_HOME)) { Join-Path $HOME '.codex' } else { $env:CODEX_HOME }
 $targets = [ordered]@{
+    agents      = Join-Path $HOME '.agents/skills'              # Shared globally discovered skills
     dsh         = Join-Path $HOME '.dsh/skills'                  # DeepSeek Harness (user-dsh root)
     claude      = Join-Path $HOME '.claude/skills'               # Claude Code
-    codex       = Join-Path $HOME '.codex/skills'                # Codex
+    codex       = Join-Path $codexBase 'skills'                  # Codex-specific skills
     antigravity = Join-Path $HOME '.gemini/config/skills'        # Antigravity
 }
 $selected = if ($Only -eq 'all') { @($targets.Keys) } else { @($Only) }
@@ -49,10 +51,14 @@ foreach ($name in $selected) {
     if ($DryRun) {
         & $installer $path -DryRun
     } elseif (Test-Path -LiteralPath $parent) {
-        Write-Output "=== $name -> $path ==="
+        Write-Output "Installing $name -> $path"
         & $installer $path
     } else {
         Write-Output "skipped $name (no $parent on this machine)"
     }
 }
-Write-Output 'Done. DeepSeek Harness and Codex pick up new skill text within the running session; reload other runtimes if their skill list is cached.'
+if ($DryRun) {
+    Write-Output 'Dry run complete; no skill folders were replaced.'
+} else {
+    Write-Output 'Done. Updated skills are available on the next turn in Codex; reload other runtimes if their skill list is cached.'
+}

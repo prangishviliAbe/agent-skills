@@ -1,44 +1,30 @@
-# Motion Libraries & Ecosystem Evaluation
+# Select the smallest motion mechanism
 
-Read when: You are selecting between Motion (React/Vanilla), GSAP, Lenis, and native CSS for a project.
+Read when: Choosing a motion dependency or integrating an existing animation engine.
 
----
-
-## 1. Decision Matrix
-
-| Requirement | Recommended Tool | Rationale |
+| Need | First choice | Reason to add an engine |
 | --- | --- | --- |
-| **Modern React / Next.js Apps** | **Motion** (`motion/react`) | Native React 19 support, declarative gesture bindings, automatic FLIP layout animations, tiny footprint. |
-| **Complex SVG / Timeline Choreography** | **GSAP 3.12+** | Unrivaled timeline control, SVG path morphing (`MorphSVG`), smooth layout FLIP (`Flip`). |
-| **Inertia Smooth Scrolling** | **Lenis** | Lightweight (3KB), accessible, does not hijack native keyboard/touch navigation. |
-| **Simple Micro-Interactions & Popovers** | **Native CSS** | Zero runtime overhead using `@starting-style` and `linear()` spring generator. |
-| **Liquid Distortion & WebGL Effects** | **Curtains.js / OGL / Three.js** | GPU fragment shaders for fluid ripples, magnetic noise, and organic particle mesh. |
+| Hover, focus, small reveal | Existing CSS | Usually none |
+| Native dialog/popover | Native behavior + progressive CSS | Complex coordinated state requiring a tested existing primitive |
+| Dynamic retargeting/gesture | Existing runtime spring or WAAPI controller | Needed behavior not supported cleanly by current tools |
+| Multi-element timeline / complex SVG | Existing timeline library | Concrete choreography requirement |
+| Shared-element navigation | Native view transitions if supported | Tested fallback with real semantic continuity |
+| Smooth scrolling | Native scrolling | Explicit requirement and verified accessibility/restoration |
+| WebGL material effect | No effect by default | Explicit visual brief and measured benefit |
 
----
+Avoid claims of universal package size, compatibility, licensing, or accessibility. Verify the installed version, import path, tree-shaken bundle, current license, and target browser behavior using official documentation.
 
-## 2. Lenis + GSAP ScrollTrigger Integration
+## Dependency decision artifact
 
-```javascript partial
-import Lenis from 'lenis';
-import gsap from 'gsap';
-import { ScrollTrigger } from 'gsap/ScrollTrigger';
-
-gsap.registerPlugin(ScrollTrigger);
-
-export function initSmoothScroll() {
-  const lenis = new Lenis({
-    duration: 1.1,
-    easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
-    smoothWheel: true,
-  });
-
-  lenis.on('scroll', ScrollTrigger.update);
-
-  gsap.ticker.add((time) => {
-    lenis.raf(time * 1000);
-  });
-
-  gsap.ticker.lagSmoothing(0);
-  return lenis;
-}
+```text
+Needed behavior:
+Current stack can/cannot support it because:
+Candidate and installed/current version:
+Bundle and runtime cost:
+Keyboard/touch/reduced-motion path:
+Cleanup ownership:
+Fallback:
+Decision and evidence:
 ```
+
+Do not introduce Lenis, GSAP, Motion, or WebGL just because a page should feel premium. If already integrated, preserve the project's architecture and avoid duplicate frame loops.

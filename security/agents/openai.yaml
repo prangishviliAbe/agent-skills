@@ -1,6 +1,6 @@
 interface:
   display_name: "Security Audit & Hardening"
-  short_description: "Audit code, model threats, and secure AI agent systems"
-  default_prompt: "Perform a comprehensive security audit using $security"
+  short_description: "Trace trust boundaries and verify scoped security fixes"
+  default_prompt: "Use $security to review this trust boundary and prioritize evidence-backed findings."
 policy:
   allow_implicit_invocation: true

@@ -1,66 +1,45 @@
 ---
 name: premium-web-motion
 description: >-
-  Architect and implement innovative, exotic, and ultra-refined web motion and physics. Covers
-  spring dynamics (CSS linear() spring generator), magnetic cursors, 3D card tilt with specular
-  reflection, text scramble reveals, View Transitions API, native scroll-driven animations
-  (animation-timeline), SVG path morphing, Apple-style dock magnification, WebGL shader ripples,
-  velocity-aware gesture dismiss, and 120fps compositor performance with strict reduced-motion
-  accessibility. Use when adding cutting-edge animations, transitions, gestures, micro-interactions,
-  or auditing web performance for silky-smooth 120fps frame rates.
+  Design, implement, and debug refined web animation, transitions, gestures, and micro-interactions.
+  Use for motion polish, springs, interruption-safe dialogs, shared-element transitions, scroll
+  effects, reduced motion, or animation performance. Keep motion purposeful, controllable,
+  accessible, and measured; avoid gratuitous card tilt, border beams, particles, and animation
+  added solely to make ordinary UI feel premium.
 ---
 
-# Premium Web Motion & Physics
+# Premium Web Motion
 
-Elevate user interfaces with innovative, exotic, and mathematically refined motion. Reject robotic, linear, or cliché transitions in favor of authentic spring physics, organic choreography, and fluid micro-interactions that feel alive and tangible under user input.
+Make state changes intelligible and interactions responsive. A quiet, well-timed transition can be more refined than a complex effect. Preserve the product's visual language, semantic controls, and native navigation.
 
-## Core Directives
+## Decisions
 
-1. **Physics Springs Over Hardcoded Bezier Curves:** Real physical objects have mass, tension, and damping. Use spring dynamics—either via the modern CSS `linear()` spring generator or motion engines (Motion / GSAP)—rather than arbitrary cubic-bezier curves.
-2. **120fps Compositor-Only Execution:** Only animate compositor-friendly properties: `transform` and `opacity`. Never animate layout geometry (`width`, `height`, `margin`, `top`, `left`) or paint properties (`box-shadow`, `filter`) without GPU isolation.
-3. **Innovative & Exotic Micro-Interactions:** Integrate distinct motion signatures: magnetic button pull, 3D card tilt with mouse-tracking specular reflection, text character decode scrambles, dynamic border beams, and Apple-grade dock magnification.
-4. **Interruption-Safety & Velocity Continuity:** Animations must never lock user input. If a user interrupts an in-flight transition or drags with momentum, the animation must inherit velocity and seamlessly retarget without visual snapping.
-5. **View Transitions & Seamless Morphs:** Use the native View Transitions API (`document.startViewTransition`) for shared-element page transitions and card-to-modal expansions.
-6. **Native Scroll-Driven Scrubbing:** Replace heavy scroll listeners with native CSS `animation-timeline: view()` and `scroll()` for GPU-driven parallax, sticky stacking, and scroll progress.
-7. **Strict Reduced-Motion Accessibility:** Every motion effect must gracefully degrade when `@media (prefers-reduced-motion: reduce)` is enabled. Keep the state change instantaneous or gentle fade without kinetic motion.
+- **Name the purpose.** Motion may show cause, continuity, hierarchy, progress, or direct manipulation. Remove effects with no useful role. Do not add decorative dots, card border beams, animated accent lines, particles, or hover spotlights. Use ambitious effects only when specifically requested and compatible with the task.
+- **Choose the smallest mechanism.** Use CSS for simple feedback, an existing animation library for stateful gestures or choreography, and native APIs when their support and behavior fit. Do not add a dependency for a minor hover.
+- **Choose easing by behavior.** Use a short ease for discrete state changes and a spring for direct manipulation or retargeting. Sampled CSS linear() easings have fixed duration; they do not preserve live velocity.
+- **Preserve control.** Users can interrupt, reverse, reopen, cancel, and repeat actions. Avoid timer-driven state races, delayed click handling, and focusable invisible elements.
+- **Prefer transform and opacity where appropriate.** Profile actual rendering. They are often inexpensive, not guaranteed GPU-only or 120fps. Small color transitions can be reasonable; layout animation needs a measured budget.
+- **Start with usable content.** Content stays visible if JavaScript, an API, or animation initialization fails. Never hide primary content until an entrance animation runs.
+- **Respect reduced motion in CSS and JavaScript.** Provide a stable final state with kinetic movement removed. Preferences can change during a session. Keep essential status comprehensible without looping decoration.
+- **Own the lifecycle.** Cancel animation frames, timers, tweens, subscriptions, observers, and pointer capture appropriately. Reset inline styles on disposal. One component must not change global ticker settings for the whole app.
+- **Verify current support.** Check installed library APIs and target-browser documentation before using view transitions, scroll timelines, discrete transitions, or framework motion features.
 
-## Motion Tier Hierarchy
+## Routed references
 
-```text
-Micro-Feedback   (100ms - 180ms) ──► Button press, toggle switch, micro-check, icon morph.
-Tactile Response (200ms - 320ms) ──► Menus, hover lifts, tooltips, segmented pill slides.
-Layout Morph     (350ms - 550ms) ──► Modal expand, card-to-sheet expansion, drawer slide.
-Ambient Flow     (600ms - 900ms) ──► Page transition, hero scroll scrub, floating particles.
-```
-
-## Quick Reference Map
-
-| Topic | What it covers | Reference file |
-| --- | --- | --- |
-| **Motion System** | Spring parameters (stiffness, damping, mass), CSS `linear()` generator, tokens | [motion-system.md](references/motion-system.md) |
-| **Exotic Recipes** | Magnetic buttons, 3D tilt, text scramble, view transitions, shaders, dock hover | [recipes.md](references/recipes.md) |
-| **Implementation** | Motion (Framer Motion v11+), GSAP (ScrollTrigger/Flip), Modern Vanilla CSS | [implementation.md](references/implementation.md) |
-| **Performance** | 120fps compositor rules, avoiding layout thrashing, `will-change` lifecycle | [performance.md](references/performance.md) |
-| **Libraries** | Choosing between Motion, GSAP, Lenis, and native CSS | [libraries.md](references/libraries.md) |
-
-## Failure Modes & Countermeasures
-
-| Failure | Correct Move |
+| Need | Read |
 | --- | --- |
-| Jerky layout recalculation when animating dimensions | Use the FLIP technique (First, Last, Invert, Play) via `transform: scale()` or View Transitions. |
-| Robotic, artificial `ease-in-out` transitions | Switch to a damped spring formula: stiffness `300`, damping `26`, mass `1`. |
-| Unresponsive UI that blocks clicks while animating | Make transitions interruptible; cancel prior tweens and preserve instant event handling. |
-| Animating heavy `filter: blur()` or multi-stop `box-shadow` directly | Pre-render layers and animate `opacity` between rendered states on separate compositor layers. |
-| Page ignoring user's vestibular disorder preference | Wrap all transform-based motion in `@media (prefers-reduced-motion: no-preference)`. |
+| Easing, spring behavior, duration, choreography | [motion-system.md](references/motion-system.md) |
+| Purposeful interaction recipes and restrictions | [recipes.md](references/recipes.md) |
+| Native dialogs, presence, cancellation, cleanup | [implementation.md](references/implementation.md) |
+| Profiling, layout reads, layers, reduced motion | [performance.md](references/performance.md) |
+| Choosing an engine without unnecessary dependencies | [libraries.md](references/libraries.md) |
 
-## Definition of Done
+## Verification
 
-- [ ] All animations run strictly on the GPU compositor (`transform`, `opacity`) maintaining 60–120fps.
-- [ ] Natural spring physics or custom `linear()` springs replace artificial linear transitions.
-- [ ] Exotic motion recipes (magnetic pull, 3D tilt, view transitions, or scroll scrubbing) implemented cleanly.
-- [ ] In-flight animations are interruption-safe and inherit user gesture velocity.
-- [ ] Full graceful degradation provided for `@media (prefers-reduced-motion: reduce)`.
+Exercise the changed interaction normally, during reversal, rapid repetition, navigation/unmount, keyboard use, touch where relevant, and reduced motion. For modal transitions, verify focus entry, Escape, background inertness, and focus return. For gestures, provide a non-drag equivalent.
 
----
+Record browser/device, scenario, and observed result when profiling. A 120Hz display has about 8.3ms per frame; this is a budget, not an achievement claim. Do not promise a frame rate from property selection alone.
+
+Finish with no interaction races, trapped focus, invisible hit targets, inaccessible essential content, or persistent animation work after disposal in the tested scope. Use **Verified**, **Inferred**, **Assumed**, and **Not run** to distinguish observation from expectation.
 
 Skill by **Abe Prangishvili** — [github.com/prangishviliAbe/agent-skills](https://github.com/prangishviliAbe/agent-skills)

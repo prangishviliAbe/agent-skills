@@ -1,78 +1,31 @@
-# Content Design & Microcopy Craft
+# Content as visual structure
 
-Read when: You are writing button labels, empty-state narratives, error descriptions, confirmation dialogues, or designing multilingual interfaces (including Georgian Mkhedruli script).
+Read when: Writing or fitting labels, actions, hints, errors, empty states, or localized UI copy.
 
----
+| Situation | Useful copy | Avoid |
+| --- | --- | --- |
+| Primary action | Verb and object: "Find shipment" | Vague "Continue" where consequence is unclear |
+| Field hint | Required format or prerequisite | Repeating the label |
+| Validation | "Enter the shipment ID from your receipt." | "Invalid input" |
+| No matches | "No shipments match this ID. Check the ID and try again." | An empty decorative illustration alone |
+| Unknown result | "We have not confirmed the update yet." | Calling an unresolved request failed |
+| Deletion | Name the object and consequence | Generic "Are you sure?" |
+| AI draft | "Draft ready. Review before sending." | Claiming the email was sent |
 
-## 1. Actionable Verbs Over Passive Labels
+Keep errors near their cause, preserve safe inputs, and offer an actual recovery route. Use truthful progress labels rather than fake live activity.
 
-Every call-to-action button must answer the user's mental question: *"What happens the moment I tap this?"*
+Fit real Georgian and English text with verified font coverage, weights, line breaks, and button dimensions. Start with natural spacing; adjust leading and tracking by observed behavior. Do not impose a fixed language expansion ratio or blanket uppercase styling.
 
-| Weak / Ambiguous | High-Conversion Actionable Verb |
-| --- | --- |
-| "Submit" | "Create Project" / "Complete Payment" |
-| "OK" | "Confirm Deletion" / "Got It" |
-| "Manage" | "Edit Permissions" |
-| "Back" | "Cancel without Saving" |
-| "Learn More" | "Explore Architecture Guide" |
-
----
-
-## 2. The 3-Part Error Architecture
-
-Never write "An error occurred". An effective error message delivers three clear pieces of information:
-1. **What happened** (without technical jargon).
-2. **Why it happened** (the immediate cause).
-3. **How to fix it now** (concrete recovery action).
+## Content-fit fixture
 
 ```text
-[Weak]:
-"Invalid format."
-
-[High-Craft]:
-"Password must be at least 8 characters and include at least one number."
+Short action: Save
+Long action: Save delivery instructions
+Georgian action: მიწოდების ინსტრუქციის შენახვა
+Long name: Abe Prangishvili / აბე პრანგიშვილი
+Empty result: No shipments match these filters.
+Pending: Saving delivery instructions…
+Error: We could not save these instructions. Your text is still here.
 ```
 
----
-
-## 3. Empty States that Inspire Action
-
-An empty state is an onboarding opportunity, not a dead end. Include:
-1. A refined, low-opacity contextual illustration or icon.
-2. A clear title explaining what will live here.
-3. A single primary CTA that triggers creation immediately.
-
-```html partial
-<div class="empty-state-card">
-  <div class="empty-icon-halo">
-    <svg class="empty-icon" viewBox="0 0 24 24"><path d="..." /></svg>
-  </div>
-  <h3 class="empty-title">No API keys generated yet</h3>
-  <p class="empty-description">
-    Create your first production API key to start querying our streaming models.
-  </p>
-  <button class="tactile-button primary">
-    Generate API Key
-  </button>
-</div>
-```
-
----
-
-## 4. Georgian Script (Mkhedruli) Typography Craft
-
-Georgian (ქართული დამწერლობა) does not feature classic Latin ascenders/descenders in the same proportions, and Mkhedruli letters have distinct circular baselines.
-
-### Typography Rules for Georgian UI:
-1. **Font Matching:** Pair clean Latin geometric sans (Inter, Geist, Satoshi) with modern Georgian fonts that match stroke weight and x-height (e.g. `FiraGO`, `Noto Sans Georgian`, or `BPG`).
-2. **Line-Height Compensation:** Georgian text requires approximately `5%–8%` more vertical `line-height` than Latin English to prevent circular diacritics and bowls from feeling compressed.
-3. **No Fake Bold or Squashed Glyphs:** Use genuine variable font weights. Avoid synthetic italicization or tight letter-spacing (`letter-spacing < 0`) on Georgian script, as it merges adjacent rounded glyphs (e.g. `ო`, `თ`, `ფ`).
-
-```css
-/* Georgian typography optimization */
-:lang(ka) {
-  font-family: "FiraGO", "Noto Sans Georgian", -apple-system, sans-serif;
-  line-height: 1.6;
-  letter-spacing: 0.01em;
-}
-```
+Use a fixture to find overflow, then test the real supported content. Labels must remain available beyond placeholders and tooltips.

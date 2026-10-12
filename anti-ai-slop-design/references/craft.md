@@ -1,46 +1,30 @@
-# Visual Craft & Typography Pairing
+# Typography, imagery, and optical craft
 
-Read when: You are selecting typefaces, setting optical tracking, refining borders, and perfecting micro-details.
+Read when: A design's direction is sound but execution still feels generic or unfinished.
 
----
+## Inspection passes
 
-## 1. High-Taste Typography Pairings
-
-Never rely on a single generic sans-serif font for both headings and body text. Master pairings create rich typographic dialogue:
-
-| Style & Mood | Display / Heading Typeface | Body / Interface Typeface |
+| Pass | Inspect | Correct |
 | --- | --- | --- |
-| **Editorial Prestige** | *Instrument Serif*, *Fraunces*, *Playfair* | *Geist Sans*, *Inter*, *Plus Jakarta* |
-| **High-Tech Engineering** | *Cabinet Grotesk*, *Space Grotesk* | *JetBrains Mono*, *Geist Mono* |
-| **Contemporary Minimalist** | *Satoshi*, *General Sans* | *Inter*, *Newsreader* (for editorial notes) |
-| **Bespoke Artisan** | *Clash Display*, *Syne* | *Satoshi*, *Switzer* |
+| Type hierarchy | Actual font, weight, size, leading, measure, headline breaks | Make roles distinct; resolve awkward wraps without arbitrary hard breaks |
+| Optical alignment | Visible glyph/icon bounds, baselines, label centering | Correct the perceived relation; document intentional token exceptions |
+| Spacing rhythm | Insets, related gaps, section transitions | Use a small coherent scale; avoid one-off gaps on every component |
+| Numerals | Columns, currencies, decimal places, live value changes | Tabular numerals where supported; align precision meaningfully |
+| Imagery | Focal point, crop, native resolution, caption, alt text | Use authentic assets; preserve useful detail at narrow widths |
+| Controls | Label measure, icon gap, target size, focus | Keep proportions and state dimensions stable |
+| Surfaces | Number of containers and visual boundaries | Remove redundant framing; retain useful grouping |
 
----
+Select typefaces from available assets, licensing, script coverage, and brand fit. Do not force two families or reject Inter/system fonts by name. Avoid fake bold/italic and unsupported feature tags.
 
-## 2. Optical Kerning & Tracking Rules
+Tune large display tracking only after inspecting the actual font and script. A fixed negative tracking value is not a universal improvement. Use content measure and font weight before squeezing letters.
 
-Display headings and fine print require opposite letter-spacing adjustments:
+## Craft review artifact
 
-- **Large Headings (> 32px):** Human eyes perceive large letters as having excessive whitespace between glyphs. Tighten tracking: `letter-spacing: -0.025em` to `-0.04em`.
-- **Uppercase Eyebrows & Badges (< 12px):** Small capital letters cluster and become illegible without breathing room. Loosen tracking: `letter-spacing: 0.05em` to `0.08em` with `text-transform: uppercase`.
-- **Tabular Numerals for Financial Data:** Ensure numbers do not wobble or jitter during live updates by enabling monospaced numeral glyphs: `font-variant-numeric: tabular-nums`.
-
-```css
-h1, .hero-display {
-  font-family: var(--font-display);
-  letter-spacing: -0.035em;
-  line-height: 1.1;
-}
-
-.eyebrow-tag {
-  font-size: 0.75rem;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  color: oklch(0.7 0.18 265);
-}
-
-.data-figure {
-  font-variant-numeric: tabular-nums;
-}
+```text
+Observed: At the narrow layout, the title leaves one short word on its last line.
+Change: Reduce the headline maximum size and adjust the text measure within the approved layout.
+Recheck: Actual Georgian and English titles at the failing width and adjacent widths.
+Status: Verified only after inspecting the render.
 ```
+
+Finish micro-details after correcting hierarchy. A precise image crop and balanced text block usually matter more than a new shadow recipe.

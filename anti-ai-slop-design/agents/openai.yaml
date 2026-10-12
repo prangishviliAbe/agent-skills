@@ -1,6 +1,6 @@
 interface:
   display_name: "Anti AI Slop & Art Direction"
-  short_description: "Eradicate generic AI tropes with bespoke visual craft"
-  default_prompt: "Refine this design with bespoke art direction using $anti-ai-slop-design"
+  short_description: "Remove visual filler and craft product-specific identity"
+  default_prompt: "Use $anti-ai-slop-design to remove decorative dots and card accents and refine this design within its approved brand."
 policy:
   allow_implicit_invocation: true

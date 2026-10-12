@@ -1,38 +1,32 @@
-# Output Craft & Before/After Transformations
+# Concise output with evidence
 
-Read when: You are condensing responses, writing status summaries, or communicating technical concepts with high density in English and Georgian.
+Read when: Writing final results, progress, reviews, or technical replies in Georgian or English.
 
----
+| Context | Include | Omit |
+| --- | --- | --- |
+| Simple answer | Answer and necessary qualifier | Introductory praise and recap |
+| Completed edit | Changed behavior, artifact/location, relevant verification | Full unchanged file |
+| Progress | New finding and next uncertainty | Repeated plan or command diary |
+| Finding | Location, condition, impact, corrective move | Generic security/design lectures |
+| Incomplete check | Exact limit and consequence | A false claim of completion |
+| Detailed user request | Required detail | Compression that loses requested substance |
 
-## 1. Concrete Transformation: Fluff to Signal
-
-### Before (Wordy, 220 Tokens):
-> "Hello! Certainly, I would be more than happy to help you with your query regarding caching in Next.js. Next.js offers a powerful suite of caching mechanisms designed to optimize your application's speed. To invalidate your cache when a user updates their profile, you can use the `revalidatePath` function which is provided by `next/cache`. Here is an example of how you might write that function in your server action..."
-
-### After (High Signal, 35 Tokens):
-> Call `revalidateTag` inside your Server Action to purge the targeted cache without invalidating unrelated routes:
-> ```typescript partial
-> 'use server';
-> import { revalidateTag } from 'next/cache';
-> 
-> export async function updateUser(id: string) {
->   await db.update(...);
->   revalidateTag(`user-${id}`);
-> }
-> ```
-
----
-
-## 2. Georgian (ქართული) Precision Communication
-
-Keep Georgian technical communication sharp and direct:
+## Examples
 
 ```text
-[Weak / Overly Verbose]:
-"გამარჯობა! რა თქმა უნდა, სიამოვნებით დაგეხმარებით ამ პრობლემის მოგვარებაში. აღნიშნული შეცდომა გამოწვეულია იმით, რომ..."
+English final:
+Saved input now survives a failed submission.
+Verified: existing form regression suite passed.
+Browser focus checks: Not run; no running preview was available.
 
-[High-Signal / Direct]:
-"შეცდომის მიზეზია ვალიდაციის ნაკლებობა Server Action-ში. გამოსწორება:
-1. `UpdateSchema.safeParse(data)`-ით შეამოწმე პარამეტრები.
-2. გაუშვი `npm run check` გადასამოწმებლად."
+Georgian progress:
+ბარათების დეკორატიული ხაზები მოვაშორე. ახლა ვამოწმებ გრძელი ქართული სათაურების გადატანას.
+
+Georgian final:
+განახლებულია ექვსივე სქილი. ადგილობრივი ასლები ემთხვევა გამოქვეყნებულ ვერსიას.
+შემოწმება: სტრუქტურული ვალიდაცია და შესაბამისი ტესტები წარმატებულია.
 ```
+
+Examples describe hypothetical outcomes, not evidence from the current task. Do not copy their verification claims into a report unless they actually occurred.
+
+Use a focused snippet or diff when it helps review. Do not impose code-first output on a conceptual question. Retain material risks, scope limits, and verification uncertainty even in a short response.

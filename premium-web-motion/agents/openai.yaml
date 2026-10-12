@@ -1,6 +1,6 @@
 interface:
   display_name: "Premium Web Motion & Physics"
-  short_description: "Innovative motion, springs, 3D tilt, and view transitions"
-  default_prompt: "Implement innovative and refined motion physics with $premium-web-motion"
+  short_description: "Purposeful motion, interruption safety, and performance"
+  default_prompt: "Use $premium-web-motion to refine this interaction with accessible, interruption-safe motion."
 policy:
   allow_implicit_invocation: true

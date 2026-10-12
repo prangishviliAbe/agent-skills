@@ -1,58 +1,38 @@
 ---
 name: token-efficiency
 description: >-
-  Communicate with extreme density, high signal-to-noise ratio, and zero fluff during agentic coding
-  and engineering workflows. Covers result-first communication, context economy in long multi-turn
-  sessions, surgical code diffs over whole-file reprinting, elimination of conversational filler,
-  and bilingual precision in English and Georgian. Use when requested for concise answers, TL;DR,
-  status summaries, compact code reviews, or when optimizing context budgets during complex tasks.
+  Communicate engineering results concisely and preserve useful context during long tasks.
+  Use for brief answers, TL;DR, compact status or review reports, focused diffs, large-log
+  investigation, or context-budget management. Remove repetition and filler while preserving
+  necessary evidence, uncertainty, user constraints, and complete authorized work.
 ---
 
-# Token & Reasoning Efficiency
+# Token and Context Efficiency
 
-Deliver maximum technical signal per token. Eliminate polite conversational preamble, unrequested tutorials, and repetitive restatements of what the user just said. Lead immediately with the concrete code change, architectural rationale, and verification.
+Increase useful information per sentence without reducing correctness, care, or task completion. Concise communication does not mean shallow investigation or prematurely stopping work.
 
-## Core Directives
+## Decisions
 
-1. **Lead with the Artifact:** Start with the code change, terminal command, or architectural decision. Never begin with conversational filler ("Certainly! I would be delighted to help you refactor...").
-2. **Surgical Diffs Over Full-File Reprints:** When updating an existing file, show only the modified block with 2–3 lines of surrounding context. Never reprint hundreds of unchanged lines unless explicitly instructed.
-3. **No Paraphrasing of User Prompts:** The user knows what they asked. Do not open with "You asked me to fix the checkout button...". Jump straight to the solution.
-4. **Dense Decision Tables Over Prose:** When comparing multiple approaches or summarizing review findings, use compact markdown tables instead of lengthy multi-paragraph explanations.
-5. **Context Economy in Long Sessions:** In multi-turn agent conversations, every generated token persists in context memory and increases latency. Keep progress reports brief and status-oriented.
-6. **Bilingual Precision:** When communicating in Georgian (ქართულად), use clear, modern technical terminology without unnatural literal translations or redundant explanatory filler.
+- Lead a final response with the result or answer. For ongoing work, give a short action or meaningful finding; omit praise, prompt paraphrases, filler, and repeated plans.
+- Use connected plain prose for one idea, bullets for independent points, and tables only when comparison benefits. A table is not inherently more efficient.
+- Link the changed artifact or location instead of reprinting entire files. Show a focused diff when it helps review; supply full code when explicitly requested.
+- Search before reading large files or logs. Inspect bounded context around the first relevant cause and follow its dependency; do not stop at a misleading final summary.
+- Load only references relevant to the task. Batch independent reads, then make dependent decisions sequentially.
+- Preserve constraints, accepted decisions, changed files, evidence, blockers, and the next required action during long work. Drop abandoned paths only when they no longer affect the decision.
+- Keep progress updates brief and meaningful. State a new finding, completed change, or next uncertainty; avoid narrating every command.
+- Preserve material uncertainty and verification limits. Never compress "source reviewed; browser checks not run" into "tested".
+- Match the user's language naturally. In Georgian, use clear Georgian prose and retain technical identifiers exactly; do not infer language from a directory name.
+- Complete the authorized scope. Do not offer to continue work that was already requested, hide a blocker to stay brief, or sacrifice visual refinement to save output.
 
-## Communication Compression Matrix
+## Routed references
 
-```text
-[ Fluffy & Wasteful ] ──► Preamble + Restatement + Unrequested Essay + Code + Repetitive Summary
-                             │
-                             ▼ (Compress)
-[ High-Signal Craft ]  ──► Direct Code Block / Command + Concrete Trade-off + Verification
-```
-
-## Quick Reference Map
-
-| Topic | What it covers | Reference file |
-| --- | --- | --- |
-| **Context Economy** | Context budgeting, minimizing multi-turn decay, surgical diff patterns | [context-economy.md](references/context-economy.md) |
-| **Output Craft** | Before/After rewrites, high-density status reports, Georgian precision | [output-craft.md](references/output-craft.md) |
-
-## Failure Modes & Countermeasures
-
-| Failure | Correct Move |
+| Need | Read |
 | --- | --- |
-| Opening with conversational pleasantries ("Hello! I hope you are having a great day!") | Delete entirely. Start immediately with the solution or diff. |
-| Printing a 300-line file to show a 2-line change | Present a focused snippet or unified diff targeting the specific function. |
-| Explaining standard library features the user already understands | State the specific architectural choice without lecturing on foundational basics. |
-| Re-summarizing the entire conversation at the end of every turn | Output only the immediate completion status and verification steps. |
+| Large inputs, bounded searches, useful handoffs | [context-economy.md](references/context-economy.md) |
+| Result, progress, review, and Georgian examples | [output-craft.md](references/output-craft.md) |
 
-## Definition of Done
+## Completion
 
-- [ ] Zero polite preamble or conversational padding.
-- [ ] Solutions lead with code, commands, or decisive answers.
-- [ ] Diffs and edits are surgical and context-efficient.
-- [ ] Complex comparisons structured as compact tables.
-
----
+Give the result and the smallest evidence needed to assess it, plus a material remaining limit if one exists. Use **Verified**, **Inferred**, **Assumed**, and **Not run** when needed, rather than ritual labels on every sentence. Do not invent token counts, costs, or latency claims.
 
 Skill by **Abe Prangishvili** — [github.com/prangishviliAbe/agent-skills](https://github.com/prangishviliAbe/agent-skills)

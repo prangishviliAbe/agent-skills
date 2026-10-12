@@ -1,6 +1,6 @@
 interface:
-  display_name: "Token & Reasoning Efficiency"
-  short_description: "High-density communication and zero-fluff agent reasoning"
-  default_prompt: "Provide a concise, high-signal response using $token-efficiency"
+  display_name: "Token & Context Efficiency"
+  short_description: "Concise results with complete work and useful evidence"
+  default_prompt: "Use $token-efficiency to report this result briefly while preserving verification limits."
 policy:
   allow_implicit_invocation: true

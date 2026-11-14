@@ -1,5 +1,7 @@
 # Refinement evaluation record
 
+> These records describe evaluations of an earlier revision of the skills. All six skills were rewritten afterwards (new reference files, a bundled scanner in `anti-ai-slop-design`, restructured entrypoints). The rewritten content passed structural validation and the automated suite, and the scanner was exercised on a fixture, but the behavioral scenarios below have **not been re-run** against it. Treat the results as historical until they are repeated.
+
 The three independent evaluators received only the selected skills, their task inputs, and the necessary synthetic description/log. They did not receive the reviewer rubrics or implementation conclusions. The skill content evaluated is included in the same revision as this record.
 
 ## What actually ran

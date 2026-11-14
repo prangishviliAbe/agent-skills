@@ -1,71 +1,137 @@
 ---
 name: ui-ux
 description: >-
-  Design and meticulously style screens, components, dashboards, forms, and product flows.
-  Use for UI/UX, "make it look better", visual refinement, perfectionist polish, typography,
-  spacing, responsive layouts, design tokens, interaction states, accessibility, or developer
-  handoff. Emphasize composition, optical alignment, content fit, and render-inspect-refine
-  verification; avoid decorative colored dots, card accent lines, and generic AI styling.
+  Design, specify, build, review, and polish product interfaces: screens, components, forms,
+  tables, dashboards, navigation, onboarding, settings, and whole user flows. Use for UI/UX
+  work, "make this easier to use", "make it look better", visual polish, a redesign, a
+  usability or accessibility review, a design system or tokens, responsive behavior, loading,
+  empty, and error states, microcopy, or a developer handoff, even when the user only shares
+  a screenshot. Works from the user's task to structure, states, and exact visual execution;
+  holds spacing, type, alignment, and states to a perfectionist standard; keeps generic
+  AI-looking patterns out; meets WCAG 2.2 AA; and verifies by rendering and operating the
+  result, not by reading code.
 ---
 
-# UI/UX and Visual Perfectionism
+# UI/UX
 
-Treat styling as substantive work. Deliver deliberate composition, precise typography, coherent surfaces, complete applicable interactions, and careful responsive behavior. A screen that compiles but still looks unfinished is unfinished.
+An interface is finished when a person can complete the task without thinking about the interface, and when nothing visible on screen was left to a default. Both conditions are required. Usable but careless is unfinished; beautiful but confusing is unfinished.
 
-## Scope and visual direction
+Work in this order, because each level makes the next one cheaper: **task → structure → states → system → execution → verification**. Most weak UI is polished at the bottom of that list while still broken at the top.
 
-Inspect the artifact, primary task, real content, brand constraints, component library, fonts, and assets. Preserve approved choices and the existing stack. For a new screen, choose a direction from the product and audience; for a small fix, improve the local relationship. Honor an explicitly requested wireframe or specification without pretending it is a finished UI.
+## Scope
 
-**Do not add decorative colored dots, faux status LEDs, card accent rails, top or side stripes, ornamental divider lines, border beams, gradient outlines, icon bubbles, glow blobs, or unrelated background patterns.** Remove them in the area being refined unless that exact motif is explicitly required. Preserve functional borders, separators, selected states, focus rings, labeled statuses, and data graphics. Generic "premium" styling is not permission to add ornament.
+| Request | Deliver | Do not |
+| --- | --- | --- |
+| New screen or flow | Task contract, structure, states, built or specified UI, verification | Start from a component library and look for a use |
+| Improve or polish existing UI | The highest-level defect first, then execution detail | Restyle while the flow is still wrong, or redesign what works |
+| Review or critique | Ranked findings: what, why it hurts the task, buildable fix, severity | Unranked lists of nitpicks or generic praise |
+| Local fix | That fix, plus anything it visibly breaks | Rebrand or restructure neighbors |
+| Handoff or spec | Dimensions as tokens, every state, copy, behavior, acceptance checks | Leave states and edge cases for the developer to invent |
 
-Do not prescribe glassmorphism, bento grids, serif pairings, dark mode, asymmetry, or OKLCH as universal requirements. Use the existing design language when it is coherent; improve its execution.
+Preserve the existing stack, design system, and approved brand. Extend a coherent system; do not start a parallel one. Do not invent research, metrics, or user quotes; label reasoning as Inferred.
 
-## Craft priorities
+## 1. Task contract
 
-| Area | What to perfect |
+Write this before drawing anything. If a line cannot be filled, that is the first design problem.
+
+```text
+User and situation:  who, how often, on what device, under what pressure
+Goal:                what they are trying to finish, in their words
+Entry:               where they come from and what they already know
+Inputs and choices:  what the system needs from them; what can be defaulted or removed
+Outcome:             what success looks like and what happens next
+Failure and return:  what can go wrong, how they recover, how they resume later
+The thing not to miss: the exception, cost, or consequence that must be noticed
+```
+
+Then remove steps, fields, choices, and screens until the contract cannot be met with less. The best interface improvement is usually a deletion. See [flows.md](references/flows.md).
+
+## 2. Structure
+
+- One screen, one primary purpose. Name it; if it needs "and", consider two screens or a clear primary and secondary region.
+- Choose the pattern from the task, not from habit: comparing means a table, one thing in depth means a detail page, a short interruption means a dialog. See [patterns.md](references/patterns.md).
+- Order content by what the user needs first. The primary action is the most prominent control and there is one per view.
+- Use conventional controls and placement. Novel navigation and custom input widgets cost every user time and usually lose accessibility.
+- Put information where the decision happens: price beside the button, error beside the field, consequence inside the confirmation.
+
+## 3. States
+
+Every data region and action has more than a happy path. Before building, list which of these apply: default, hover, focus, pressed, selected, disabled, loading, empty, partial, error, success, unknown outcome, offline, no permission, too much content, too little content. Design the ones that apply and state which do not. See [states.md](references/states.md) and, for input, [forms.md](references/forms.md).
+
+Rules that hold everywhere: state changes never shift layout; nothing essential depends on hover; the user's input is never lost; a failed action says how to recover; an action cannot be triggered twice by accident.
+
+## 4. System
+
+Decide tokens before components: type scale, spacing scale, color roles, radius, border, elevation, control heights, motion durations. Components consume tokens only. A raw value in a component is a defect or a missing token. See [design-system.md](references/design-system.md).
+
+## 5. Execution standard
+
+Hold every screen to this. Detail and method: [visual-craft.md](references/visual-craft.md).
+
+| Area | Finished means |
 | --- | --- |
-| Composition | Primary task is obvious; section widths and density follow the content; each region has a clear role. |
-| Typography | Actual font coverage and weights; headline measure and wrapping; readable body size; clear label/value hierarchy; stable numeral alignment. |
-| Spacing | Related items read as a group; larger separations mark meaningful transitions; consistent insets and deliberate optical corrections. |
-| Alignment | Text baselines, icon ink bounds, button labels, field edges, table columns, and adjacent media align perceptually. |
-| Surfaces | Controlled contrast and restrained containment; consistent radii and borders; shadows explain elevation rather than decorate every box. |
-| Color | Semantic roles and primary action are clear; neutral surfaces remain calm; color does not carry meaning alone. |
-| Assets | Authentic product content; intentional crop, aspect ratio, focal point, and sharpness; no fake proof or filler imagery. |
-| Interaction | Applicable hover, press, focus, selected, disabled, pending, success, error, empty, and unknown states preserve layout and meaning. |
-| Responsive fit | Content-driven breakpoints; readable narrow layouts; long labels and localization; zoom and on-screen keyboard do not hide the task. |
+| Hierarchy | One focal point per view; importance is obvious in a blurred screenshot; one primary action |
+| Typography | Fixed scale, at most two families and three weights; body 16px or more on content pages (13 to 15px acceptable in dense tools); 45 to 75 characters per line; no orphaned words in headings; tabular figures in data |
+| Spacing | Every value from the scale; gaps inside a group smaller than gaps between groups, at every level |
+| Alignment | Few shared edges, all exact; icons optically centered on their labels; numbers end-aligned |
+| Color | Neutrals carry the screen; one accent with one job; every color is a named role; meaning never by color alone |
+| Surfaces | One radius family, one border weight, one elevation logic; a box only where it groups something |
+| Controls | Shared height scale; visible labels; every applicable state designed; targets at least 24 by 24 CSS px, 44 for touch-first |
+| Content | Real or realistic data including the longest cases; specific labels; no invented proof or filler |
+| Responsive | Composed, not collapsed, from 320px upward; no page-level horizontal scroll; usable at 200% zoom |
+| Motion | Only to explain a state change; 120 to 250ms; interruptible; reduced-motion path |
 
-Polish the largest hierarchy or proportion defect before tuning small shadows. Do not apply equal visual weight to primary, supporting, and incidental information.
+**Keep generated-looking patterns out.** Do not add, and remove from the scope being changed unless explicitly requested: gradient text; purple or blue-violet gradients and glows; glassmorphism; gradient borders and border beams; accent stripes on card edges; decorative dots and fake status lights; tinted icon bubbles; pill badges as decoration; blobs, grids, and grain behind content; the same large radius and shadow on every box; hover lift on non-interactive cards; fade-up on scroll for every block; emoji as icons; the four-KPI-card dashboard with invented numbers; stock phrases such as "unlock", "seamless", and "supercharge"; invented testimonials, logos, and metrics. Functional marks stay: labeled status, chart series, focus rings, selected states, progress, necessary rules and borders.
 
-## Working method
+Do not swap one template for another. A direction (serif and cream, monospace and black borders, bento, dark with neon) is justified only by the product and audience, never by fashion.
 
-1. **Define the task contract.** Identify the action, inputs, decisions, outcome, and relevant failure or return paths. Do not invent user research.
-2. **Style with real content.** Reuse tokens and patterns; tune type, width, rhythm, controls, imagery, and information priority together. Avoid a collection of individually decorated components.
-3. **Specify applicable states.** Read [states.md](references/states.md). A button does not need an "empty" state; a destructive transaction may need an unknown-outcome state. Do not invent seven states for every element.
-4. **Implement or hand off concretely.** For implementation, edit the actual source and reuse the established system. For a specification, provide dimensions or tokens, behaviors, content, and acceptance checks a developer can use.
-5. **Render and inspect.** For implementation, use the available preview/browser tooling to inspect the whole screen and detail crops at representative narrow, intermediate, and wide widths. Exercise affected controls and states. Use [visual-qa.md](references/visual-qa.md).
-6. **Refine and recheck.** Correct hierarchy, wrapping, alignment, inconsistent spacing, awkward crops, clipping, and state jumps. Inspect again after material corrections. Stop when the changed scope has no unresolved blockers or major craft defects; avoid unrelated scope expansion.
-7. **Check accessibility proportionally.** Inspect semantics and test relevant keyboard/focus behavior where possible. Report untested behavior honestly. Contrast values alone do not establish WCAG conformance.
+## 6. Verification
 
-A screenshot supports visible design findings. It cannot prove focus order, announcements, hidden states, or responsive behavior. If rendering tools are unavailable, make the source/specification as complete as possible and mark visual QA **Not run**.
+Open the result in a browser and use it.
 
-## Routed references
+1. Render at narrow, middle, and wide sizes with real content and loaded fonts.
+2. Complete the task end to end with the keyboard alone, then with pointer or touch.
+3. Trigger every state that applies: loading, empty, error, long content, disabled, success.
+4. Inspect whole-screen for hierarchy, then zoomed crops for alignment, spacing, wrapping, and crops.
+5. Fix what is found in the source and inspect again. Stop when a full pass finds nothing above minor.
+
+Method, severity levels, and report format: [visual-qa.md](references/visual-qa.md). Accessibility checks: [accessibility.md](references/accessibility.md).
+
+A screenshot is evidence of one state at one size. It does not prove focus order, announcements, or behavior. If rendering or interaction is not possible, finish the source or spec fully and mark the visual and interaction checks **Not run**.
+
+## Common failures
+
+| Failure | Correct move |
+| --- | --- |
+| Polishing a screen whose flow is wrong | Fix the task and structure first; then style |
+| Only the happy path designed | List applicable states before building; design empty, loading, error, long content |
+| Every element given equal weight | Rank; make the primary action and the key data unmistakable; quiet the rest |
+| "Premium" pursued with effects | Finish comes from type, spacing, alignment, and complete states |
+| Clean look achieved by hiding things | Keep needed information and controls reachable; simplify hierarchy, not capability |
+| Accessibility claimed from a contrast check | Report exactly what was tested; keyboard and screen reader are separate checks |
+| Desktop layout squeezed onto a phone | Recompose for narrow width; reorder by priority |
+| Handoff with one static mockup | Specify states, behavior, copy, tokens, and acceptance checks |
+
+## References
 
 | Need | Read |
 | --- | --- |
-| Detailed styling and optical corrections | [aesthetic-craft.md](references/aesthetic-craft.md) |
-| Tokens, type, radii, and themes | [design-system.md](references/design-system.md) |
-| Choosing components by task | [patterns.md](references/patterns.md) |
-| State and recovery contracts | [states.md](references/states.md) |
-| Keyboard, semantics, contrast, and targets | [accessibility.md](references/accessibility.md) |
-| Reflow, container fit, and viewport behavior | [responsive.md](references/responsive.md) |
-| Microcopy and multilingual content | [content-design.md](references/content-design.md) |
-| Streaming, sources, draft actions, and uncertainty | [ai-interfaces.md](references/ai-interfaces.md) |
-| Visual review and completion gates | [visual-qa.md](references/visual-qa.md) |
+| Flows, information architecture, navigation, onboarding | [flows.md](references/flows.md) |
+| Choosing components and layouts by task; tables and dashboards | [patterns.md](references/patterns.md) |
+| State coverage and recovery, async and destructive actions | [states.md](references/states.md) |
+| Forms, validation, and input design | [forms.md](references/forms.md) |
+| Visual execution: hierarchy, spacing, type, alignment, surfaces | [visual-craft.md](references/visual-craft.md) |
+| Tokens, components, themes | [design-system.md](references/design-system.md) |
+| Keyboard, semantics, contrast, targets, announcements | [accessibility.md](references/accessibility.md) |
+| Reflow, breakpoints, touch, narrow and wide layouts | [responsive.md](references/responsive.md) |
+| Labels, errors, empty states, Georgian and multilingual copy | [content-design.md](references/content-design.md) |
+| Streaming, sources, approvals, and uncertainty in AI features | [ai-interfaces.md](references/ai-interfaces.md) |
+| Render, operate, inspect, report | [visual-qa.md](references/visual-qa.md) |
 
 ## Completion evidence
 
-Deliver the requested artifact with consistent styling, truthful content, usable applicable states, and corrections supported by inspection. Record representative viewport/state checks and material limits, without a ceremonial report for a tiny edit.
+Deliver the requested artifact with the task contract met, applicable states present, the execution standard held in the changed scope, and no generated-looking pattern added. Report briefly what was built, what was rendered and operated (sizes, states, input methods), and what remains open. Scale the report to the task: a one-line fix gets one line.
 
-Use **Verified**, **Inferred**, **Assumed**, and **Not run** precisely. Never claim "pixel-perfect", accessibility compliance, user validation, or responsive verification beyond the evidence collected.
+Use **Verified** for observed results, **Inferred** for reasoned conclusions, **Assumed** for missing context, and **Not run** for checks that did not happen. Never claim "pixel-perfect", "fully accessible", "user-tested", or "responsive" beyond the evidence collected.
 
 Skill by **Abe Prangishvili** — [github.com/prangishviliAbe/agent-skills](https://github.com/prangishviliAbe/agent-skills)

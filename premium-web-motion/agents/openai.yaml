@@ -1,6 +1,6 @@
 interface:
-  display_name: "Premium Web Motion & Physics"
-  short_description: "Purposeful motion, interruption safety, and performance"
-  default_prompt: "Use $premium-web-motion to refine this interaction with accessible, interruption-safe motion."
+  display_name: "Premium Web Motion"
+  short_description: "Purposeful, interruptible, measured interface motion"
+  default_prompt: "Use $premium-web-motion to remove decorative animation here and give each real state change an exact duration, easing, interruption behavior, and reduced-motion variant."
 policy:
   allow_implicit_invocation: true

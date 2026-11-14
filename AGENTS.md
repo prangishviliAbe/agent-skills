@@ -8,7 +8,8 @@ This repository contains portable agent skills. A skill must be useful in any ru
 <skill-name>/
 ├── SKILL.md            # required entrypoint and routing
 ├── agents/openai.yaml  # required Codex UI metadata; other runtimes ignore it
-└── references/         # optional conditional depth
+├── references/         # optional conditional depth
+└── scripts/            # optional zero-dependency tools the skill tells the agent to run
 ```
 
 - Keep each skill folder self-contained. Installation is folder-by-folder, so do not link to another skill or to repository-level files from `SKILL.md` or its references.
@@ -39,6 +40,8 @@ This repository contains portable agent skills. A skill must be useful in any ru
 - Write `description` as a folded scalar (`description: >-`): a plain scalar breaks on `: `. Include the real requests that should trigger the skill, including near-miss phrasing, within 1024 characters and without angle brackets.
 - Time-sensitive facts (versions, browser support, defaults) say how to verify them against the installed version or current documentation.
 - Keep the evidence vocabulary consistent: Verified, Inferred, Assumed, Not run.
+- Design-facing skills name the generated-looking patterns they forbid and pair each with a replacement that requires a decision. A ban without a replacement produces a blank default.
+- A bundled script runs on plain Node with no dependencies, is exercised before commit, and is described in the skill as producing candidates, not verdicts.
 
 ## References and metadata
 

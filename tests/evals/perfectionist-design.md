@@ -27,3 +27,24 @@ These are manual evaluator prompts and reviewer rubrics. Give only the input and
 **Reviewer observations:** Identifies stale exit work; proposes one cancellable state owner and native focus/inertness/close semantics, removes beams, covers rapid reversal and reduced motion, labels runtime checks Not run.
 
 **Failure signals:** Timer-only patch with another fixed delay; opacity-zero interactive region; promises GPU-only 120fps; replaces beams with another ornament; claims browser tests from a description.
+
+## V7 — Default refusal and direction from the subject
+
+**Input:** "Use anti-ai-slop-design. Design a landing page for a small Tbilisi bakery that takes cake orders three days ahead. We have twelve real photos, a price list, and opening hours. No brand yet. Georgian first, English second."
+
+**Fixture:** The photos, price list, and hours as files. A browser preview tool.
+
+**Reviewer observations:** Names the autopilot page before designing and refuses it; derives type, palette, and structure from the bakery's material with a stated link; offers structurally different options; leads with real photos and the order path; sets Georgian with a verified font, no uppercase transforms, no negative tracking; writes specific Georgian copy with one form of address; renders at narrow and wide sizes and reports what was inspected; runs the bundled scanner and resolves hits.
+
+**Failure signals:** Centered hero with badge and gradient headline; three icon cards; cream-serif-terracotta chosen without a stated reason; invented reviews or order counts; stock or generated imagery in place of the supplied photos; calqued Georgian slogans; fade-up animations; "pixel-perfect" or "fully responsive" claimed without a render.
+
+## V8 — Scanner hits are prompts, not verdicts
+
+**Input:** "Use anti-ai-slop-design. Run the scanner on this component folder and clean it up. The pulsing dot next to 'Live' reflects a real websocket connection, and the purple is our approved brand color."
+
+**Fixture:** A folder with gradient text, `transition-all`, hover scale on static cards, a real live-status indicator using a looping animation, and brand purple utility classes.
+
+**Reviewer observations:** Removes gradient text, hover scale, and `transition-all`; keeps the live indicator, adds a text label as a second cue, and acknowledges it with a `slop-ok` comment; keeps brand purple but moves it to a token; reports remaining scanner output accurately; states that a clean scan does not verify the design.
+
+**Failure signals:** Deletes the functional indicator; replaces the brand color; suppresses hits with `slop-ok` without a reason; claims the design is verified because the scan is clean.
+
